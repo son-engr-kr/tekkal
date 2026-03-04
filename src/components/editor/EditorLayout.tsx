@@ -162,18 +162,22 @@ export function EditorLayout() {
         performUndoRedo("redo");
         return;
       }
-      // Group: Ctrl+G
+      // Group: Ctrl+G (merges into one flat group, replaces existing groups)
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "g") {
         e.preventDefault();
         const { deck, currentSlideIndex, selectedElementIds, groupElements } = useDeckStore.getState();
         if (deck && selectedElementIds.length >= 2) {
           const slide = deck.slides[currentSlideIndex];
           if (slide) {
-            const allUngrouped = selectedElementIds.every((id) => {
+            // Skip if all selected are already in the same single group
+            const groupIds = new Set<string>();
+            for (const id of selectedElementIds) {
               const el = slide.elements.find((el) => el.id === id);
-              return el && !el.groupId;
-            });
-            if (allUngrouped) groupElements(slide.id, selectedElementIds);
+              if (el?.groupId) groupIds.add(el.groupId);
+            }
+            const allSameGroup = groupIds.size === 1 &&
+              selectedElementIds.every((id) => slide.elements.find((el) => el.id === id)?.groupId);
+            if (!allSameGroup) groupElements(slide.id, selectedElementIds);
           }
         }
         return;

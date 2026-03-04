@@ -105,9 +105,19 @@ export function SelectionOverlay({ slide, scale }: Props) {
           showResizeHandles={element.id === singleSelectedId && !element.groupId}
           onSelect={(e: React.MouseEvent) => handleSelect(element, e)}
           onMove={(dx, dy) => {
-            const idsToMove = moveTargetIds.has(element.id)
-              ? [...moveTargetIds]
-              : [element.id];
+            // Read latest selection from store (not stale closure)
+            // so first click-drag on a group member works immediately.
+            const latestSelected = useDeckStore.getState().selectedElementIds;
+            const allIds = new Set(latestSelected);
+            for (const id of latestSelected) {
+              const el = slide.elements.find((e) => e.id === id);
+              if (el?.groupId) {
+                for (const m of slide.elements) {
+                  if (m.groupId === el.groupId) allIds.add(m.id);
+                }
+              }
+            }
+            const idsToMove = allIds.has(element.id) ? [...allIds] : [element.id];
             for (const elId of idsToMove) {
               const el = slide.elements.find((e) => e.id === elId);
               if (el) {
@@ -370,10 +380,18 @@ function ElementContextMenu({
   // Determine group context
   const slide = deck?.slides.find((s) => s.id === slideId);
   const clickedElement = slide?.elements.find((e) => e.id === elementId);
-  const canGroup = selectedElementIds.length >= 2 && selectedElementIds.every((id) => {
-    const el = slide?.elements.find((e) => e.id === id);
-    return el && !el.groupId;
-  });
+  // Can group: 2+ elements selected, not all in the same single group already
+  const canGroup = selectedElementIds.length >= 2 && (() => {
+    const groupIds = new Set<string>();
+    let allGrouped = true;
+    for (const id of selectedElementIds) {
+      const el = slide?.elements.find((e) => e.id === id);
+      if (el?.groupId) groupIds.add(el.groupId);
+      else allGrouped = false;
+    }
+    // Skip if all selected are already in exactly one group
+    return !(allGrouped && groupIds.size === 1);
+  })();
   const clickedGroupId = clickedElement?.groupId;
 
   return (

@@ -172,6 +172,60 @@ Every element has these common fields:
 | `size` | object | yes | `{ "w": number, "h": number }` in virtual coordinates |
 | `style` | object | no | Type-specific styling |
 | `rotation` | number | no | Rotation in degrees (clockwise) |
+| `groupId` | string | no | Group identifier. Elements sharing the same `groupId` form a group — they move and scale together. |
+
+### Grouping
+
+Elements can be grouped by assigning the same `groupId` string. Grouped elements behave as a unit:
+
+- Clicking any member selects the entire group
+- Dragging moves all members together
+- Resizing scales all members proportionally
+- A purple dashed bounding box appears around the group
+
+Grouping is flat (1-level only). Grouping elements that already belong to different groups merges them into one group.
+
+**Convention:** use `"group-"` prefix followed by a short identifier (e.g., `"group-box-a"`).
+
+**Arrow connectors must always be grouped with their label.** An arrow element (`"shape": "arrow"`) and its associated text label should share the same `groupId` so they stay aligned when moved:
+
+```json
+{
+  "id": "arrow-1",
+  "type": "shape", "shape": "arrow",
+  "position": { "x": 240, "y": 155 },
+  "size": { "w": 80, "h": 20 },
+  "style": { "stroke": "#64748b", "strokeWidth": 2 },
+  "groupId": "group-arrow-1"
+},
+{
+  "id": "label-1",
+  "type": "text",
+  "content": "Yes",
+  "position": { "x": 255, "y": 138 },
+  "size": { "w": 50, "h": 18 },
+  "style": { "fontSize": 12, "color": "#64748b", "textAlign": "center" },
+  "groupId": "group-arrow-1"
+}
+```
+
+Similarly, box + label pairs in diagrams should be grouped:
+
+```json
+{
+  "id": "box-input", "type": "shape", "shape": "rectangle",
+  "position": { "x": 80, "y": 130 }, "size": { "w": 160, "h": 70 },
+  "style": { "fill": "#dbeafe", "stroke": "#3b82f6", "strokeWidth": 2, "borderRadius": 10 },
+  "groupId": "group-input"
+},
+{
+  "id": "label-input", "type": "text",
+  "content": "**Input**\nUser request",
+  "position": { "x": 80, "y": 130 }, "size": { "w": 160, "h": 70 },
+  "style": { "fontSize": 14, "color": "#1e40af", "textAlign": "center", "verticalAlign": "middle" },
+  "groupId": "group-input"
+}
+```
 
 ---
 
@@ -467,7 +521,7 @@ For **flow diagrams, pipeline diagrams, and block-and-arrow layouts**, prefer **
 - Wide box (with subtitle): `w: 150–200, h: 55–70`
 - Arrow gap between boxes: `40–65px`
 
-**Step 2: Build each box as a shape + text pair.**
+**Step 2: Build each box as a shape + text pair** with the same `groupId`:
 
 ```json
 {
@@ -480,56 +534,67 @@ For **flow diagrams, pipeline diagrams, and block-and-arrow layouts**, prefer **
     "stroke": "#7c3aed",
     "strokeWidth": 2,
     "borderRadius": 8
-  }
+  },
+  "groupId": "group-my-box"
 },
 {
   "id": "my-box-text",
   "type": "text",
   "content": "**SAC Policy**",
-  "position": { "x": 205, "y": 148 },
-  "size": { "w": 130, "h": 26 },
-  "style": { "fontSize": 14, "color": "#7c3aed", "textAlign": "center" }
+  "position": { "x": 200, "y": 140 },
+  "size": { "w": 140, "h": 42 },
+  "style": { "fontSize": 14, "color": "#7c3aed", "textAlign": "center", "verticalAlign": "middle" },
+  "groupId": "group-my-box"
 }
 ```
 
-The text element is inset ~5px from the shape border on each side to avoid clipping.
-
-**Step 3: Connect boxes with arrows.** Use thin rectangles for lines and Unicode triangles for arrowheads:
+**Step 3: Connect boxes with native arrow elements.** Use `"shape": "arrow"` with `rotation` for direction:
 
 ```json
-{
-  "id": "line-a-b",
-  "type": "shape", "shape": "rectangle",
-  "position": { "x": 340, "y": 160 },
-  "size": { "w": 50, "h": 2 },
-  "style": { "fill": "#7c3aed" }
-},
 {
   "id": "arrow-a-b",
-  "type": "text",
-  "content": "▶",
-  "position": { "x": 382, "y": 154 },
-  "size": { "w": 14, "h": 14 },
-  "style": { "fontSize": 10, "color": "#7c3aed" }
+  "type": "shape", "shape": "arrow",
+  "position": { "x": 340, "y": 155 },
+  "size": { "w": 60, "h": 20 },
+  "style": { "stroke": "#7c3aed", "strokeWidth": 2 }
 }
 ```
 
-**Arrow coordinate formula:**
-- Horizontal arrow: line starts at `box_A.x + box_A.w`, ends at `box_B.x`. Line `y` = `box.y + box.h/2`. Arrowhead at `line.x + line.w - 8`.
-- Vertical arrow: use a thin rectangle with `w: 2` and computed `h`. Use `▼` or `▲` for the arrowhead.
+**Arrow directions via `rotation`:**
+- Right (default): `rotation` omitted or `0`
+- Down: `"rotation": 90`
+- Left: `"rotation": 180`
+- Up: `"rotation": 270`
 
-**Step 4: Build feedback loops.** Use 3 thin rectangles (right vertical → horizontal → left vertical) to form an L-shaped or U-shaped path:
+If the arrow has a label, group them together:
 
 ```json
-{ "id": "fb-right", "type": "shape", "shape": "rectangle",
-  "position": { "x": 804, "y": 100 }, "size": { "w": 2, "h": 40 },
-  "style": { "fill": "#7c3aed" } },
-{ "id": "fb-horiz", "type": "shape", "shape": "rectangle",
-  "position": { "x": 270, "y": 100 }, "size": { "w": 536, "h": 2 },
-  "style": { "fill": "#7c3aed" } },
-{ "id": "fb-left", "type": "shape", "shape": "rectangle",
-  "position": { "x": 269, "y": 100 }, "size": { "w": 2, "h": 40 },
-  "style": { "fill": "#7c3aed" } }
+{
+  "id": "arrow-yes", "type": "shape", "shape": "arrow",
+  "position": { "x": 510, "y": 340 }, "size": { "w": 80, "h": 20 },
+  "style": { "stroke": "#22c55e", "strokeWidth": 2 },
+  "groupId": "group-arrow-yes"
+},
+{
+  "id": "label-yes", "type": "text", "content": "Yes",
+  "position": { "x": 530, "y": 322 }, "size": { "w": 40, "h": 18 },
+  "style": { "fontSize": 12, "color": "#22c55e", "textAlign": "center" },
+  "groupId": "group-arrow-yes"
+}
+```
+
+**Step 4: Build feedback loops.** Use 3 thin `"line"` shapes (right vertical → horizontal → left vertical) to form an L-shaped or U-shaped path:
+
+```json
+{ "id": "fb-right", "type": "shape", "shape": "line",
+  "position": { "x": 804, "y": 100 }, "size": { "w": 40, "h": 4 },
+  "rotation": 90, "style": { "stroke": "#7c3aed", "strokeWidth": 2 } },
+{ "id": "fb-horiz", "type": "shape", "shape": "line",
+  "position": { "x": 270, "y": 100 }, "size": { "w": 536, "h": 4 },
+  "style": { "stroke": "#7c3aed", "strokeWidth": 2 } },
+{ "id": "fb-left", "type": "shape", "shape": "line",
+  "position": { "x": 269, "y": 100 }, "size": { "w": 40, "h": 4 },
+  "rotation": 90, "style": { "stroke": "#7c3aed", "strokeWidth": 2 } }
 ```
 
 **Step 5: Add step-by-step animation.** Each click reveals one logical group:
@@ -537,7 +602,6 @@ The text element is inset ~5px from the shape border on each side to avoid clipp
 ```json
 { "target": "box-bg",   "trigger": "onClick",      "effect": "fadeIn", "duration": 300 },
 { "target": "box-text", "trigger": "withPrevious",  "effect": "fadeIn", "duration": 300 },
-{ "target": "line-ab",  "trigger": "withPrevious",  "effect": "fadeIn", "duration": 300 },
 { "target": "arrow-ab", "trigger": "withPrevious",  "effect": "fadeIn", "duration": 300 }
 ```
 
