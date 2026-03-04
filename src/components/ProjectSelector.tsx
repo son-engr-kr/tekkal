@@ -43,6 +43,7 @@ function ViteProjectSelector({ onAdapterReady }: { onAdapterReady: (adapter: Fil
   const [wizardOpen, setWizardOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [ghDialogOpen, setGhDialogOpen] = useState(false);
+  const [recentFolders, setRecentFolders] = useState<RecentProject[]>([]);
 
   const fetchProjects = () => {
     listProjects().then((p) => {
@@ -51,7 +52,11 @@ function ViteProjectSelector({ onAdapterReady }: { onAdapterReady: (adapter: Fil
     });
   };
 
-  useEffect(() => { fetchProjects(); }, []);
+  const loadRecentFolders = () => {
+    listRecentProjects().then(setRecentFolders);
+  };
+
+  useEffect(() => { fetchProjects(); loadRecentFolders(); }, []);
 
   const handleOpen = async (name: string) => {
     const deck = await loadDeckFromDisk(name);
@@ -76,11 +81,33 @@ function ViteProjectSelector({ onAdapterReady }: { onAdapterReady: (adapter: Fil
     fetchProjects();
   };
 
-  const handleOpenFolder = async () => {
-    const adapter = await FsAccessAdapter.openDirectory();
+  const openWithFsHandle = async (handle: FileSystemDirectoryHandle) => {
+    await saveHandle(handle);
+    await addRecentProject(handle);
+    const adapter = new FsAccessAdapter(handle);
     const deck = await adapter.loadDeck();
     onAdapterReady(adapter);
     useDeckStore.getState().openProject(adapter.projectName, deck);
+  };
+
+  const handleOpenFolder = async () => {
+    const adapter = await FsAccessAdapter.openDirectory();
+    await addRecentProject(adapter.dirHandle);
+    const deck = await adapter.loadDeck();
+    onAdapterReady(adapter);
+    useDeckStore.getState().openProject(adapter.projectName, deck);
+  };
+
+  const handleOpenRecentFolder = async (entry: RecentProject) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const perm = await (entry.handle as any).requestPermission({ mode: "readwrite" });
+      if (perm !== "granted") return;
+      await openWithFsHandle(entry.handle);
+    } catch {
+      await removeRecentProject(entry.name);
+      loadRecentFolders();
+    }
   };
 
   if (loading) {
@@ -123,6 +150,38 @@ function ViteProjectSelector({ onAdapterReady }: { onAdapterReady: (adapter: Fil
             </div>
           ))}
         </div>
+
+        {/* Recent local folders */}
+        {recentFolders.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Recent Local Folders</h2>
+            <div className="space-y-1.5">
+              {recentFolders.map((entry) => (
+                <div
+                  key={entry.name}
+                  className="flex items-center justify-between px-4 py-2.5 bg-zinc-900 rounded-lg border border-zinc-800 hover:border-zinc-600 transition-colors group"
+                >
+                  <button
+                    onClick={() => handleOpenRecentFolder(entry)}
+                    className="flex-1 text-left"
+                  >
+                    <span className="text-sm font-medium text-zinc-200">{entry.name}</span>
+                    <span className="text-[11px] text-zinc-600 ml-2">
+                      {formatRelativeTime(entry.openedAt)}
+                    </span>
+                  </button>
+                  <button
+                    onClick={async (e) => { e.stopPropagation(); await removeRecentProject(entry.name); loadRecentFolders(); }}
+                    className="text-xs text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity ml-3"
+                    title="Remove from recents"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* New project */}
         <div className="border border-zinc-800 rounded-lg p-4 bg-zinc-900">
