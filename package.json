@@ -27,13 +27,14 @@
     "immer": "^10.1.1",
     "jspdf": "^4.2.0",
     "katex": "^0.16.22",
+    "mermaid": "^11.12.3",
+    "pdfjs-dist": "^5.4.624",
     "pptxgenjs": "^4.0.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "shiki": "^3.22.0",
     "three": "^0.183.2",
     "zundo": "^2.3.0",
-    "pdfjs-dist": "^5.4.624",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

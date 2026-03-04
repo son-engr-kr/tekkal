@@ -18,6 +18,7 @@ import type {
   TableElement,
   TableStyle,
   TikZElement,
+  MermaidElement,
 } from "@/types/deck";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import type { FileSystemAdapter } from "@/adapters/types";
@@ -322,6 +323,8 @@ async function buildElement(
       return buildTable(el, deck);
     case "tikz":
       return await buildTikZ(el, adapter);
+    case "mermaid":
+      return buildMermaid(el);
     case "video":
       return buildVideo();
     default:
@@ -634,6 +637,21 @@ async function rasterizeSvg(
   } catch {
     return null;
   }
+}
+
+// ---- Mermaid (render cached SVG) ----
+
+function buildMermaid(el: MermaidElement): HTMLElement {
+  const d = document.createElement("div");
+  d.style.cssText = `width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;background:${el.style?.backgroundColor ?? "transparent"}`;
+  if (el.renderedSvg) {
+    d.innerHTML = el.renderedSvg;
+  } else {
+    d.textContent = "[Mermaid]";
+    d.style.color = "#999";
+    d.style.fontSize = "14px";
+  }
+  return d;
 }
 
 // ---- Video (placeholder) ----

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDeckStore } from "@/stores/deckStore";
-import type { Slide, SlideElement, TikZElement, TableElement, CustomElement, Scene3DElement } from "@/types/deck";
+import type { Slide, SlideElement, TikZElement, MermaidElement, TableElement, CustomElement, Scene3DElement } from "@/types/deck";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { AnimationEditor } from "./AnimationEditor";
 import {
@@ -99,8 +99,8 @@ export function PropertyPanel() {
         </div>
       </div>
 
-      {/* Content (for text/code — not tikz, which has its own editor) */}
-      {"content" in element && element.type !== "tikz" && (
+      {/* Content (for text/code — not tikz/mermaid, which have their own editors) */}
+      {"content" in element && element.type !== "tikz" && element.type !== "mermaid" && (
         <div>
           <FieldLabel>Content</FieldLabel>
           <textarea
@@ -117,6 +117,15 @@ export function PropertyPanel() {
       {/* TikZ editor */}
       {element.type === "tikz" && (
         <TikZEditor
+          element={element}
+          slideId={slide.id}
+          updateElement={updateElement}
+        />
+      )}
+
+      {/* Mermaid editor */}
+      {element.type === "mermaid" && (
+        <MermaidEditor
           element={element}
           slideId={slide.id}
           updateElement={updateElement}
@@ -281,9 +290,43 @@ function SlidePropertiesPanel({
         </div>
       </div>
 
+      {/* Transition */}
+      <div>
+        <FieldLabel>Transition</FieldLabel>
+        <div className="space-y-2">
+          <SelectField
+            label="Type"
+            value={selectedSlides.length === 1 ? (selectedSlides[0]!.transition?.type ?? "fade") : undefined}
+            options={TRANSITION_TYPE_OPTIONS}
+            onChange={(v) => {
+              for (const slide of selectedSlides) {
+                updateSlide(slide.id, {
+                  transition: { ...slide.transition, type: v },
+                });
+              }
+            }}
+          />
+          <NumberField
+            label="Duration (ms)"
+            value={selectedSlides.length === 1 ? (selectedSlides[0]!.transition?.duration ?? 300) : undefined}
+            onChange={(v) => {
+              for (const slide of selectedSlides) {
+                updateSlide(slide.id, {
+                  transition: { ...slide.transition, type: slide.transition?.type ?? "fade", duration: v },
+                });
+              }
+            }}
+            min={0}
+            max={3000}
+          />
+        </div>
+      </div>
+
     </div>
   );
 }
+
+const TRANSITION_TYPE_OPTIONS = ["fade", "slide", "morph", "none"] as const;
 
 function ElementStyleEditor({
   element,
@@ -348,6 +391,12 @@ function ElementStyleEditor({
           </>
         )}
         {element.type === "tikz" && (
+          <>
+            <ColorField label="Background" value={element.style?.backgroundColor} onChange={(v) => patchStyle("backgroundColor", v)} />
+            <NumberField label="Border Radius" value={element.style?.borderRadius} onChange={(v) => patchStyle("borderRadius", v)} min={0} max={32} />
+          </>
+        )}
+        {element.type === "mermaid" && (
           <>
             <ColorField label="Background" value={element.style?.backgroundColor} onChange={(v) => patchStyle("backgroundColor", v)} />
             <NumberField label="Border Radius" value={element.style?.borderRadius} onChange={(v) => patchStyle("borderRadius", v)} min={0} max={32} />
@@ -861,6 +910,41 @@ function Scene3DEditor({
           <div className="text-red-400 text-xs mt-1 font-mono">{keyframesError}</div>
         )}
       </div>
+    </>
+  );
+}
+
+function MermaidEditor({
+  element,
+  slideId,
+  updateElement,
+}: {
+  element: MermaidElement;
+  slideId: string;
+  updateElement: (slideId: string, elementId: string, patch: Partial<SlideElement>) => void;
+}) {
+  return (
+    <>
+      <div>
+        <FieldLabel>Mermaid Code</FieldLabel>
+        <textarea
+          className="w-full bg-zinc-900 text-cyan-300 rounded px-2 py-1.5 text-xs font-mono resize-y min-h-32 border border-zinc-700 focus:border-blue-500 focus:outline-none"
+          value={element.content}
+          rows={10}
+          spellCheck={false}
+          onChange={(e) => {
+            updateElement(slideId, element.id, { content: e.target.value } as Partial<SlideElement>);
+          }}
+        />
+      </div>
+
+      {element.renderError && (
+        <div className="bg-red-900/30 border border-red-700 rounded p-2">
+          <div className="text-red-400 text-xs font-mono whitespace-pre-wrap break-all">
+            {element.renderError}
+          </div>
+        </div>
+      )}
     </>
   );
 }

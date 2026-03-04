@@ -14,6 +14,7 @@ import type {
   TableElement,
   TableStyle,
   TikZElement,
+  MermaidElement,
 } from "@/types/deck";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import type { FileSystemAdapter } from "@/adapters/types";
@@ -141,6 +142,9 @@ async function addElement(
       break;
     case "custom":
       addCustomPlaceholder(slide, x, y, w, h, rotate);
+      break;
+    case "mermaid":
+      await addMermaid(slide, el, x, y, w, h, rotate);
       break;
     case "scene3d":
       addScene3DPlaceholder(slide, x, y, w, h, rotate);
@@ -641,6 +645,38 @@ async function addTikZ(
 
   const resolved = await resolveAssetSrc(el.svgUrl, adapter);
   const rasterized = await rasterizeSvgToBase64(resolved, el.size.w, el.size.h);
+  if (rasterized) {
+    slide.addImage({
+      data: rasterized,
+      x,
+      y,
+      w,
+      h,
+      rotate,
+    });
+  }
+}
+
+// ========================================================================
+// Mermaid (rendered SVG → rasterized PNG → embedded image)
+// ========================================================================
+
+async function addMermaid(
+  slide: PptxGenJS.Slide,
+  el: MermaidElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  rotate: number,
+) {
+  if (!el.renderedSvg) return;
+
+  const svgBlob = new Blob([el.renderedSvg], { type: "image/svg+xml" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+  const rasterized = await rasterizeSvgToBase64(svgUrl, el.size.w, el.size.h);
+  URL.revokeObjectURL(svgUrl);
+
   if (rasterized) {
     slide.addImage({
       data: rasterized,

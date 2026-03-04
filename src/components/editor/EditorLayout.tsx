@@ -10,6 +10,7 @@ import { NotesEditor } from "./NotesEditor";
 import { ElementPalette } from "./ElementPalette";
 import { SlideAnimationList } from "./SlideAnimationList";
 import { ThemePanel } from "./ThemePanel";
+import { DiffView } from "./DiffView";
 import { PresentationMode } from "@/components/presenter/PresentationMode";
 import { exportToPdf } from "@/components/export/pdfExport";
 import { exportToNativePdf } from "@/components/export/pdfNativeExport";
@@ -47,6 +48,7 @@ export function EditorLayout() {
   const [bottomPanel, setBottomPanel] = useState<BottomPanel>(null);
   const [rightPanel, setRightPanel] = useState<RightPanel>("properties");
   const [presenting, setPresenting] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
   const [pdfMenuOpen, setPdfMenuOpen] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const pdfMenuRef = useRef<HTMLDivElement>(null);
@@ -201,8 +203,14 @@ export function EditorLayout() {
         }
         return;
       }
+      // Diff view: Ctrl+Shift+D
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === "KeyD") {
+        e.preventDefault();
+        setShowDiff((v) => !v);
+        return;
+      }
       // Duplicate element(s): Ctrl+D
-      if ((e.ctrlKey || e.metaKey) && e.code === "KeyD") {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === "KeyD") {
         e.preventDefault();
         const { deck, currentSlideIndex, selectedElementIds, duplicateElement, selectElement } = useDeckStore.getState();
         if (deck && selectedElementIds.length > 0) {
@@ -369,6 +377,17 @@ export function EditorLayout() {
           PPTX
         </button>
         <button
+          onClick={() => setShowDiff(!showDiff)}
+          className={`text-xs px-2 py-1 rounded transition-colors ${
+            showDiff
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+          }`}
+          title="Visual Diff (Ctrl+Shift+D)"
+        >
+          Diff
+        </button>
+        <button
           onClick={() => setRightPanel(rightPanel === "theme" ? "properties" : "theme")}
           className={`text-xs px-2 py-1 rounded transition-colors ${
             rightPanel === "theme"
@@ -391,6 +410,9 @@ export function EditorLayout() {
       </div>
 
       {/* Main area */}
+      {showDiff ? (
+        <DiffView onClose={() => setShowDiff(false)} />
+      ) : (
       <div className="flex-1 flex overflow-hidden">
         {/* Slide list sidebar */}
         <div
@@ -452,6 +474,7 @@ export function EditorLayout() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

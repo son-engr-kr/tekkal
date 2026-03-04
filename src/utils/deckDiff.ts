@@ -1,4 +1,82 @@
-import type { Deck } from "@/types/deck";
+import type { Deck, Slide, SlideElement } from "@/types/deck";
+
+// ----- Element-level diff types -----
+
+export type ChangeType = "added" | "removed" | "modified" | "unchanged";
+
+export interface ElementDiff {
+  elementId: string;
+  change: ChangeType;
+  changedFields: string[];
+  oldElement?: SlideElement;
+  newElement?: SlideElement;
+}
+
+export interface SlideDiff {
+  slideId: string;
+  elements: ElementDiff[];
+}
+
+export function diffSlides(oldSlide: Slide | null, newSlide: Slide | null): SlideDiff | null {
+  if (!newSlide) return null;
+  if (!oldSlide) {
+    // Entire slide is new
+    return {
+      slideId: newSlide.id,
+      elements: newSlide.elements.map((e) => ({
+        elementId: e.id,
+        change: "added",
+        changedFields: [],
+        newElement: e,
+      })),
+    };
+  }
+
+  const oldMap = new Map(oldSlide.elements.map((e) => [e.id, e]));
+  const newMap = new Map(newSlide.elements.map((e) => [e.id, e]));
+  const elements: ElementDiff[] = [];
+
+  // Check new elements
+  for (const [id, newEl] of newMap) {
+    const oldEl = oldMap.get(id);
+    if (!oldEl) {
+      elements.push({ elementId: id, change: "added", changedFields: [], newElement: newEl });
+    } else {
+      const changed = diffFields(oldEl, newEl);
+      elements.push({
+        elementId: id,
+        change: changed.length > 0 ? "modified" : "unchanged",
+        changedFields: changed,
+        oldElement: oldEl,
+        newElement: newEl,
+      });
+    }
+  }
+
+  // Check removed elements
+  for (const [id, oldEl] of oldMap) {
+    if (!newMap.has(id)) {
+      elements.push({ elementId: id, change: "removed", changedFields: [], oldElement: oldEl });
+    }
+  }
+
+  return { slideId: newSlide.id, elements };
+}
+
+function diffFields(oldEl: SlideElement, newEl: SlideElement): string[] {
+  const changed: string[] = [];
+  const allKeys = new Set([...Object.keys(oldEl), ...Object.keys(newEl)]);
+  for (const key of allKeys) {
+    const oldVal = JSON.stringify((oldEl as unknown as Record<string, unknown>)[key]);
+    const newVal = JSON.stringify((newEl as unknown as Record<string, unknown>)[key]);
+    if (oldVal !== newVal) {
+      changed.push(key);
+    }
+  }
+  return changed;
+}
+
+// ----- Undo change detection -----
 
 export interface UndoChanges {
   slideIndex: number;

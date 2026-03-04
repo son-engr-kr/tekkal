@@ -16,6 +16,10 @@ const Scene3DElementRenderer = lazy(() =>
   import("./elements/Scene3DElement").then((m) => ({ default: m.Scene3DElementRenderer })),
 );
 
+const MermaidElementRenderer = lazy(() =>
+  import("./elements/MermaidElement").then((m) => ({ default: m.MermaidElementRenderer })),
+);
+
 interface Props {
   element: SlideElement;
   animations?: Animation[];
@@ -174,6 +178,12 @@ function renderByType(
       return <TableElementRenderer element={element} />;
     case "custom":
       return <CustomElementRenderer element={element} />;
+    case "mermaid":
+      return (
+        <Suspense fallback={<div style={{ width: "100%", height: "100%", background: "#1e1e2e", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontSize: 14 }}>Loading Mermaid...</div>}>
+          <MermaidElementRenderer element={element} thumbnail={thumbnail} />
+        </Suspense>
+      );
     case "scene3d": {
       const sceneStep = computeSceneStep(element, animations, activeAnimations);
       return (

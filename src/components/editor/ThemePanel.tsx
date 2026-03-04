@@ -66,6 +66,7 @@ export function ThemePanel() {
   const patchImage = patchStyle("image");
   const patchVideo = patchStyle("video");
   const patchTikZ = patchStyle("tikz");
+  const patchMermaid = patchStyle("mermaid");
 
   return (
     <div className="text-sm">
@@ -241,6 +242,21 @@ export function ThemePanel() {
           label="Border Radius"
           value={theme.tikz?.borderRadius}
           onChange={(v) => patchTikZ({ borderRadius: v })}
+          min={0}
+          max={32}
+        />
+      </Section>
+
+      <Section title="Mermaid">
+        <ColorField
+          label="Background"
+          value={theme.mermaid?.backgroundColor}
+          onChange={(v) => patchMermaid({ backgroundColor: v })}
+        />
+        <NumberField
+          label="Border Radius"
+          value={theme.mermaid?.borderRadius}
+          onChange={(v) => patchMermaid({ borderRadius: v })}
           min={0}
           max={32}
         />

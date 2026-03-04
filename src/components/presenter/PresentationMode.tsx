@@ -9,6 +9,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import type { Deck, Slide, SlideTransition, DeckTheme } from "@/types/deck";
 import type { FsAccessAdapter } from "@/adapters/fsAccess";
 import { AnimatePresence, motion } from "framer-motion";
+import { MorphTransition } from "@/components/renderer/MorphTransition";
 
 function useVisibleSlides(deck: Deck | null) {
   return useMemo(() => {
@@ -59,6 +60,7 @@ const transitionVariants = {
     exit: { opacity: 0, x: -80 },
   },
   none: { initial: {}, animate: {}, exit: {} },
+  morph: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
 };
 
 // ── Main PresentationMode ─────────────────────────────────────────
@@ -732,30 +734,44 @@ function AudienceSlideViewer({
     type: "fade",
     duration: 300,
   };
-  const variant =
-    transitionVariants[transition.type] ?? transitionVariants.fade;
+  const isMorph = transition.type === "morph";
+  const variant = isMorph
+    ? transitionVariants.fade
+    : transitionVariants[transition.type] ?? transitionVariants.fade;
 
   return (
     <div className="h-full w-full flex items-center justify-center bg-black cursor-default">
       <div className="relative">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.id}
-            initial={variant.initial}
-            animate={variant.animate}
-            exit={variant.exit}
-            transition={{ duration: (transition.duration ?? 300) / 1000 }}
-          >
-            <StableSlideContent
-              slide={slide}
-              scale={scale}
-              activeStep={activeStep}
-              steps={steps}
-              onAdvance={onAdvance}
-              theme={deck?.theme}
-            />
-          </motion.div>
-        </AnimatePresence>
+        {isMorph ? (
+          <MorphTransition
+            slide={slide}
+            scale={scale}
+            duration={transition.duration ?? 300}
+            theme={deck?.theme}
+            activeStep={activeStep}
+            steps={steps}
+            onAdvance={onAdvance}
+          />
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slide.id}
+              initial={variant.initial}
+              animate={variant.animate}
+              exit={variant.exit}
+              transition={{ duration: (transition.duration ?? 300) / 1000 }}
+            >
+              <StableSlideContent
+                slide={slide}
+                scale={scale}
+                activeStep={activeStep}
+                steps={steps}
+                onAdvance={onAdvance}
+                theme={deck?.theme}
+              />
+            </motion.div>
+          </AnimatePresence>
+        )}
         {pointer.visible && (
           <div
             className="absolute w-3 h-3 rounded-full bg-red-500 pointer-events-none"
