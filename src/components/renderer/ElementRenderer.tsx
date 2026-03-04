@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import type { SlideElement, Animation, Scene3DElement } from "@/types/deck";
 import { getAnimationConfig } from "@/utils/animationEffects";
+import { getElementPositionStyle } from "@/utils/elementStyle";
 import { TextElementRenderer } from "./elements/TextElement";
 import { ImageElementRenderer } from "./elements/ImageElement";
 import { CodeElementRenderer } from "./elements/CodeElement";
@@ -30,16 +31,7 @@ interface Props {
 }
 
 export function ElementRenderer({ element, animations, activeAnimations, delayOverrides, thumbnail, previewMode, previewKey }: Props) {
-  const transform = element.rotation ? `rotate(${element.rotation}deg)` : undefined;
-
-  const positionStyle: React.CSSProperties = {
-    left: element.position.x,
-    top: element.position.y,
-    width: element.size.w,
-    height: element.size.h,
-    transform,
-  };
-
+  const positionStyle = getElementPositionStyle(element);
   const child = renderByType(element, thumbnail, animations, activeAnimations);
 
   // No animations → plain div (zero overhead in editor)

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useDeckStore, setDeckDragging } from "@/stores/deckStore";
 import type { Slide, SlideElement } from "@/types/deck";
 import { CANVAS_HEIGHT } from "@/types/deck";
+import { getElementPositionStyle } from "@/utils/elementStyle";
 
 function getGroupBounds(elements: SlideElement[]) {
   let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
@@ -313,12 +314,7 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
     <motion.div
       className="absolute cursor-move select-none"
       style={{
-        left: element.position.x,
-        top: element.position.y,
-        width: element.size.w,
-        height: element.size.h,
-        transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
-        transformOrigin: "center center",
+        ...getElementPositionStyle(element),
         // outline instead of ring: framer-motion's boxShadow animate overrides Tailwind ring (both use box-shadow)
         outline: isSelected ? "2px solid rgb(59,130,246)" : "none",
         // auto: re-enable events (parent is pointer-events:none)
