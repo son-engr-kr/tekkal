@@ -62,7 +62,7 @@
           },
           "style": {
             "fontSize": 24,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "textAlign": "center"
           }
         },
@@ -79,7 +79,7 @@
             "h": 4
           },
           "style": {
-            "fill": "#2563eb"
+            "fill": "#3b82f6"
           }
         },
         {
@@ -96,7 +96,7 @@
           },
           "style": {
             "fill": "transparent",
-            "stroke": "#2563eb",
+            "stroke": "#3b82f6",
             "strokeWidth": 2,
             "opacity": 0.4
           }
@@ -115,7 +115,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#2563eb",
+            "color": "#3b82f6",
             "textAlign": "center"
           }
         },
@@ -133,7 +133,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#94a3b8",
+            "color": "#475569",
             "textAlign": "center"
           }
         }
@@ -207,7 +207,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#94a3b8"
+            "color": "#64748b"
           }
         },
         {
@@ -223,7 +223,7 @@
             "h": 120
           },
           "style": {
-            "fill": "#2563eb",
+            "fill": "#3b82f6",
             "borderRadius": 12
           }
         },
@@ -241,7 +241,7 @@
           },
           "style": {
             "fontSize": 13,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "textAlign": "center"
           }
         },
@@ -277,7 +277,7 @@
           },
           "style": {
             "fontSize": 13,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "textAlign": "center"
           }
         },
@@ -312,7 +312,7 @@
           },
           "style": {
             "fontSize": 13,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "textAlign": "center"
           }
         },
@@ -348,8 +348,26 @@
           },
           "style": {
             "fontSize": 13,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "textAlign": "center"
+          }
+        },
+        {
+          "id": "shapes-opacity-rect",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": {
+            "x": 60,
+            "y": 340
+          },
+          "size": {
+            "w": 400,
+            "h": 120
+          },
+          "style": {
+            "fill": "#10b981",
+            "opacity": 0.3,
+            "borderRadius": 16
           }
         },
         {
@@ -382,8 +400,8 @@
             "h": 120
           },
           "style": {
-            "fill": "#f1f5f9",
-            "stroke": "#94a3b8",
+            "fill": "#1e293b",
+            "stroke": "#475569",
             "strokeWidth": 2,
             "borderRadius": 16
           }
@@ -402,25 +420,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#64748b"
-          }
-        },
-        {
-          "id": "shapes-opacity-rect",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 340
-          },
-          "size": {
-            "w": 400,
-            "h": 120
-          },
-          "style": {
-            "fill": "#10b981",
-            "opacity": 0.3,
-            "borderRadius": 16
+            "color": "#94a3b8"
           }
         }
       ],
@@ -452,6 +452,221 @@
           "duration": 400,
           "delay": 300
         }
+      ]
+    },
+    {
+      "id": "diagram",
+      "transition": { "type": "fade", "duration": 400 },
+      "notes": "Flowchart diagram built from rectangle shapes and arrow connectors.",
+      "elements": [
+        {
+          "id": "diagram-title",
+          "type": "text",
+          "content": "## Diagram with Arrows",
+          "position": { "x": 60, "y": 20 },
+          "size": { "w": 840, "h": 45 },
+          "style": { "fontSize": 32, "color": "#0f172a" }
+        },
+        {
+          "id": "diagram-desc",
+          "type": "text",
+          "content": "Combine **rectangle** shapes and **arrow** connectors to build flowcharts.",
+          "position": { "x": 60, "y": 65 },
+          "size": { "w": 840, "h": 25 },
+          "style": { "fontSize": 15, "color": "#64748b" }
+        },
+        {
+          "id": "box-input",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 80, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fill": "#dbeafe", "stroke": "#3b82f6", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-input",
+          "type": "text",
+          "content": "**Input**\nUser request",
+          "position": { "x": 80, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fontSize": 14, "color": "#1e40af", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-1",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 240, "y": 155 },
+          "size": { "w": 80, "h": 20 },
+          "style": { "stroke": "#64748b", "strokeWidth": 2 }
+        },
+        {
+          "id": "box-process",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 320, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fill": "#fef3c7", "stroke": "#f59e0b", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-process",
+          "type": "text",
+          "content": "**Process**\nTransform data",
+          "position": { "x": 320, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fontSize": 14, "color": "#92400e", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-2",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 480, "y": 155 },
+          "size": { "w": 80, "h": 20 },
+          "style": { "stroke": "#64748b", "strokeWidth": 2 }
+        },
+        {
+          "id": "box-output",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 560, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fill": "#dcfce7", "stroke": "#22c55e", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-output",
+          "type": "text",
+          "content": "**Output**\nResult",
+          "position": { "x": 560, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fontSize": 14, "color": "#166534", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-down",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 390, "y": 200 },
+          "size": { "w": 100, "h": 20 },
+          "rotation": 90,
+          "style": { "stroke": "#64748b", "strokeWidth": 2 }
+        },
+        {
+          "id": "box-validate",
+          "type": "shape",
+          "shape": "ellipse",
+          "position": { "x": 330, "y": 310 },
+          "size": { "w": 180, "h": 80 },
+          "style": { "fill": "#fce7f3", "stroke": "#ec4899", "strokeWidth": 2 }
+        },
+        {
+          "id": "label-validate",
+          "type": "text",
+          "content": "**Validate?**",
+          "position": { "x": 330, "y": 310 },
+          "size": { "w": 180, "h": 80 },
+          "style": { "fontSize": 16, "color": "#9d174d", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-yes",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 510, "y": 340 },
+          "size": { "w": 100, "h": 20 },
+          "style": { "stroke": "#22c55e", "strokeWidth": 2 }
+        },
+        {
+          "id": "label-yes",
+          "type": "text",
+          "content": "Yes",
+          "position": { "x": 535, "y": 320 },
+          "size": { "w": 50, "h": 20 },
+          "style": { "fontSize": 13, "color": "#22c55e", "textAlign": "center" }
+        },
+        {
+          "id": "box-done",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 610, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fill": "#dcfce7", "stroke": "#22c55e", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-done",
+          "type": "text",
+          "content": "**Done**",
+          "position": { "x": 610, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fontSize": 16, "color": "#166534", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-no",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 160, "y": 340 },
+          "size": { "w": 170, "h": 20 },
+          "rotation": 180,
+          "style": { "stroke": "#ef4444", "strokeWidth": 2 }
+        },
+        {
+          "id": "label-no",
+          "type": "text",
+          "content": "No",
+          "position": { "x": 210, "y": 320 },
+          "size": { "w": 50, "h": 20 },
+          "style": { "fontSize": 13, "color": "#ef4444", "textAlign": "center" }
+        },
+        {
+          "id": "box-retry",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fill": "#fee2e2", "stroke": "#ef4444", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-retry",
+          "type": "text",
+          "content": "**Retry**",
+          "position": { "x": 60, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fontSize": 16, "color": "#991b1b", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "diagram-tip",
+          "type": "text",
+          "content": "Tip: use **rotation** on arrows (90° = down, 180° = left) to create branching flows.",
+          "position": { "x": 60, "y": 420 },
+          "size": { "w": 840, "h": 30 },
+          "style": { "fontSize": 14, "color": "#94a3b8" }
+        },
+        {
+          "id": "diagram-code-tip",
+          "type": "code",
+          "language": "json",
+          "content": "{ \"type\": \"shape\", \"shape\": \"arrow\", \"rotation\": 90,\n  \"style\": { \"stroke\": \"#64748b\", \"strokeWidth\": 2 } }",
+          "position": { "x": 60, "y": 455 },
+          "size": { "w": 500, "h": 65 },
+          "style": { "fontSize": 12, "borderRadius": 8 }
+        }
+      ],
+      "animations": [
+        { "target": "box-input", "trigger": "onEnter", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-input", "trigger": "onEnter", "effect": "fadeIn", "duration": 300 },
+        { "target": "arrow-1", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 200 },
+        { "target": "box-process", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 400 },
+        { "target": "label-process", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 400 },
+        { "target": "arrow-2", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 600 },
+        { "target": "box-output", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
+        { "target": "label-output", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
+        { "target": "arrow-down", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
+        { "target": "box-validate", "trigger": "afterPrevious", "effect": "scaleIn", "duration": 400 },
+        { "target": "label-validate", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "arrow-yes", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-yes", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 200 },
+        { "target": "box-done", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-done", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "arrow-no", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-no", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 200 },
+        { "target": "box-retry", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-retry", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 }
       ]
     },
     {
@@ -493,7 +708,7 @@
           },
           "style": {
             "fontSize": 18,
-            "color": "#64748b"
+            "color": "#94a3b8"
           }
         },
         {
@@ -509,7 +724,7 @@
             "h": 370
           },
           "style": {
-            "fill": "#f1f5f9",
+            "fill": "#1e293b",
             "borderRadius": 16
           }
         },
@@ -527,7 +742,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#334155",
+            "color": "#1e293b",
             "lineHeight": 1.4
           }
         },
@@ -545,7 +760,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#334155",
+            "color": "#1e293b",
             "lineHeight": 1.4
           }
         },
@@ -563,140 +778,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#334155",
-            "lineHeight": 1.4
-          }
-        }
-      ]
-    },
-    {
-      "id": "math-matrix",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "KaTeX matrix examples — various delimiters, operations, and linear systems.",
-      "elements": [
-        {
-          "id": "mat-title",
-          "type": "text",
-          "content": "## Matrices & Linear Algebra",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "mat-desc",
-          "type": "text",
-          "content": "Block math with `$$...$$` — matrices, determinants, and linear systems.",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "mat-bg",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 40,
-            "y": 120
-          },
-          "size": {
-            "w": 880,
-            "h": 400
-          },
-          "style": {
-            "fill": "#f1f5f9",
-            "borderRadius": 16
-          }
-        },
-        {
-          "id": "mat-multiply",
-          "type": "text",
-          "content": "**Matrix Multiplication**\n\n$$\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} \\begin{pmatrix} e & f \\\\ g & h \\end{pmatrix} = \\begin{pmatrix} ae+bg & af+bh \\\\ ce+dg & cf+dh \\end{pmatrix}$$",
-          "position": {
-            "x": 60,
-            "y": 135
-          },
-          "size": {
-            "w": 430,
-            "h": 140
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#334155",
-            "lineHeight": 1.4
-          }
-        },
-        {
-          "id": "mat-eigen",
-          "type": "text",
-          "content": "**Eigenvalue Problem**\n\n$$A\\mathbf{v} = \\lambda\\mathbf{v} \\implies \\det(A - \\lambda I) = 0$$\n\n$$\\det\\begin{vmatrix} a-\\lambda & b \\\\ c & d-\\lambda \\end{vmatrix} = 0$$",
-          "position": {
-            "x": 510,
-            "y": 135
-          },
-          "size": {
-            "w": 390,
-            "h": 140
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#334155",
-            "lineHeight": 1.4
-          }
-        },
-        {
-          "id": "mat-system",
-          "type": "text",
-          "content": "**Linear System (Augmented Matrix)**\n\n$$\\left[\\begin{array}{ccc|c} 1 & 2 & -1 & 8 \\\\ 0 & 1 & 3 & 5 \\\\ 2 & -1 & 1 & 3 \\end{array}\\right] \\xrightarrow{\\text{RREF}} \\left[\\begin{array}{ccc|c} 1 & 0 & 0 & 3 \\\\ 0 & 1 & 0 & -1 \\\\ 0 & 0 & 1 & 2 \\end{array}\\right]$$",
-          "position": {
-            "x": 60,
-            "y": 290
-          },
-          "size": {
-            "w": 540,
-            "h": 120
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#334155",
-            "lineHeight": 1.4
-          }
-        },
-        {
-          "id": "mat-svd",
-          "type": "text",
-          "content": "**SVD Decomposition**\n\n$$A = U\\Sigma V^T = \\begin{bmatrix} u_1 & \\cdots & u_m \\end{bmatrix} \\begin{bmatrix} \\sigma_1 & & \\\\ & \\ddots & \\\\ & & \\sigma_r \\end{bmatrix} \\begin{bmatrix} v_1^T \\\\ \\vdots \\\\ v_n^T \\end{bmatrix}$$",
-          "position": {
-            "x": 60,
-            "y": 410
-          },
-          "size": {
-            "w": 840,
-            "h": 100
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#334155",
+            "color": "#1e293b",
             "lineHeight": 1.4
           }
         }
@@ -807,7 +889,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "lineHeight": 1.8
           }
         }
@@ -852,7 +934,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#94a3b8"
+            "color": "#64748b"
           }
         },
         {
@@ -867,14 +949,12 @@
             "w": 280,
             "h": 250
           },
-          "svgUrl": "./assets/tikz/tikz-geo.svg?v=1771819124094",
-          "renderedContent": "\\begin{tikzpicture}[scale=1.5]\n  \\draw[thick, fill=blue!20] (0,0) -- (3,0) -- (1.5,2.6) -- cycle;\n  \\draw[thick, fill=red!20] (1.5,0) circle (1);\n  \\node at (1.5, -0.5) {Geometry};\n\\end{tikzpicture}",
-          "renderedPreamble": ""
+          "svgUrl": "./assets/tikz/tikz-demo-1.svg"
         },
         {
           "id": "tikz-plot",
           "type": "tikz",
-          "content": "\\begin{tikzpicture}\n  \\begin{axis}[\n    width=6cm, height=5cm,\n    xlabel=$x$, ylabel=$f(x)$,\n    grid=major,\n    title={$\\sin(x)$ and $\\cos(x)$}\n  ]\n    \\addplot[yellow, thick, domain=0:360, samples=100] {sin(x)};\n    \\addplot[red, thick, dashed, domain=0:360, samples=100] {cos(x)};\n    \\legend{$\\sin$, $\\cos$}\n  \\end{axis}\n\\end{tikzpicture}",
+          "content": "\\begin{tikzpicture}\n  \\begin{axis}[\n    width=6cm, height=5cm,\n    xlabel=$x$, ylabel=$f(x)$,\n    grid=major,\n    title={$\\sin(x)$ and $\\cos(x)$}\n  ]\n    \\addplot[green, thick, domain=0:360, samples=100] {sin(x)};\n    \\addplot[red, thick, dashed, domain=0:360, samples=100] {cos(x)};\n    \\legend{$\\sin$, $\\cos$}\n  \\end{axis}\n\\end{tikzpicture}",
           "position": {
             "x": 340,
             "y": 130
@@ -883,9 +963,7 @@
             "w": 280,
             "h": 250
           },
-          "svgUrl": "./assets/tikz/tikz-plot.svg?v=1771821322054",
-          "renderedContent": "\\begin{tikzpicture}\n  \\begin{axis}[\n    width=6cm, height=5cm,\n    xlabel=$x$, ylabel=$f(x)$,\n    grid=major,\n    title={$\\sin(x)$ and $\\cos(x)$}\n  ]\n    \\addplot[yellow, thick, domain=0:360, samples=100] {sin(x)};\n    \\addplot[red, thick, dashed, domain=0:360, samples=100] {cos(x)};\n    \\legend{$\\sin$, $\\cos$}\n  \\end{axis}\n\\end{tikzpicture}",
-          "renderedPreamble": ""
+          "svgUrl": "./assets/tikz/tikz-demo-2.svg"
         },
         {
           "id": "tikz-flow",
@@ -899,9 +977,7 @@
             "w": 280,
             "h": 250
           },
-          "svgUrl": "./assets/tikz/tikz-flow.svg?v=1771819613894",
-          "renderedContent": "\\begin{tikzpicture}[node distance=1.5cm, auto,\n    block/.style={rectangle, draw, fill=blue!20, text width=4em, text centered, rounded corners, minimum height=2.5em},\n    line/.style={draw, -latex}]\n  \\node [block] (input) {Input};\n  \\node [block, right of=input, node distance=3cm] (process) {Process};\n  \\node [block, right of=process, node distance=3cm] (output) {Output};\n  \\path [line] (input) -- (process);\n  \\path [line] (process) -- (output);\n\\end{tikzpicture}",
-          "renderedPreamble": ""
+          "svgUrl": "./assets/tikz/tikz-demo-3.svg"
         },
         {
           "id": "tikz-hint",
@@ -917,184 +993,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#94a3b8"
-          }
-        }
-      ]
-    },
-    {
-      "id": "tikz-diagrams",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "TikZ advanced diagrams — neural network, finite automaton, and commutative diagram.",
-      "elements": [
-        {
-          "id": "tikzd-title",
-          "type": "text",
-          "content": "## TikZ Diagrams",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "tikzd-desc",
-          "type": "text",
-          "content": "Neural networks, automata, and commutative diagrams — all rendered client-side.",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "tikzd-nn",
-          "type": "tikz",
-          "content": "\\begin{tikzpicture}[x=1.8cm, y=1.2cm,\n    node/.style={circle, draw, minimum size=6mm, inner sep=0pt, fill=blue!15},\n    >=latex]\n  \\foreach \\i in {1,...,3}\n    \\node[node] (I-\\i) at (0,-\\i) {};\n  \\foreach \\j in {1,...,4}\n    \\node[node, fill=orange!20] (H-\\j) at (1.5,-\\j+0.5) {};\n  \\foreach \\k in {1,...,2}\n    \\node[node, fill=green!20] (O-\\k) at (3,-\\k-0.5) {};\n  \\foreach \\i in {1,...,3}\n    \\foreach \\j in {1,...,4}\n      \\draw[->] (I-\\i) -- (H-\\j);\n  \\foreach \\j in {1,...,4}\n    \\foreach \\k in {1,...,2}\n      \\draw[->] (H-\\j) -- (O-\\k);\n  \\node[above] at (0,-0.5) {\\small Input};\n  \\node[above] at (1.5,0) {\\small Hidden};\n  \\node[above] at (3,-0.5) {\\small Output};\n\\end{tikzpicture}",
-          "position": {
-            "x": 30,
-            "y": 120
-          },
-          "size": {
-            "w": 300,
-            "h": 280
-          },
-          "style": {
-            "backgroundColor": "#f8fafc",
-            "borderRadius": 8
-          },
-          "svgUrl": "./assets/tikz/tikzd-nn.svg?v=1772445439142",
-          "renderedContent": "\\begin{tikzpicture}[x=1.8cm, y=1.2cm,\n    node/.style={circle, draw, minimum size=6mm, inner sep=0pt, fill=blue!15},\n    >=latex]\n  \\foreach \\i in {1,...,3}\n    \\node[node] (I-\\i) at (0,-\\i) {};\n  \\foreach \\j in {1,...,4}\n    \\node[node, fill=orange!20] (H-\\j) at (1.5,-\\j+0.5) {};\n  \\foreach \\k in {1,...,2}\n    \\node[node, fill=green!20] (O-\\k) at (3,-\\k-0.5) {};\n  \\foreach \\i in {1,...,3}\n    \\foreach \\j in {1,...,4}\n      \\draw[->] (I-\\i) -- (H-\\j);\n  \\foreach \\j in {1,...,4}\n    \\foreach \\k in {1,...,2}\n      \\draw[->] (H-\\j) -- (O-\\k);\n  \\node[above] at (0,-0.5) {\\small Input};\n  \\node[above] at (1.5,0) {\\small Hidden};\n  \\node[above] at (3,-0.5) {\\small Output};\n\\end{tikzpicture}",
-          "renderedPreamble": ""
-        },
-        {
-          "id": "tikzd-nn-label",
-          "type": "text",
-          "content": "**Neural Network**",
-          "position": {
-            "x": 30,
-            "y": 410
-          },
-          "size": {
-            "w": 300,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#64748b",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "tikzd-auto",
-          "type": "tikz",
-          "preamble": "\\usetikzlibrary{automata,positioning}",
-          "content": "\\begin{tikzpicture}[shorten >=1pt, node distance=2.5cm, auto,\n    every state/.style={minimum size=7mm, inner sep=0pt}]\n  \\node[state, initial] (q0) {$q_0$};\n  \\node[state] (q1) [right of=q0] {$q_1$};\n  \\node[state, accepting] (q2) [right of=q1] {$q_2$};\n  \\path[->] (q0) edge node {a} (q1)\n                  edge [loop above] node {b} ()\n            (q1) edge node {a,b} (q2)\n                  edge [loop above] node {a} ()\n            (q2) edge [loop above] node {b} ();\n\\end{tikzpicture}",
-          "position": {
-            "x": 340,
-            "y": 120
-          },
-          "size": {
-            "w": 300,
-            "h": 280
-          },
-          "style": {
-            "backgroundColor": "#f8fafc",
-            "borderRadius": 8
-          },
-          "renderedContent": "\\begin{tikzpicture}[shorten >=1pt, node distance=2.5cm, auto,\n    every state/.style={minimum size=7mm, inner sep=0pt}]\n  \\node[state, initial] (q0) {$q_0$};\n  \\node[state] (q1) [right of=q0] {$q_1$};\n  \\node[state, accepting] (q2) [right of=q1] {$q_2$};\n  \\path[->] (q0) edge node {a} (q1)\n                  edge [loop above] node {b} ()\n            (q1) edge node {a,b} (q2)\n                  edge [loop above] node {a} ()\n            (q2) edge [loop above] node {b} ();\n\\end{tikzpicture}",
-          "renderedPreamble": "\\usetikzlibrary{automata,positioning}",
-          "svgUrl": "./assets/tikz/tikzd-auto.svg?v=1772445515558"
-        },
-        {
-          "id": "tikzd-auto-label",
-          "type": "text",
-          "content": "**Finite Automaton (DFA)**",
-          "position": {
-            "x": 340,
-            "y": 410
-          },
-          "size": {
-            "w": 300,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#64748b",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "tikzd-cd",
-          "type": "tikz",
-          "content": "\\begin{tikzpicture}[node distance=2.5cm, >=latex]\n  \\node (A) {$A$};\n  \\node (B) [right of=A] {$B$};\n  \\node (C) [below of=A] {$C$};\n  \\node (D) [right of=C] {$D$};\n  \\draw[->] (A) -- node[above] {$f$} (B);\n  \\draw[->] (A) -- node[left] {$g$} (C);\n  \\draw[->] (B) -- node[right] {$h$} (D);\n  \\draw[->] (C) -- node[below] {$k$} (D);\n  \\draw[->, dashed] (A) -- node[above left=-2pt] {$\\exists!\\, \\varphi$} (D);\n\\end{tikzpicture}",
-          "position": {
-            "x": 650,
-            "y": 120
-          },
-          "size": {
-            "w": 280,
-            "h": 280
-          },
-          "style": {
-            "backgroundColor": "#f8fafc",
-            "borderRadius": 8
-          },
-          "svgUrl": "./assets/tikz/tikzd-cd.svg?v=1772445442441",
-          "renderedContent": "\\begin{tikzpicture}[node distance=2.5cm, >=latex]\n  \\node (A) {$A$};\n  \\node (B) [right of=A] {$B$};\n  \\node (C) [below of=A] {$C$};\n  \\node (D) [right of=C] {$D$};\n  \\draw[->] (A) -- node[above] {$f$} (B);\n  \\draw[->] (A) -- node[left] {$g$} (C);\n  \\draw[->] (B) -- node[right] {$h$} (D);\n  \\draw[->] (C) -- node[below] {$k$} (D);\n  \\draw[->, dashed] (A) -- node[above left=-2pt] {$\\exists!\\, \\varphi$} (D);\n\\end{tikzpicture}",
-          "renderedPreamble": ""
-        },
-        {
-          "id": "tikzd-cd-label",
-          "type": "text",
-          "content": "**Commutative Diagram**",
-          "position": {
-            "x": 650,
-            "y": 410
-          },
-          "size": {
-            "w": 280,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#64748b",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "tikzd-hint",
-          "type": "text",
-          "content": "Select each TikZ element and click **Render** in the property panel to compile.",
-          "position": {
-            "x": 60,
-            "y": 460
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#94a3b8",
-            "textAlign": "center"
+            "color": "#475569"
           }
         }
       ]
@@ -1153,7 +1052,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "textAlign": "center"
           }
         },
@@ -1170,8 +1069,7 @@
             "h": 236
           },
           "controls": true,
-          "muted": true,
-          "loop": true
+          "muted": true
         },
         {
           "id": "video-local-label",
@@ -1187,7 +1085,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "textAlign": "center"
           }
         },
@@ -1223,7 +1121,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#94a3b8",
+            "color": "#475569",
             "textAlign": "center"
           }
         }
@@ -1240,11 +1138,6 @@
           "trigger": "onClick",
           "effect": "fadeIn",
           "duration": 500
-        },
-        {
-          "target": "video-local",
-          "trigger": "onClick",
-          "effect": "playVideo"
         }
       ]
     },
@@ -1287,7 +1180,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#94a3b8"
+            "color": "#64748b"
           }
         },
         {
@@ -1303,7 +1196,7 @@
             "h": 100
           },
           "style": {
-            "fill": "#2563eb",
+            "fill": "#3b82f6",
             "borderRadius": 12
           }
         },
@@ -1448,7 +1341,7 @@
           },
           "style": {
             "fontSize": 22,
-            "color": "#d97706"
+            "color": "#fbbf24"
           }
         },
         {
@@ -1537,7 +1430,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#94a3b8",
+            "color": "#475569",
             "textAlign": "center"
           }
         }
@@ -1673,7 +1566,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#94a3b8"
+            "color": "#64748b"
           }
         },
         {
@@ -1689,7 +1582,7 @@
             "h": 120
           },
           "style": {
-            "fill": "#2563eb",
+            "fill": "#3b82f6",
             "borderRadius": 12
           }
         },
@@ -1724,7 +1617,7 @@
             "h": 120
           },
           "style": {
-            "fill": "#2563eb",
+            "fill": "#3b82f6",
             "borderRadius": 12
           }
         },
@@ -1828,7 +1721,7 @@
           },
           "style": {
             "fontSize": 14,
-            "color": "#64748b",
+            "color": "#94a3b8",
             "lineHeight": 1.8
           }
         }
@@ -1929,7 +1822,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#94a3b8"
+            "color": "#64748b"
           }
         },
         {
@@ -1946,7 +1839,7 @@
           },
           "style": {
             "fontSize": 15,
-            "color": "#64748b"
+            "color": "#94a3b8"
           }
         },
         {
@@ -1962,7 +1855,7 @@
             "h": 80
           },
           "style": {
-            "fill": "#2563eb",
+            "fill": "#3b82f6",
             "borderRadius": 12
           }
         },
@@ -2068,7 +1961,7 @@
           },
           "style": {
             "fontSize": 15,
-            "color": "#64748b"
+            "color": "#94a3b8"
           }
         },
         {
@@ -2119,7 +2012,7 @@
           },
           "style": {
             "fontSize": 15,
-            "color": "#64748b"
+            "color": "#94a3b8"
           }
         },
         {
@@ -2170,7 +2063,7 @@
           },
           "style": {
             "fontSize": 13,
-            "color": "#94a3b8",
+            "color": "#475569",
             "textAlign": "center"
           }
         }
@@ -2279,7 +2172,7 @@
           },
           "style": {
             "fontSize": 18,
-            "color": "#64748b"
+            "color": "#94a3b8"
           }
         },
         {
@@ -2295,8 +2188,8 @@
             "h": 140
           },
           "style": {
-            "fill": "#f1f5f9",
-            "stroke": "#2563eb",
+            "fill": "#1e293b",
+            "stroke": "#3b82f6",
             "strokeWidth": 2,
             "borderRadius": 12
           }
@@ -2315,7 +2208,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#334155",
+            "color": "#1e293b",
             "textAlign": "center",
             "lineHeight": 1.6
           }
@@ -2333,7 +2226,7 @@
             "h": 140
           },
           "style": {
-            "fill": "#f1f5f9",
+            "fill": "#1e293b",
             "stroke": "#8b5cf6",
             "strokeWidth": 2,
             "borderRadius": 12
@@ -2353,7 +2246,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#334155",
+            "color": "#1e293b",
             "textAlign": "center",
             "lineHeight": 1.6
           }
@@ -2371,8 +2264,8 @@
             "h": 140
           },
           "style": {
-            "fill": "#f1f5f9",
-            "stroke": "#94a3b8",
+            "fill": "#1e293b",
+            "stroke": "#64748b",
             "strokeWidth": 2,
             "borderRadius": 12
           }
@@ -2391,7 +2284,7 @@
           },
           "style": {
             "fontSize": 16,
-            "color": "#334155",
+            "color": "#1e293b",
             "textAlign": "center",
             "lineHeight": 1.6
           }
@@ -2440,7 +2333,7 @@
           },
           "style": {
             "fontSize": 36,
-            "color": "#f8fafc"
+            "color": "#0f172a"
           }
         },
         {
@@ -2480,7 +2373,7 @@
         {
           "id": "ts-theme-text",
           "type": "text",
-          "content": "**Deck-level theme** sets defaults:\n- text: fontSize 18, color #1e293b\n- code: fontSize 14, borderRadius 8\n- shape: borderRadius 8\n\nElement `style` overrides theme.",
+          "content": "**Deck-level theme** sets defaults:\n- text: fontSize 18, color #e2e8f0\n- code: fontSize 14, borderRadius 8\n- shape: borderRadius 8\n\nElement `style` overrides theme.",
           "position": {
             "x": 80,
             "y": 155
@@ -2491,7 +2384,7 @@
           },
           "style": {
             "fontSize": 15,
-            "color": "#cbd5e1",
+            "color": "#475569",
             "lineHeight": 1.7
           }
         },
@@ -2526,7 +2419,7 @@
           },
           "style": {
             "fontSize": 15,
-            "color": "#cbd5e1",
+            "color": "#475569",
             "lineHeight": 1.7
           }
         },
@@ -2696,128 +2589,48 @@
           "id": "tbl-title",
           "type": "text",
           "content": "## Table Element",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
+          "position": { "x": 60, "y": 30 },
+          "size": { "w": 840, "h": 50 },
+          "style": { "fontSize": 36, "color": "#0f172a" }
         },
         {
           "id": "tbl-desc",
           "type": "text",
           "content": "Structured data with headers, configurable borders, and optional striped rows.",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#94a3b8"
-          }
+          "position": { "x": 60, "y": 80 },
+          "size": { "w": 840, "h": 30 },
+          "style": { "fontSize": 16, "color": "#64748b" }
         },
         {
           "id": "tbl-demo",
           "type": "table",
-          "columns": [
-            "Feature",
-            "Type",
-            "Default"
-          ],
+          "columns": ["Feature", "Type", "Default"],
           "rows": [
-            [
-              "fontSize",
-              "number",
-              "14"
-            ],
-            [
-              "headerBackground",
-              "string",
-              "#f1f5f9"
-            ],
-            [
-              "striped",
-              "boolean",
-              "false"
-            ],
-            [
-              "borderColor",
-              "string",
-              "#e2e8f0"
-            ],
-            [
-              "borderRadius",
-              "number",
-              "8"
-            ]
+            ["fontSize", "number", "14"],
+            ["headerBackground", "string", "#1e293b"],
+            ["striped", "boolean", "false"],
+            ["borderColor", "string", "#334155"],
+            ["borderRadius", "number", "8"]
           ],
-          "position": {
-            "x": 60,
-            "y": 130
-          },
-          "size": {
-            "w": 440,
-            "h": 220
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#1e293b",
-            "striped": true,
-            "borderRadius": 8
-          }
+          "position": { "x": 60, "y": 130 },
+          "size": { "w": 440, "h": 220 },
+          "style": { "fontSize": 14, "striped": true, "borderRadius": 8 }
         },
         {
           "id": "tbl-demo2",
           "type": "table",
-          "columns": [
-            "Quarter",
-            "Revenue",
-            "Growth"
-          ],
+          "columns": ["Quarter", "Revenue", "Growth"],
           "rows": [
-            [
-              "Q1 2025",
-              "$1.2M",
-              "+12%"
-            ],
-            [
-              "Q2 2025",
-              "$1.5M",
-              "+25%"
-            ],
-            [
-              "Q3 2025",
-              "$1.8M",
-              "+20%"
-            ],
-            [
-              "Q4 2025",
-              "$2.1M",
-              "+17%"
-            ]
+            ["Q1 2025", "$1.2M", "+12%"],
+            ["Q2 2025", "$1.5M", "+25%"],
+            ["Q3 2025", "$1.8M", "+20%"],
+            ["Q4 2025", "$2.1M", "+17%"]
           ],
-          "position": {
-            "x": 520,
-            "y": 130
-          },
-          "size": {
-            "w": 380,
-            "h": 200
-          },
+          "position": { "x": 520, "y": 130 },
+          "size": { "w": 380, "h": 200 },
           "style": {
             "fontSize": 14,
-            "color": "#1e293b",
-            "headerBackground": "#2563eb",
+            "headerBackground": "#3b82f6",
             "headerColor": "#ffffff",
             "striped": true,
             "borderRadius": 8
@@ -2828,196 +2641,19 @@
           "type": "code",
           "language": "json",
           "content": "{ \"type\": \"table\", \"columns\": [\"A\", \"B\"],\n  \"rows\": [[\"1\", \"2\"], [\"3\", \"4\"]], \"style\": { \"striped\": true } }",
-          "position": {
-            "x": 140,
-            "y": 400
-          },
-          "size": {
-            "w": 680,
-            "h": 60
-          },
-          "style": {
-            "fontSize": 13,
-            "borderRadius": 8
-          }
+          "position": { "x": 140, "y": 400 },
+          "size": { "w": 680, "h": 60 },
+          "style": { "fontSize": 13, "borderRadius": 8 }
         },
         {
           "id": "tbl-hint",
           "type": "text",
           "content": "Add/remove rows and columns in the **Property Panel**. PPTX export is supported.",
-          "position": {
-            "x": 60,
-            "y": 480
-          },
-          "size": {
-            "w": 840,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#94a3b8",
-            "textAlign": "center"
-          }
+          "position": { "x": 60, "y": 480 },
+          "size": { "w": 840, "h": 25 },
+          "style": { "fontSize": 14, "color": "#475569", "textAlign": "center" }
         }
       ]
-    },
-    {
-      "id": "table-latex",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "Table with inline LaTeX — math expressions rendered via KaTeX inside table cells.",
-      "elements": [
-        {
-          "id": "tbl-latex-title",
-          "type": "text",
-          "content": "## Table with $\\LaTeX$",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "tbl-latex-desc",
-          "type": "text",
-          "content": "Inline math expressions are rendered inside table cells using `$...$` syntax.",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "tbl-latex-demo",
-          "type": "table",
-          "columns": [
-            "Name",
-            "Formula",
-            "Domain"
-          ],
-          "rows": [
-            [
-              "Quadratic formula",
-              "$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$",
-              "$a \\neq 0$"
-            ],
-            [
-              "Euler's identity",
-              "$e^{i\\pi} + 1 = 0$",
-              "$\\mathbb{C}$"
-            ],
-            [
-              "Gaussian integral",
-              "$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$",
-              "$\\mathbb{R}$"
-            ],
-            [
-              "Bayes' theorem",
-              "$P(A|B) = \\frac{P(B|A)\\,P(A)}{P(B)}$",
-              "$P(B) > 0$"
-            ]
-          ],
-          "position": {
-            "x": 60,
-            "y": 130
-          },
-          "size": {
-            "w": 840,
-            "h": 200
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#1e293b",
-            "striped": true,
-            "borderRadius": 8,
-            "headerBackground": "#7c3aed",
-            "headerColor": "#ffffff",
-            "borderColor": "#a78bfa"
-          }
-        },
-        {
-          "id": "tbl-latex-demo2",
-          "type": "table",
-          "columns": [
-            "Property",
-            "Symbol",
-            "SI Unit"
-          ],
-          "rows": [
-            [
-              "Force",
-              "$\\vec{F} = m\\vec{a}$",
-              "$\\text{kg}\\cdot\\text{m/s}^2$"
-            ],
-            [
-              "Energy",
-              "$E = mc^2$",
-              "$\\text{J}$"
-            ],
-            [
-              "Entropy",
-              "$S = k_B \\ln \\Omega$",
-              "$\\text{J/K}$"
-            ]
-          ],
-          "position": {
-            "x": 60,
-            "y": 360
-          },
-          "size": {
-            "w": 540,
-            "h": 160
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#1e293b",
-            "striped": true,
-            "borderRadius": 8
-          }
-        },
-        {
-          "id": "tbl-latex-hint",
-          "type": "text",
-          "content": "Use `$...$` inside any cell — supports **bold**, *italic*, and `code` too.",
-          "position": {
-            "x": 620,
-            "y": 440
-          },
-          "size": {
-            "w": 300,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8"
-          }
-        }
-      ]
-    },
-    {
-      "$ref": "./slides/scene3d.json"
-    },
-    {
-      "$ref": "./slides/scene3d-graph.json"
-    },
-    {
-      "$ref": "./slides/scene3d-surface.json"
     },
     {
       "id": "end",
@@ -3059,7 +2695,7 @@
           },
           "style": {
             "fontSize": 18,
-            "color": "#94a3b8",
+            "color": "#64748b",
             "textAlign": "center"
           }
         },
@@ -3076,7 +2712,7 @@
             "h": 3
           },
           "style": {
-            "fill": "#2563eb"
+            "fill": "#3b82f6"
           }
         }
       ],
