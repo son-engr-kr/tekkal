@@ -317,6 +317,8 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
         top: element.position.y,
         width: element.size.w,
         height: element.size.h,
+        transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
+        transformOrigin: "center center",
         // outline instead of ring: framer-motion's boxShadow animate overrides Tailwind ring (both use box-shadow)
         outline: isSelected ? "2px solid rgb(59,130,246)" : "none",
         // auto: re-enable events (parent is pointer-events:none)
