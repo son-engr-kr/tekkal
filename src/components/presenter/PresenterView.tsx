@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useDeckStore } from "@/stores/deckStore";
 import { SlideRenderer } from "@/components/renderer/SlideRenderer";
 import { usePresentationChannel } from "@/hooks/usePresentationChannel";
@@ -45,6 +45,8 @@ export function PresenterView() {
   }>({ x: 0, y: 0, visible: false });
   const [scale, setScale] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const hideTimerRef = useRef(0);
 
   const slide = deck?.slides[currentSlideIndex];
   const steps = useMemo(
@@ -105,6 +107,25 @@ export function PresenterView() {
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
+
+  // Auto-hide fullscreen button after 3s of inactivity
+  const resetHideTimer = useCallback(() => {
+    setShowControls(true);
+    window.clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = window.setTimeout(
+      () => setShowControls(false),
+      3000,
+    );
+  }, []);
+
+  useEffect(() => {
+    resetHideTimer();
+    window.addEventListener("mousemove", resetHideTimer);
+    return () => {
+      window.removeEventListener("mousemove", resetHideTimer);
+      window.clearTimeout(hideTimerRef.current);
+    };
+  }, [resetHideTimer]);
 
   // Keyboard: Escape to close, F to toggle fullscreen
   useEffect(() => {
@@ -169,11 +190,11 @@ export function PresenterView() {
           />
         )}
       </div>
-      {/* Fullscreen control — fades out after a moment */}
-      {!isFullscreen && (
+      {/* Fullscreen control — auto-hides after 3s, reappears on mouse move */}
+      {!isFullscreen && showControls && (
         <button
           onClick={() => document.documentElement.requestFullscreen?.()}
-          className="absolute top-3 right-3 text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors backdrop-blur-sm"
+          className="absolute top-3 right-3 text-xs px-3 py-1.5 rounded bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-colors backdrop-blur-sm animate-fade-in"
           title="Fullscreen (F)"
         >
           Fullscreen (F)
