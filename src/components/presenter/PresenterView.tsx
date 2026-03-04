@@ -46,11 +46,6 @@ export function PresenterView() {
     [slide?.animations],
   );
 
-  // Reset activeStep on slide change
-  useEffect(() => {
-    setActiveStep(0);
-  }, [currentSlideIndex]);
-
   // Scale to fill window
   useEffect(() => {
     const update = () => {
