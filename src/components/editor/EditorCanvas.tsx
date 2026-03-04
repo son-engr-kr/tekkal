@@ -3,17 +3,28 @@ import { useDeckStore } from "@/stores/deckStore";
 import { usePreviewStore } from "@/stores/previewStore";
 import { SlideRenderer } from "@/components/renderer/SlideRenderer";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
-import type { ImageElement, VideoElement } from "@/types/deck";
+import type { ImageElement, VideoElement, SlideElement } from "@/types/deck";
 import { SelectionOverlay } from "./SelectionOverlay";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { assert } from "@/utils/assert";
+
+interface MarqueeRect {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+}
 
 export function EditorCanvas() {
   const deck = useDeckStore((s) => s.deck);
   const currentSlideIndex = useDeckStore((s) => s.currentSlideIndex);
   const selectElement = useDeckStore((s) => s.selectElement);
+  const selectElements = useDeckStore((s) => s.selectElements);
   const addElement = useDeckStore((s) => s.addElement);
   const adapter = useAdapter();
+
+  const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
+  const marqueeRef = useRef<MarqueeRect | null>(null);
 
   const previewAnimations = usePreviewStore((s) => s.animations);
   const previewDelayOverrides = usePreviewStore((s) => s.delayOverrides);
@@ -123,13 +134,88 @@ export function EditorCanvas() {
   const slide = deck.slides[currentSlideIndex];
   assert(slide !== undefined, `Slide index ${currentSlideIndex} out of bounds`);
 
-  // Deselect all elements when clicking empty canvas space.
-  // This fires on the wrapper (slide area + gray surround). InteractiveElement's
-  // handleMouseDown calls stopPropagation, so element clicks never reach here.
+  // Start marquee selection or deselect when clicking empty canvas space.
+  // InteractiveElement's handleMouseDown calls stopPropagation, so element clicks never reach here.
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    // Only primary button (left click)
     if (e.button !== 0) return;
-    selectElement(null);
+
+    const wrapper = canvasWrapperRef.current;
+    if (!wrapper) {
+      selectElement(null);
+      return;
+    }
+
+    const rect = wrapper.getBoundingClientRect();
+    const canvasX = (e.clientX - rect.left) / scale;
+    const canvasY = (e.clientY - rect.top) / scale;
+
+    // Only start marquee if click is within the canvas area
+    if (canvasX < 0 || canvasX > CANVAS_WIDTH || canvasY < 0 || canvasY > CANVAS_HEIGHT) {
+      selectElement(null);
+      return;
+    }
+
+    const isShift = e.shiftKey;
+    const startRect: MarqueeRect = { startX: canvasX, startY: canvasY, endX: canvasX, endY: canvasY };
+    marqueeRef.current = startRect;
+    // Don't show marquee yet — wait for actual drag movement
+    let didDrag = false;
+
+    const handleMouseMove = (me: MouseEvent) => {
+      const cx = (me.clientX - rect.left) / scale;
+      const cy = (me.clientY - rect.top) / scale;
+      const updated = { ...marqueeRef.current!, endX: cx, endY: cy };
+      marqueeRef.current = updated;
+      if (!didDrag && (Math.abs(cx - canvasX) > 3 || Math.abs(cy - canvasY) > 3)) {
+        didDrag = true;
+      }
+      if (didDrag) setMarquee(updated);
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+
+      if (!didDrag) {
+        // Simple click on empty space — deselect
+        selectElement(null);
+      } else {
+        // Compute which elements intersect the marquee rect
+        const m = marqueeRef.current!;
+        const mx1 = Math.min(m.startX, m.endX);
+        const my1 = Math.min(m.startY, m.endY);
+        const mx2 = Math.max(m.startX, m.endX);
+        const my2 = Math.max(m.startY, m.endY);
+
+        const currentSlide = useDeckStore.getState().deck?.slides[useDeckStore.getState().currentSlideIndex];
+        if (currentSlide) {
+          const hitIds = currentSlide.elements
+            .filter((el: SlideElement) => {
+              const ex1 = el.position.x;
+              const ey1 = el.position.y;
+              const ex2 = ex1 + el.size.w;
+              const ey2 = ey1 + el.size.h;
+              return ex1 < mx2 && ex2 > mx1 && ey1 < my2 && ey2 > my1;
+            })
+            .map((el: SlideElement) => el.id);
+
+          if (isShift) {
+            // Add to existing selection
+            const existing = useDeckStore.getState().selectedElementIds;
+            const merged = [...new Set([...existing, ...hitIds])];
+            selectElements(merged);
+          } else {
+            selectElements(hitIds);
+          }
+        }
+      }
+
+      marqueeRef.current = null;
+      setMarquee(null);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -191,7 +277,16 @@ export function EditorCanvas() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <div ref={canvasWrapperRef} className="relative">
+      <div
+        ref={canvasWrapperRef}
+        className="relative"
+        style={{ userSelect: "none", WebkitUserDrag: "none" } as React.CSSProperties}
+        onDragStart={(e) => {
+          // Prevent native HTML drag from rendered elements (images, text, SVGs).
+          // External file drops still work because they originate outside the window.
+          e.preventDefault();
+        }}
+      >
         <SlideRenderer
           slide={slide}
           scale={scale}
@@ -201,6 +296,27 @@ export function EditorCanvas() {
           previewKey={previewKey}
         />
         <SelectionOverlay slide={slide} scale={scale} />
+        {marquee && (
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left: Math.min(marquee.startX, marquee.endX),
+                top: Math.min(marquee.startY, marquee.endY),
+                width: Math.abs(marquee.endX - marquee.startX),
+                height: Math.abs(marquee.endY - marquee.startY),
+                border: "1.5px solid rgba(59, 130, 246, 0.8)",
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+              }}
+            />
+          </div>
+        )}
         {flashActive && (
           <div
             className="absolute inset-0 pointer-events-none rounded-sm"

@@ -161,6 +161,7 @@ interface BaseElement {
   position: Position;
   size: Size;
   rotation?: number;
+  groupId?: string;
 }
 
 export interface TextElement extends BaseElement {

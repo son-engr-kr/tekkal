@@ -37,6 +37,9 @@ interface DeckState {
   nextSlide: () => void;
   prevSlide: () => void;
   selectElement: (id: string | null, mode?: "replace" | "add" | "toggle") => void;
+  selectElements: (ids: string[]) => void;
+  groupElements: (slideId: string, elementIds: string[]) => void;
+  ungroupElements: (slideId: string, groupId: string) => void;
   updateElement: (slideId: string, elementId: string, patch: Partial<SlideElement>) => void;
   updateSlide: (slideId: string, patch: Partial<Slide>) => void;
   addSlide: (slide: Slide, afterIndex?: number) => void;
@@ -210,6 +213,34 @@ export const useDeckStore = create<DeckState>()(
             }
           }),
 
+        selectElements: (ids) =>
+          set((state) => {
+            state.selectedElementIds = ids;
+          }),
+
+        groupElements: (slideId, elementIds) =>
+          set((state) => {
+            assert(state.deck !== null, "No deck loaded");
+            assert(elementIds.length >= 2, "Need at least 2 elements to group");
+            const slide = getSlide(state.deck.slides, slideId);
+            const groupId = `group-${crypto.randomUUID().slice(0, 8)}`;
+            for (const elId of elementIds) {
+              const el = slide.elements.find((e) => e.id === elId);
+              if (el) el.groupId = groupId;
+            }
+            state.isDirty = true;
+          }),
+
+        ungroupElements: (slideId, groupId) =>
+          set((state) => {
+            assert(state.deck !== null, "No deck loaded");
+            const slide = getSlide(state.deck.slides, slideId);
+            for (const el of slide.elements) {
+              if (el.groupId === groupId) delete el.groupId;
+            }
+            state.isDirty = true;
+          }),
+
         updateElement: (slideId, elementId, patch) =>
           set((state) => {
             assert(state.deck !== null, "No deck loaded");
@@ -295,11 +326,19 @@ export const useDeckStore = create<DeckState>()(
             const slide = getSlide(state.deck.slides, slideId);
             const idx = slide.elements.findIndex((e) => e.id === elementId);
             assert(idx !== -1, `Element ${elementId} not found in slide ${slideId}`);
+            const removedGroupId = slide.elements[idx]!.groupId;
             slide.elements.splice(idx, 1);
             if (slide.animations) {
               slide.animations = slide.animations.filter(a => a.target !== elementId);
             }
             state.selectedElementIds = state.selectedElementIds.filter(id => id !== elementId);
+            // Auto-ungroup if group has 0-1 members remaining
+            if (removedGroupId) {
+              const remaining = slide.elements.filter((e) => e.groupId === removedGroupId);
+              if (remaining.length <= 1) {
+                for (const el of remaining) delete el.groupId;
+              }
+            }
             state.isDirty = true;
           }),
 

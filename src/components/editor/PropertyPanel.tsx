@@ -37,9 +37,20 @@ export function PropertyPanel() {
   }
 
   if (selectedElementIds.length > 1) {
+    // Check if selection is a group
+    const slide = deck.slides[currentSlideIndex];
+    const selectedElements = slide?.elements.filter((e) => selectedElementIds.includes(e.id)) ?? [];
+    const groupIds = new Set(selectedElements.map((e) => e.groupId).filter(Boolean));
+    const isGrouped = groupIds.size === 1 && selectedElements.every((e) => e.groupId);
+
     return (
-      <div className="p-4 text-zinc-400 text-sm">
-        {selectedElementIds.length} elements selected
+      <div className="p-4 text-zinc-400 text-sm space-y-1">
+        <div>{selectedElementIds.length} elements selected</div>
+        {isGrouped && (
+          <div className="text-purple-400 text-xs font-mono">
+            Group: {[...groupIds][0]}
+          </div>
+        )}
       </div>
     );
   }

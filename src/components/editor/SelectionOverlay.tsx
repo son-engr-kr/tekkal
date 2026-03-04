@@ -1,8 +1,19 @@
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useDeckStore, setDeckDragging } from "@/stores/deckStore";
 import type { Slide, SlideElement } from "@/types/deck";
 import { CANVAS_HEIGHT } from "@/types/deck";
+
+function getGroupBounds(elements: SlideElement[]) {
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  for (const el of elements) {
+    x1 = Math.min(x1, el.position.x);
+    y1 = Math.min(y1, el.position.y);
+    x2 = Math.max(x2, el.position.x + el.size.w);
+    y2 = Math.max(y2, el.position.y + el.size.h);
+  }
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
 
 interface Props {
   slide: Slide;
@@ -20,6 +31,7 @@ export function SelectionOverlay({ slide, scale }: Props) {
   const selectedElementIds = useDeckStore((s) => s.selectedElementIds);
   const highlightedElementIds = useDeckStore((s) => s.highlightedElementIds);
   const selectElement = useDeckStore((s) => s.selectElement);
+  const selectElements = useDeckStore((s) => s.selectElements);
   const updateElement = useDeckStore((s) => s.updateElement);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
@@ -27,11 +39,69 @@ export function SelectionOverlay({ slide, scale }: Props) {
 
   const singleSelectedId = selectedElementIds.length === 1 ? selectedElementIds[0] : null;
 
+  // Group-aware select: clicking a grouped element selects the whole group
+  const handleSelect = useCallback(
+    (element: SlideElement, e: React.MouseEvent) => {
+      if (e.shiftKey) {
+        selectElement(element.id, "add");
+      } else if (e.ctrlKey || e.metaKey) {
+        selectElement(element.id, "toggle");
+      } else if (element.groupId) {
+        // Grouped element: select entire group unless group is already fully selected
+        const groupMembers = slide.elements
+          .filter((el) => el.groupId === element.groupId)
+          .map((el) => el.id);
+        const allSelected = groupMembers.every((id) => selectedElementIds.includes(id));
+        if (allSelected) {
+          // Group already selected — narrow to single element
+          selectElement(element.id);
+        } else {
+          selectElements(groupMembers);
+        }
+      } else if (!selectedElementIds.includes(element.id)) {
+        selectElement(element.id);
+      }
+      // If already selected with no modifier, keep current selection (enables multi-drag)
+    },
+    [slide.elements, selectedElementIds, selectElement, selectElements],
+  );
+
+  // Compute visible group bounding boxes for selected groups
+  const groupBoxes = useMemo(() => {
+    const seenGroups = new Set<string>();
+    const boxes: { groupId: string; x: number; y: number; w: number; h: number }[] = [];
+    for (const id of selectedElementIds) {
+      const el = slide.elements.find((e) => e.id === id);
+      if (!el?.groupId || seenGroups.has(el.groupId)) continue;
+      seenGroups.add(el.groupId);
+      const members = slide.elements.filter((e) => e.groupId === el.groupId);
+      if (members.length >= 2) {
+        boxes.push({ groupId: el.groupId, ...getGroupBounds(members) });
+      }
+    }
+    return boxes;
+  }, [selectedElementIds, slide.elements]);
+
   return (
     <div
       className="absolute inset-0"
       style={{ transform: `scale(${scale})`, transformOrigin: "top left", pointerEvents: "none" }}
     >
+      {/* Group bounding boxes */}
+      {groupBoxes.map((box) => (
+        <div
+          key={box.groupId}
+          className="absolute pointer-events-none"
+          style={{
+            left: box.x - 4,
+            top: box.y - 4,
+            width: box.w + 8,
+            height: box.h + 8,
+            border: "2px dashed rgba(168, 85, 247, 0.6)",
+            borderRadius: 4,
+          }}
+        />
+      ))}
       {slide.elements.map((element) => (
         <InteractiveElement
           key={element.id + (highlightedElementIds.includes(element.id) ? "-hl" : "")}
@@ -40,12 +110,7 @@ export function SelectionOverlay({ slide, scale }: Props) {
           slideId={slide.id}
           isSelected={selectedElementIds.includes(element.id)}
           showResizeHandles={element.id === singleSelectedId}
-          onSelect={(e: React.MouseEvent) => {
-            if (e.shiftKey) selectElement(element.id, "add");
-            else if (e.ctrlKey || e.metaKey) selectElement(element.id, "toggle");
-            else if (!selectedElementIds.includes(element.id)) selectElement(element.id);
-            // If already selected with no modifier, keep current selection (enables multi-drag)
-          }}
+          onSelect={(e: React.MouseEvent) => handleSelect(element, e)}
           onMove={(dx, dy) => {
             const idsToMove = selectedElementIds.includes(element.id)
               ? selectedElementIds
@@ -76,7 +141,7 @@ export function SelectionOverlay({ slide, scale }: Props) {
           }}
           onContextMenu={(x, y) => {
             if (!selectedElementIds.includes(element.id)) {
-              selectElement(element.id);
+              handleSelect(element, { shiftKey: false, ctrlKey: false, metaKey: false } as React.MouseEvent);
             }
             setContextMenu({ x, y, slideId: slide.id, elementId: element.id });
           }}
@@ -282,10 +347,14 @@ function ElementContextMenu({
   elementId,
   onClose,
 }: ContextMenuState & { onClose: () => void }) {
+  const deck = useDeckStore((s) => s.deck);
+  const selectedElementIds = useDeckStore((s) => s.selectedElementIds);
   const bringToFront = useDeckStore((s) => s.bringToFront);
   const sendToBack = useDeckStore((s) => s.sendToBack);
   const duplicateElement = useDeckStore((s) => s.duplicateElement);
   const deleteElement = useDeckStore((s) => s.deleteElement);
+  const groupElements = useDeckStore((s) => s.groupElements);
+  const ungroupElements = useDeckStore((s) => s.ungroupElements);
 
   const handleAction = useCallback(
     (action: () => void) => {
@@ -294,6 +363,15 @@ function ElementContextMenu({
     },
     [onClose],
   );
+
+  // Determine group context
+  const slide = deck?.slides.find((s) => s.id === slideId);
+  const clickedElement = slide?.elements.find((e) => e.id === elementId);
+  const canGroup = selectedElementIds.length >= 2 && selectedElementIds.every((id) => {
+    const el = slide?.elements.find((e) => e.id === id);
+    return el && !el.groupId;
+  });
+  const clickedGroupId = clickedElement?.groupId;
 
   return (
     <>
@@ -317,6 +395,21 @@ function ElementContextMenu({
           onClick={() => handleAction(() => sendToBack(slideId, elementId))}
         />
         <div className="h-px bg-zinc-700 my-1" />
+        {canGroup && (
+          <ContextMenuItem
+            label="Group"
+            shortcut="Ctrl+G"
+            onClick={() => handleAction(() => groupElements(slideId, selectedElementIds))}
+          />
+        )}
+        {clickedGroupId && (
+          <ContextMenuItem
+            label="Ungroup"
+            shortcut="Ctrl+Shift+G"
+            onClick={() => handleAction(() => ungroupElements(slideId, clickedGroupId))}
+          />
+        )}
+        {(canGroup || clickedGroupId) && <div className="h-px bg-zinc-700 my-1" />}
         <ContextMenuItem
           label="Duplicate"
           shortcut="Ctrl+D"

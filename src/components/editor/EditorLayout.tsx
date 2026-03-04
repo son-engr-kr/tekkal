@@ -162,6 +162,41 @@ export function EditorLayout() {
         performUndoRedo("redo");
         return;
       }
+      // Group: Ctrl+G
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "g") {
+        e.preventDefault();
+        const { deck, currentSlideIndex, selectedElementIds, groupElements } = useDeckStore.getState();
+        if (deck && selectedElementIds.length >= 2) {
+          const slide = deck.slides[currentSlideIndex];
+          if (slide) {
+            const allUngrouped = selectedElementIds.every((id) => {
+              const el = slide.elements.find((el) => el.id === id);
+              return el && !el.groupId;
+            });
+            if (allUngrouped) groupElements(slide.id, selectedElementIds);
+          }
+        }
+        return;
+      }
+      // Ungroup: Ctrl+Shift+G
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "G") {
+        e.preventDefault();
+        const { deck, currentSlideIndex, selectedElementIds, ungroupElements } = useDeckStore.getState();
+        if (deck && selectedElementIds.length > 0) {
+          const slide = deck.slides[currentSlideIndex];
+          if (slide) {
+            const groupIds = new Set<string>();
+            for (const id of selectedElementIds) {
+              const el = slide.elements.find((el) => el.id === id);
+              if (el?.groupId) groupIds.add(el.groupId);
+            }
+            for (const gid of groupIds) {
+              ungroupElements(slide.id, gid);
+            }
+          }
+        }
+        return;
+      }
       // Duplicate element(s): Ctrl+D
       if ((e.ctrlKey || e.metaKey) && e.key === "d") {
         e.preventDefault();
