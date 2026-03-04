@@ -201,8 +201,12 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
       if (e.button === 2) {
         // Right-click: open context menu directly from mousedown
         // (contextmenu event may not fire reliably through motion.div)
+        // Only change selection if the element isn't already selected
+        // — preserves multi-selection when right-clicking a member
         e.stopPropagation();
-        onSelect(e);
+        if (!useDeckStore.getState().selectedElementIds.includes(element.id)) {
+          onSelect(e);
+        }
         onContextMenu(
           element.position.x + e.nativeEvent.offsetX,
           element.position.y + e.nativeEvent.offsetY,
