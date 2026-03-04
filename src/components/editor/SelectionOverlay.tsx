@@ -153,9 +153,6 @@ export function SelectionOverlay({ slide, scale }: Props) {
             } as Partial<SlideElement>);
           }}
           onContextMenu={(x, y) => {
-            if (!selectedElementIds.includes(element.id)) {
-              handleSelect(element, { shiftKey: false, ctrlKey: false, metaKey: false } as React.MouseEvent);
-            }
             setContextMenu({ x, y, slideId: slide.id, elementId: element.id });
           }}
           scale={scale}
@@ -201,8 +198,19 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (e.button === 2) {
+        // Right-click: open context menu directly from mousedown
+        // (contextmenu event may not fire reliably through motion.div)
+        e.stopPropagation();
+        onSelect(e);
+        onContextMenu(
+          element.position.x + e.nativeEvent.offsetX,
+          element.position.y + e.nativeEvent.offsetY,
+        );
+        return;
+      }
       if (e.button !== 0) {
-        e.stopPropagation(); // Prevent canvas handler from firing
+        e.stopPropagation();
         return;
       }
       e.preventDefault();
@@ -255,16 +263,15 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [element.position.x, element.position.y, scale, onSelect, onMove],
+    [element.position.x, element.position.y, scale, onSelect, onMove, onContextMenu],
   );
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      onContextMenu(element.position.x + e.nativeEvent.offsetX, element.position.y + e.nativeEvent.offsetY);
     },
-    [element.position.x, element.position.y, onContextMenu],
+    [],
   );
 
   const handleResizeMouseDown = useCallback(
@@ -421,12 +428,13 @@ function ElementContextMenu({
       <div
         className="fixed inset-0"
         style={{ pointerEvents: "auto" }}
-        onMouseDown={onClose}
-        onContextMenu={(e) => { e.preventDefault(); onClose(); }}
+        onMouseDown={(e) => { e.stopPropagation(); onClose(); }}
+        onContextMenu={(e) => e.preventDefault()}
       />
       <div
         className="absolute bg-zinc-800 border border-zinc-700 rounded-md shadow-xl py-1 min-w-[160px] text-xs"
         style={{ left: x, top: y, pointerEvents: "auto", zIndex: 50 }}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <ContextMenuItem
           label="Bring to Front"
