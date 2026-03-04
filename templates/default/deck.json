@@ -455,6 +455,221 @@
       ]
     },
     {
+      "id": "diagram",
+      "transition": { "type": "fade", "duration": 400 },
+      "notes": "Flowchart diagram built from rectangle shapes and arrow connectors.",
+      "elements": [
+        {
+          "id": "diagram-title",
+          "type": "text",
+          "content": "## Diagram with Arrows",
+          "position": { "x": 60, "y": 20 },
+          "size": { "w": 840, "h": 45 },
+          "style": { "fontSize": 32, "color": "#0f172a" }
+        },
+        {
+          "id": "diagram-desc",
+          "type": "text",
+          "content": "Combine **rectangle** shapes and **arrow** connectors to build flowcharts.",
+          "position": { "x": 60, "y": 65 },
+          "size": { "w": 840, "h": 25 },
+          "style": { "fontSize": 15, "color": "#64748b" }
+        },
+        {
+          "id": "box-input",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 80, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fill": "#dbeafe", "stroke": "#3b82f6", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-input",
+          "type": "text",
+          "content": "**Input**\nUser request",
+          "position": { "x": 80, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fontSize": 14, "color": "#1e40af", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-1",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 240, "y": 155 },
+          "size": { "w": 80, "h": 20 },
+          "style": { "stroke": "#64748b", "strokeWidth": 2 }
+        },
+        {
+          "id": "box-process",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 320, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fill": "#fef3c7", "stroke": "#f59e0b", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-process",
+          "type": "text",
+          "content": "**Process**\nTransform data",
+          "position": { "x": 320, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fontSize": 14, "color": "#92400e", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-2",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 480, "y": 155 },
+          "size": { "w": 80, "h": 20 },
+          "style": { "stroke": "#64748b", "strokeWidth": 2 }
+        },
+        {
+          "id": "box-output",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 560, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fill": "#dcfce7", "stroke": "#22c55e", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-output",
+          "type": "text",
+          "content": "**Output**\nResult",
+          "position": { "x": 560, "y": 130 },
+          "size": { "w": 160, "h": 70 },
+          "style": { "fontSize": 14, "color": "#166534", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-down",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 390, "y": 200 },
+          "size": { "w": 100, "h": 20 },
+          "rotation": 90,
+          "style": { "stroke": "#64748b", "strokeWidth": 2 }
+        },
+        {
+          "id": "box-validate",
+          "type": "shape",
+          "shape": "ellipse",
+          "position": { "x": 330, "y": 310 },
+          "size": { "w": 180, "h": 80 },
+          "style": { "fill": "#fce7f3", "stroke": "#ec4899", "strokeWidth": 2 }
+        },
+        {
+          "id": "label-validate",
+          "type": "text",
+          "content": "**Validate?**",
+          "position": { "x": 330, "y": 310 },
+          "size": { "w": 180, "h": 80 },
+          "style": { "fontSize": 16, "color": "#9d174d", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-yes",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 510, "y": 340 },
+          "size": { "w": 100, "h": 20 },
+          "style": { "stroke": "#22c55e", "strokeWidth": 2 }
+        },
+        {
+          "id": "label-yes",
+          "type": "text",
+          "content": "Yes",
+          "position": { "x": 535, "y": 320 },
+          "size": { "w": 50, "h": 20 },
+          "style": { "fontSize": 13, "color": "#22c55e", "textAlign": "center" }
+        },
+        {
+          "id": "box-done",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 610, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fill": "#dcfce7", "stroke": "#22c55e", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-done",
+          "type": "text",
+          "content": "**Done**",
+          "position": { "x": 610, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fontSize": 16, "color": "#166534", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "arrow-no",
+          "type": "shape",
+          "shape": "arrow",
+          "position": { "x": 160, "y": 340 },
+          "size": { "w": 170, "h": 20 },
+          "rotation": 180,
+          "style": { "stroke": "#ef4444", "strokeWidth": 2 }
+        },
+        {
+          "id": "label-no",
+          "type": "text",
+          "content": "No",
+          "position": { "x": 210, "y": 320 },
+          "size": { "w": 50, "h": 20 },
+          "style": { "fontSize": 13, "color": "#ef4444", "textAlign": "center" }
+        },
+        {
+          "id": "box-retry",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fill": "#fee2e2", "stroke": "#ef4444", "strokeWidth": 2, "borderRadius": 10 }
+        },
+        {
+          "id": "label-retry",
+          "type": "text",
+          "content": "**Retry**",
+          "position": { "x": 60, "y": 310 },
+          "size": { "w": 140, "h": 70 },
+          "style": { "fontSize": 16, "color": "#991b1b", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "diagram-tip",
+          "type": "text",
+          "content": "Tip: use **rotation** on arrows (90° = down, 180° = left) to create branching flows.",
+          "position": { "x": 60, "y": 420 },
+          "size": { "w": 840, "h": 30 },
+          "style": { "fontSize": 14, "color": "#94a3b8" }
+        },
+        {
+          "id": "diagram-code-tip",
+          "type": "code",
+          "language": "json",
+          "content": "{ \"type\": \"shape\", \"shape\": \"arrow\", \"rotation\": 90,\n  \"style\": { \"stroke\": \"#64748b\", \"strokeWidth\": 2 } }",
+          "position": { "x": 60, "y": 455 },
+          "size": { "w": 500, "h": 65 },
+          "style": { "fontSize": 12, "borderRadius": 8 }
+        }
+      ],
+      "animations": [
+        { "target": "box-input", "trigger": "onEnter", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-input", "trigger": "onEnter", "effect": "fadeIn", "duration": 300 },
+        { "target": "arrow-1", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 200 },
+        { "target": "box-process", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 400 },
+        { "target": "label-process", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 400 },
+        { "target": "arrow-2", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 600 },
+        { "target": "box-output", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
+        { "target": "label-output", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
+        { "target": "arrow-down", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
+        { "target": "box-validate", "trigger": "afterPrevious", "effect": "scaleIn", "duration": 400 },
+        { "target": "label-validate", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "arrow-yes", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-yes", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 200 },
+        { "target": "box-done", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-done", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "arrow-no", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-no", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 200 },
+        { "target": "box-retry", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
+        { "target": "label-retry", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 }
+      ]
+    },
+    {
       "id": "math",
       "transition": {
         "type": "fade",

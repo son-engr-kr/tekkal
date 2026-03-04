@@ -298,7 +298,7 @@ export function EditorCanvas() {
         <SelectionOverlay slide={slide} scale={scale} />
         {marquee && (
           <div
-            className="absolute pointer-events-none"
+            className="absolute inset-0 pointer-events-none"
             style={{
               transform: `scale(${scale})`,
               transformOrigin: "top left",

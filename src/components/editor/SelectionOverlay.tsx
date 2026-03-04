@@ -37,9 +37,31 @@ export function SelectionOverlay({ slide, scale }: Props) {
 
   const closeContextMenu = useCallback(() => setContextMenu(null), []);
 
+  // Active group IDs: groups where any member is selected
+  const activeGroupIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const id of selectedElementIds) {
+      const el = slide.elements.find((e) => e.id === id);
+      if (el?.groupId) ids.add(el.groupId);
+    }
+    return ids;
+  }, [selectedElementIds, slide.elements]);
+
+  // Expanded selection: selected elements + all their group members
+  const moveTargetIds = useMemo(() => {
+    const ids = new Set(selectedElementIds);
+    for (const groupId of activeGroupIds) {
+      for (const el of slide.elements) {
+        if (el.groupId === groupId) ids.add(el.id);
+      }
+    }
+    return ids;
+  }, [selectedElementIds, activeGroupIds, slide.elements]);
+
+  // Only show individual resize handles for ungrouped single selection
   const singleSelectedId = selectedElementIds.length === 1 ? selectedElementIds[0] : null;
 
-  // Group-aware select: clicking a grouped element selects the whole group
+  // Group-aware select: clicking a grouped element always selects the whole group
   const handleSelect = useCallback(
     (element: SlideElement, e: React.MouseEvent) => {
       if (e.shiftKey) {
@@ -47,17 +69,11 @@ export function SelectionOverlay({ slide, scale }: Props) {
       } else if (e.ctrlKey || e.metaKey) {
         selectElement(element.id, "toggle");
       } else if (element.groupId) {
-        // Grouped element: select entire group unless group is already fully selected
+        // Always select entire group
         const groupMembers = slide.elements
           .filter((el) => el.groupId === element.groupId)
           .map((el) => el.id);
-        const allSelected = groupMembers.every((id) => selectedElementIds.includes(id));
-        if (allSelected) {
-          // Group already selected — narrow to single element
-          selectElement(element.id);
-        } else {
-          selectElements(groupMembers);
-        }
+        selectElements(groupMembers);
       } else if (!selectedElementIds.includes(element.id)) {
         selectElement(element.id);
       }
@@ -66,54 +82,31 @@ export function SelectionOverlay({ slide, scale }: Props) {
     [slide.elements, selectedElementIds, selectElement, selectElements],
   );
 
-  // Compute visible group bounding boxes for selected groups
-  const groupBoxes = useMemo(() => {
-    const seenGroups = new Set<string>();
-    const boxes: { groupId: string; x: number; y: number; w: number; h: number }[] = [];
-    for (const id of selectedElementIds) {
-      const el = slide.elements.find((e) => e.id === id);
-      if (!el?.groupId || seenGroups.has(el.groupId)) continue;
-      seenGroups.add(el.groupId);
-      const members = slide.elements.filter((e) => e.groupId === el.groupId);
-      if (members.length >= 2) {
-        boxes.push({ groupId: el.groupId, ...getGroupBounds(members) });
-      }
-    }
-    return boxes;
-  }, [selectedElementIds, slide.elements]);
+  // Group data for rendering bounding boxes with resize handles
+  const activeGroups = useMemo(() => {
+    return [...activeGroupIds].map((groupId) => {
+      const members = slide.elements.filter((e) => e.groupId === groupId);
+      return { groupId, members };
+    }).filter((g) => g.members.length >= 2);
+  }, [activeGroupIds, slide.elements]);
 
   return (
     <div
       className="absolute inset-0"
       style={{ transform: `scale(${scale})`, transformOrigin: "top left", pointerEvents: "none" }}
     >
-      {/* Group bounding boxes */}
-      {groupBoxes.map((box) => (
-        <div
-          key={box.groupId}
-          className="absolute pointer-events-none"
-          style={{
-            left: box.x - 4,
-            top: box.y - 4,
-            width: box.w + 8,
-            height: box.h + 8,
-            border: "2px dashed rgba(168, 85, 247, 0.6)",
-            borderRadius: 4,
-          }}
-        />
-      ))}
       {slide.elements.map((element) => (
         <InteractiveElement
           key={element.id + (highlightedElementIds.includes(element.id) ? "-hl" : "")}
           isHighlighted={highlightedElementIds.includes(element.id)}
           element={element}
           slideId={slide.id}
-          isSelected={selectedElementIds.includes(element.id)}
-          showResizeHandles={element.id === singleSelectedId}
+          isSelected={selectedElementIds.includes(element.id) || moveTargetIds.has(element.id)}
+          showResizeHandles={element.id === singleSelectedId && !element.groupId}
           onSelect={(e: React.MouseEvent) => handleSelect(element, e)}
           onMove={(dx, dy) => {
-            const idsToMove = selectedElementIds.includes(element.id)
-              ? selectedElementIds
+            const idsToMove = moveTargetIds.has(element.id)
+              ? [...moveTargetIds]
               : [element.id];
             for (const elId of idsToMove) {
               const el = slide.elements.find((e) => e.id === elId);
@@ -146,6 +139,16 @@ export function SelectionOverlay({ slide, scale }: Props) {
             setContextMenu({ x, y, slideId: slide.id, elementId: element.id });
           }}
           scale={scale}
+        />
+      ))}
+      {/* Group bounding boxes with resize handles */}
+      {activeGroups.map((group) => (
+        <GroupBox
+          key={group.groupId}
+          members={group.members}
+          slideId={slide.id}
+          scale={scale}
+          updateElement={updateElement}
         />
       ))}
       {contextMenu && (
@@ -449,6 +452,120 @@ function ContextMenuItem({
       <span>{label}</span>
       {shortcut && <span className="text-zinc-500">{shortcut}</span>}
     </button>
+  );
+}
+
+// ── Group Box with Resize ─────────────────────────────────────────
+
+function GroupBox({
+  members,
+  slideId,
+  scale,
+  updateElement,
+}: {
+  members: SlideElement[];
+  slideId: string;
+  scale: number;
+  updateElement: (slideId: string, elementId: string, patch: Partial<SlideElement>) => void;
+}) {
+  const bounds = getGroupBounds(members);
+  const pad = 4;
+
+  const handleResizeMouseDown = useCallback(
+    (e: React.MouseEvent, corner: Corner) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setDeckDragging(true);
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const ob = { ...bounds };
+      const origMembers = members.map((m) => ({
+        id: m.id,
+        x: m.position.x,
+        y: m.position.y,
+        w: m.size.w,
+        h: m.size.h,
+      }));
+
+      const prevent = (ev: Event) => ev.preventDefault();
+      document.addEventListener("selectstart", prevent);
+
+      const handleMouseMove = (me: MouseEvent) => {
+        if (me.buttons === 0) { handleMouseUp(); return; }
+        const dx = (me.clientX - startX) / scale;
+        const dy = (me.clientY - startY) / scale;
+
+        let anchorX: number, anchorY: number, newW: number, newH: number;
+        switch (corner) {
+          case "se":
+            anchorX = ob.x; anchorY = ob.y;
+            newW = ob.w + dx; newH = ob.h + dy;
+            break;
+          case "sw":
+            anchorX = ob.x + ob.w; anchorY = ob.y;
+            newW = ob.w - dx; newH = ob.h + dy;
+            break;
+          case "ne":
+            anchorX = ob.x; anchorY = ob.y + ob.h;
+            newW = ob.w + dx; newH = ob.h - dy;
+            break;
+          case "nw":
+          default:
+            anchorX = ob.x + ob.w; anchorY = ob.y + ob.h;
+            newW = ob.w - dx; newH = ob.h - dy;
+            break;
+        }
+
+        newW = Math.max(20, newW);
+        newH = Math.max(20, newH);
+        const sx = newW / ob.w;
+        const sy = newH / ob.h;
+
+        for (const orig of origMembers) {
+          updateElement(slideId, orig.id, {
+            position: {
+              x: Math.round(anchorX + (orig.x - anchorX) * sx),
+              y: Math.round(anchorY + (orig.y - anchorY) * sy),
+            },
+            size: {
+              w: Math.max(20, Math.round(orig.w * sx)),
+              h: Math.max(20, Math.round(orig.h * sy)),
+            },
+          } as Partial<SlideElement>);
+        }
+      };
+
+      const handleMouseUp = () => {
+        setDeckDragging(false);
+        document.removeEventListener("selectstart", prevent);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    },
+    [bounds, members, slideId, scale, updateElement],
+  );
+
+  return (
+    <div
+      className="absolute"
+      style={{
+        left: bounds.x - pad,
+        top: bounds.y - pad,
+        width: bounds.w + pad * 2,
+        height: bounds.h + pad * 2,
+        border: "2px dashed rgba(168, 85, 247, 0.6)",
+        borderRadius: 4,
+        pointerEvents: "none",
+      }}
+    >
+      <ResizeHandle corner="nw" onMouseDown={handleResizeMouseDown} />
+      <ResizeHandle corner="ne" onMouseDown={handleResizeMouseDown} />
+      <ResizeHandle corner="sw" onMouseDown={handleResizeMouseDown} />
+      <ResizeHandle corner="se" onMouseDown={handleResizeMouseDown} />
+    </div>
   );
 }
 

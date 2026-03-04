@@ -16,6 +16,7 @@ export function ImageElementRenderer({ element }: Props) {
     <img
       src={resolvedSrc}
       alt={element.alt ?? ""}
+      draggable={false}
       style={{
         width: element.size.w,
         height: element.size.h,
