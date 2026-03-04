@@ -27,20 +27,14 @@
   "slides": [
     {
       "id": "title",
-      "notes": "Title slide — onEnter animations: title fades in, subtitle slides up, divider scales in.",
+      "notes": "Title slide with onEnter animations.",
       "elements": [
         {
           "id": "title-text",
           "type": "text",
           "content": "# Deckode Feature Showcase",
-          "position": {
-            "x": 130,
-            "y": 140
-          },
-          "size": {
-            "w": 700,
-            "h": 80
-          },
+          "position": { "x": 130, "y": 140 },
+          "size": { "w": 700, "h": 80 },
           "style": {
             "fontSize": 48,
             "color": "#0f172a",
@@ -52,14 +46,8 @@
           "id": "title-sub",
           "type": "text",
           "content": "Every feature in one deck",
-          "position": {
-            "x": 230,
-            "y": 240
-          },
-          "size": {
-            "w": 500,
-            "h": 40
-          },
+          "position": { "x": 230, "y": 240 },
+          "size": { "w": 500, "h": 40 },
           "style": {
             "fontSize": 24,
             "color": "#94a3b8",
@@ -70,30 +58,16 @@
           "id": "title-divider",
           "type": "shape",
           "shape": "rectangle",
-          "position": {
-            "x": 380,
-            "y": 310
-          },
-          "size": {
-            "w": 200,
-            "h": 4
-          },
-          "style": {
-            "fill": "#3b82f6"
-          }
+          "position": { "x": 380, "y": 310 },
+          "size": { "w": 200, "h": 4 },
+          "style": { "fill": "#3b82f6" }
         },
         {
           "id": "title-badge",
           "type": "shape",
           "shape": "ellipse",
-          "position": {
-            "x": 830,
-            "y": 20
-          },
-          "size": {
-            "w": 100,
-            "h": 100
-          },
+          "position": { "x": 830, "y": 20 },
+          "size": { "w": 100, "h": 100 },
           "style": {
             "fill": "transparent",
             "stroke": "#3b82f6",
@@ -105,14 +79,8 @@
           "id": "title-version",
           "type": "text",
           "content": "v0.1",
-          "position": {
-            "x": 847,
-            "y": 50
-          },
-          "size": {
-            "w": 66,
-            "h": 30
-          },
+          "position": { "x": 847, "y": 50 },
+          "size": { "w": 66, "h": 30 },
           "style": {
             "fontSize": 14,
             "color": "#3b82f6",
@@ -123,14 +91,8 @@
           "id": "title-nav",
           "type": "text",
           "content": "Press **Space** or **ArrowRight** to advance",
-          "position": {
-            "x": 280,
-            "y": 480
-          },
-          "size": {
-            "w": 400,
-            "h": 30
-          },
+          "position": { "x": 280, "y": 480 },
+          "size": { "w": 400, "h": 30 },
           "style": {
             "fontSize": 14,
             "color": "#475569",
@@ -139,266 +101,199 @@
         }
       ],
       "animations": [
+        { "target": "title-text", "trigger": "onEnter", "effect": "fadeIn", "duration": 600 },
+        { "target": "title-sub", "trigger": "onEnter", "effect": "slideInUp", "duration": 500, "delay": 300 },
+        { "target": "title-divider", "trigger": "onEnter", "effect": "scaleIn", "duration": 400, "delay": 600 },
+        { "target": "title-badge", "trigger": "onEnter", "effect": "scaleIn", "duration": 500, "delay": 400 }
+      ]
+    },
+    {
+      "id": "text-math",
+      "transition": { "type": "slide", "duration": 400 },
+      "notes": "Text/Markdown rendering with inline and display KaTeX math.",
+      "elements": [
         {
-          "target": "title-text",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 600
+          "id": "tm-title",
+          "type": "text",
+          "content": "## Text & Math",
+          "position": { "x": 60, "y": 20 },
+          "size": { "w": 840, "h": 45 },
+          "style": { "fontSize": 36, "color": "#0f172a" }
         },
         {
-          "target": "title-sub",
-          "trigger": "onEnter",
-          "effect": "slideInUp",
-          "duration": 500,
-          "delay": 300
+          "id": "tm-desc",
+          "type": "text",
+          "content": "Full **Markdown** with inline `$...$` and display `$$...$$` KaTeX math.",
+          "position": { "x": 60, "y": 65 },
+          "size": { "w": 840, "h": 25 },
+          "style": { "fontSize": 16, "color": "#64748b" }
         },
         {
-          "target": "title-divider",
-          "trigger": "onEnter",
-          "effect": "scaleIn",
-          "duration": 400,
-          "delay": 600
+          "id": "tm-markdown",
+          "type": "text",
+          "content": "**Rich text** supports *italic*, `inline code`, ~~strikethrough~~, and [links](https://deckode.dev).\n\nInline math: the quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$ renders in text flow.",
+          "position": { "x": 60, "y": 100 },
+          "size": { "w": 840, "h": 60 },
+          "style": { "fontSize": 16, "color": "#475569", "lineHeight": 1.6 }
         },
         {
-          "target": "title-badge",
-          "trigger": "onEnter",
-          "effect": "scaleIn",
-          "duration": 500,
-          "delay": 400
+          "id": "tm-bg",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 40, "y": 175 },
+          "size": { "w": 880, "h": 340 },
+          "style": { "fill": "#1e293b", "borderRadius": 16 }
+        },
+        {
+          "id": "tm-schrodinger",
+          "type": "text",
+          "content": "**Schr\u00f6dinger Equation**\n\n$$i\\hbar \\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\left[-\\frac{\\hbar^2}{2m}\\nabla^2 + V(\\mathbf{r},t)\\right]\\Psi(\\mathbf{r},t)$$",
+          "position": { "x": 60, "y": 190 },
+          "size": { "w": 420, "h": 140 },
+          "style": { "fontSize": 16, "color": "#e2e8f0", "lineHeight": 1.4 }
+        },
+        {
+          "id": "tm-einstein",
+          "type": "text",
+          "content": "**Einstein Field Equations**\n\n$$R_{\\mu\\nu} - \\tfrac{1}{2}R\\,g_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\frac{8\\pi G}{c^4}T_{\\mu\\nu}$$",
+          "position": { "x": 500, "y": 190 },
+          "size": { "w": 400, "h": 140 },
+          "style": { "fontSize": 16, "color": "#e2e8f0", "lineHeight": 1.4 }
+        },
+        {
+          "id": "tm-maxwell",
+          "type": "text",
+          "content": "**Maxwell's Equations**\n\n$$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}, \\quad \\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}, \\quad \\nabla \\cdot \\mathbf{B} = 0, \\quad \\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\varepsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$",
+          "position": { "x": 60, "y": 340 },
+          "size": { "w": 840, "h": 80 },
+          "style": { "fontSize": 16, "color": "#e2e8f0", "lineHeight": 1.4 }
+        },
+        {
+          "id": "tm-matrix",
+          "type": "text",
+          "content": "**Matrix Multiplication**\n\n$$\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix} \\begin{pmatrix} e & f \\\\ g & h \\end{pmatrix} = \\begin{pmatrix} ae+bg & af+bh \\\\ ce+dg & cf+dh \\end{pmatrix}$$",
+          "position": { "x": 60, "y": 430 },
+          "size": { "w": 430, "h": 80 },
+          "style": { "fontSize": 15, "color": "#e2e8f0", "lineHeight": 1.4 }
+        },
+        {
+          "id": "tm-svd",
+          "type": "text",
+          "content": "**SVD Decomposition**\n\n$$A = U\\Sigma V^T = \\begin{bmatrix} u_1 & \\cdots & u_m \\end{bmatrix} \\begin{bmatrix} \\sigma_1 & & \\\\ & \\ddots & \\\\ & & \\sigma_r \\end{bmatrix} \\begin{bmatrix} v_1^T \\\\ \\vdots \\\\ v_n^T \\end{bmatrix}$$",
+          "position": { "x": 500, "y": 430 },
+          "size": { "w": 410, "h": 80 },
+          "style": { "fontSize": 15, "color": "#e2e8f0", "lineHeight": 1.4 }
         }
       ]
     },
     {
       "id": "shapes",
-      "transition": {
-        "type": "slide",
-        "duration": 400
-      },
-      "notes": "Showcase all 4 shape kinds: rectangle, ellipse, line, arrow. The arrow element is rotated 15 degrees.",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "Showcase all 4 shape kinds: rectangle, ellipse, line, arrow.",
       "elements": [
         {
           "id": "shapes-title",
           "type": "text",
           "content": "## Shape Elements",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
+          "position": { "x": 60, "y": 30 },
+          "size": { "w": 840, "h": 50 },
+          "style": { "fontSize": 36, "color": "#0f172a" }
         },
         {
           "id": "shapes-desc",
           "type": "text",
           "content": "Four shape kinds with configurable fill, stroke, border radius, and opacity.",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#64748b"
-          }
+          "position": { "x": 60, "y": 80 },
+          "size": { "w": 840, "h": 30 },
+          "style": { "fontSize": 16, "color": "#64748b" }
         },
         {
           "id": "shape-rect",
           "type": "shape",
           "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 140
-          },
-          "size": {
-            "w": 180,
-            "h": 120
-          },
-          "style": {
-            "fill": "#3b82f6",
-            "borderRadius": 12
-          }
+          "position": { "x": 60, "y": 140 },
+          "size": { "w": 180, "h": 120 },
+          "style": { "fill": "#3b82f6", "borderRadius": 12 }
         },
         {
           "id": "shape-rect-label",
           "type": "text",
           "content": "**rectangle**\nborderRadius: 12",
-          "position": {
-            "x": 70,
-            "y": 270
-          },
-          "size": {
-            "w": 160,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8",
-            "textAlign": "center"
-          }
+          "position": { "x": 70, "y": 270 },
+          "size": { "w": 160, "h": 40 },
+          "style": { "fontSize": 13, "color": "#94a3b8", "textAlign": "center" }
         },
         {
           "id": "shape-ellipse",
           "type": "shape",
           "shape": "ellipse",
-          "position": {
-            "x": 290,
-            "y": 140
-          },
-          "size": {
-            "w": 180,
-            "h": 120
-          },
-          "style": {
-            "fill": "transparent",
-            "stroke": "#8b5cf6",
-            "strokeWidth": 3
-          }
+          "position": { "x": 290, "y": 140 },
+          "size": { "w": 180, "h": 120 },
+          "style": { "fill": "transparent", "stroke": "#8b5cf6", "strokeWidth": 3 }
         },
         {
           "id": "shape-ellipse-label",
           "type": "text",
           "content": "**ellipse**\nstroke only",
-          "position": {
-            "x": 300,
-            "y": 270
-          },
-          "size": {
-            "w": 160,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8",
-            "textAlign": "center"
-          }
+          "position": { "x": 300, "y": 270 },
+          "size": { "w": 160, "h": 40 },
+          "style": { "fontSize": 13, "color": "#94a3b8", "textAlign": "center" }
         },
         {
           "id": "shape-line",
           "type": "shape",
           "shape": "line",
-          "position": {
-            "x": 520,
-            "y": 170
-          },
-          "size": {
-            "w": 180,
-            "h": 60
-          },
-          "style": {
-            "stroke": "#f59e0b",
-            "strokeWidth": 3
-          }
+          "position": { "x": 520, "y": 170 },
+          "size": { "w": 180, "h": 60 },
+          "style": { "stroke": "#f59e0b", "strokeWidth": 3 }
         },
         {
           "id": "shape-line-label",
           "type": "text",
           "content": "**line**\nstrokeWidth: 3",
-          "position": {
-            "x": 530,
-            "y": 270
-          },
-          "size": {
-            "w": 160,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8",
-            "textAlign": "center"
-          }
+          "position": { "x": 530, "y": 270 },
+          "size": { "w": 160, "h": 40 },
+          "style": { "fontSize": 13, "color": "#94a3b8", "textAlign": "center" }
         },
         {
           "id": "shape-arrow",
           "type": "shape",
           "shape": "arrow",
-          "position": {
-            "x": 750,
-            "y": 160
-          },
-          "size": {
-            "w": 150,
-            "h": 80
-          },
+          "position": { "x": 750, "y": 160 },
+          "size": { "w": 150, "h": 80 },
           "rotation": 15,
-          "style": {
-            "stroke": "#ec4899",
-            "strokeWidth": 3
-          }
+          "style": { "stroke": "#ec4899", "strokeWidth": 3 }
         },
         {
           "id": "shape-arrow-label",
           "type": "text",
-          "content": "**arrow**\nrotation: 15°",
-          "position": {
-            "x": 745,
-            "y": 270
-          },
-          "size": {
-            "w": 160,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8",
-            "textAlign": "center"
-          }
+          "content": "**arrow**\nrotation: 15\u00b0",
+          "position": { "x": 745, "y": 270 },
+          "size": { "w": 160, "h": 40 },
+          "style": { "fontSize": 13, "color": "#94a3b8", "textAlign": "center" }
         },
         {
           "id": "shapes-opacity-rect",
           "type": "shape",
           "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 340
-          },
-          "size": {
-            "w": 400,
-            "h": 120
-          },
-          "style": {
-            "fill": "#10b981",
-            "opacity": 0.3,
-            "borderRadius": 16
-          }
+          "position": { "x": 60, "y": 340 },
+          "size": { "w": 400, "h": 120 },
+          "style": { "fill": "#10b981", "opacity": 0.3, "borderRadius": 16 }
         },
         {
           "id": "shapes-opacity-label",
           "type": "text",
           "content": "opacity: 0.3",
-          "position": {
-            "x": 80,
-            "y": 380
-          },
-          "size": {
-            "w": 200,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#10b981"
-          }
+          "position": { "x": 80, "y": 380 },
+          "size": { "w": 200, "h": 30 },
+          "style": { "fontSize": 16, "color": "#10b981" }
         },
         {
           "id": "shapes-filled-rect",
           "type": "shape",
           "shape": "rectangle",
-          "position": {
-            "x": 500,
-            "y": 340
-          },
-          "size": {
-            "w": 400,
-            "h": 120
-          },
+          "position": { "x": 500, "y": 340 },
+          "size": { "w": 400, "h": 120 },
           "style": {
             "fill": "#1e293b",
             "stroke": "#475569",
@@ -410,445 +305,51 @@
           "id": "shapes-filled-label",
           "type": "text",
           "content": "fill + stroke + borderRadius",
-          "position": {
-            "x": 520,
-            "y": 380
-          },
-          "size": {
-            "w": 350,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#94a3b8"
-          }
+          "position": { "x": 520, "y": 380 },
+          "size": { "w": 350, "h": 30 },
+          "style": { "fontSize": 16, "color": "#94a3b8" }
         }
       ],
       "animations": [
-        {
-          "target": "shape-rect",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 400
-        },
-        {
-          "target": "shape-ellipse",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 400,
-          "delay": 100
-        },
-        {
-          "target": "shape-line",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 400,
-          "delay": 200
-        },
-        {
-          "target": "shape-arrow",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 400,
-          "delay": 300
-        }
-      ]
-    },
-    {
-      "id": "diagram",
-      "transition": { "type": "fade", "duration": 400 },
-      "notes": "Flowchart diagram built from rectangle shapes and arrow connectors.",
-      "elements": [
-        {
-          "id": "diagram-title",
-          "type": "text",
-          "content": "## Diagram with Arrows",
-          "position": { "x": 60, "y": 20 },
-          "size": { "w": 840, "h": 45 },
-          "style": { "fontSize": 32, "color": "#0f172a" }
-        },
-        {
-          "id": "diagram-desc",
-          "type": "text",
-          "content": "Combine **rectangle** shapes and **arrow** connectors to build flowcharts.",
-          "position": { "x": 60, "y": 65 },
-          "size": { "w": 840, "h": 25 },
-          "style": { "fontSize": 15, "color": "#64748b" }
-        },
-        {
-          "id": "box-input",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": { "x": 80, "y": 130 },
-          "size": { "w": 160, "h": 70 },
-          "style": { "fill": "#dbeafe", "stroke": "#3b82f6", "strokeWidth": 2, "borderRadius": 10 }
-        },
-        {
-          "id": "label-input",
-          "type": "text",
-          "content": "**Input**\nUser request",
-          "position": { "x": 80, "y": 130 },
-          "size": { "w": 160, "h": 70 },
-          "style": { "fontSize": 14, "color": "#1e40af", "textAlign": "center", "verticalAlign": "middle" }
-        },
-        {
-          "id": "arrow-1",
-          "type": "shape",
-          "shape": "arrow",
-          "position": { "x": 240, "y": 155 },
-          "size": { "w": 80, "h": 20 },
-          "style": { "stroke": "#64748b", "strokeWidth": 2 }
-        },
-        {
-          "id": "box-process",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": { "x": 320, "y": 130 },
-          "size": { "w": 160, "h": 70 },
-          "style": { "fill": "#fef3c7", "stroke": "#f59e0b", "strokeWidth": 2, "borderRadius": 10 }
-        },
-        {
-          "id": "label-process",
-          "type": "text",
-          "content": "**Process**\nTransform data",
-          "position": { "x": 320, "y": 130 },
-          "size": { "w": 160, "h": 70 },
-          "style": { "fontSize": 14, "color": "#92400e", "textAlign": "center", "verticalAlign": "middle" }
-        },
-        {
-          "id": "arrow-2",
-          "type": "shape",
-          "shape": "arrow",
-          "position": { "x": 480, "y": 155 },
-          "size": { "w": 80, "h": 20 },
-          "style": { "stroke": "#64748b", "strokeWidth": 2 }
-        },
-        {
-          "id": "box-output",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": { "x": 560, "y": 130 },
-          "size": { "w": 160, "h": 70 },
-          "style": { "fill": "#dcfce7", "stroke": "#22c55e", "strokeWidth": 2, "borderRadius": 10 }
-        },
-        {
-          "id": "label-output",
-          "type": "text",
-          "content": "**Output**\nResult",
-          "position": { "x": 560, "y": 130 },
-          "size": { "w": 160, "h": 70 },
-          "style": { "fontSize": 14, "color": "#166534", "textAlign": "center", "verticalAlign": "middle" }
-        },
-        {
-          "id": "arrow-down",
-          "type": "shape",
-          "shape": "arrow",
-          "position": { "x": 355, "y": 245 },
-          "size": { "w": 110, "h": 20 },
-          "rotation": 90,
-          "style": { "stroke": "#64748b", "strokeWidth": 2 }
-        },
-        {
-          "id": "box-validate",
-          "type": "shape",
-          "shape": "ellipse",
-          "position": { "x": 330, "y": 310 },
-          "size": { "w": 180, "h": 80 },
-          "style": { "fill": "#fce7f3", "stroke": "#ec4899", "strokeWidth": 2 }
-        },
-        {
-          "id": "label-validate",
-          "type": "text",
-          "content": "**Validate?**",
-          "position": { "x": 330, "y": 310 },
-          "size": { "w": 180, "h": 80 },
-          "style": { "fontSize": 16, "color": "#9d174d", "textAlign": "center", "verticalAlign": "middle" }
-        },
-        {
-          "id": "arrow-yes",
-          "type": "shape",
-          "shape": "arrow",
-          "position": { "x": 510, "y": 340 },
-          "size": { "w": 100, "h": 20 },
-          "style": { "stroke": "#22c55e", "strokeWidth": 2 }
-        },
-        {
-          "id": "label-yes",
-          "type": "text",
-          "content": "Yes",
-          "position": { "x": 535, "y": 320 },
-          "size": { "w": 50, "h": 20 },
-          "style": { "fontSize": 13, "color": "#22c55e", "textAlign": "center" }
-        },
-        {
-          "id": "box-done",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": { "x": 610, "y": 310 },
-          "size": { "w": 140, "h": 70 },
-          "style": { "fill": "#dcfce7", "stroke": "#22c55e", "strokeWidth": 2, "borderRadius": 10 }
-        },
-        {
-          "id": "label-done",
-          "type": "text",
-          "content": "**Done**",
-          "position": { "x": 610, "y": 310 },
-          "size": { "w": 140, "h": 70 },
-          "style": { "fontSize": 16, "color": "#166534", "textAlign": "center", "verticalAlign": "middle" }
-        },
-        {
-          "id": "arrow-no",
-          "type": "shape",
-          "shape": "arrow",
-          "position": { "x": 160, "y": 340 },
-          "size": { "w": 170, "h": 20 },
-          "rotation": 180,
-          "style": { "stroke": "#ef4444", "strokeWidth": 2 }
-        },
-        {
-          "id": "label-no",
-          "type": "text",
-          "content": "No",
-          "position": { "x": 210, "y": 320 },
-          "size": { "w": 50, "h": 20 },
-          "style": { "fontSize": 13, "color": "#ef4444", "textAlign": "center" }
-        },
-        {
-          "id": "box-retry",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": { "x": 60, "y": 310 },
-          "size": { "w": 140, "h": 70 },
-          "style": { "fill": "#fee2e2", "stroke": "#ef4444", "strokeWidth": 2, "borderRadius": 10 }
-        },
-        {
-          "id": "label-retry",
-          "type": "text",
-          "content": "**Retry**",
-          "position": { "x": 60, "y": 310 },
-          "size": { "w": 140, "h": 70 },
-          "style": { "fontSize": 16, "color": "#991b1b", "textAlign": "center", "verticalAlign": "middle" }
-        },
-        {
-          "id": "diagram-tip",
-          "type": "text",
-          "content": "Tip: use **rotation** on arrows (90° = down, 180° = left) to create branching flows.",
-          "position": { "x": 60, "y": 420 },
-          "size": { "w": 840, "h": 30 },
-          "style": { "fontSize": 14, "color": "#94a3b8" }
-        },
-        {
-          "id": "diagram-code-tip",
-          "type": "code",
-          "language": "json",
-          "content": "{ \"type\": \"shape\", \"shape\": \"arrow\", \"rotation\": 90,\n  \"style\": { \"stroke\": \"#64748b\", \"strokeWidth\": 2 } }",
-          "position": { "x": 60, "y": 455 },
-          "size": { "w": 500, "h": 65 },
-          "style": { "fontSize": 12, "borderRadius": 8 }
-        }
-      ],
-      "animations": [
-        { "target": "box-input", "trigger": "onEnter", "effect": "fadeIn", "duration": 300 },
-        { "target": "label-input", "trigger": "onEnter", "effect": "fadeIn", "duration": 300 },
-        { "target": "arrow-1", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 200 },
-        { "target": "box-process", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 400 },
-        { "target": "label-process", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 400 },
-        { "target": "arrow-2", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 600 },
-        { "target": "box-output", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
-        { "target": "label-output", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
-        { "target": "arrow-down", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
-        { "target": "box-validate", "trigger": "afterPrevious", "effect": "scaleIn", "duration": 400 },
-        { "target": "label-validate", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
-        { "target": "arrow-yes", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
-        { "target": "label-yes", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 200 },
-        { "target": "box-done", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
-        { "target": "label-done", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
-        { "target": "arrow-no", "trigger": "onClick", "effect": "fadeIn", "duration": 300 },
-        { "target": "label-no", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 200 },
-        { "target": "box-retry", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 },
-        { "target": "label-retry", "trigger": "afterPrevious", "effect": "fadeIn", "duration": 300 }
-      ]
-    },
-    {
-      "id": "math",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "Math rendering with KaTeX — inline and display modes.",
-      "elements": [
-        {
-          "id": "math-title",
-          "type": "text",
-          "content": "## Math Rendering (KaTeX)",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "math-inline",
-          "type": "text",
-          "content": "Inline math: the quadratic formula $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$ renders in text flow.",
-          "position": {
-            "x": 60,
-            "y": 90
-          },
-          "size": {
-            "w": 840,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "math-bg",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 40,
-            "y": 150
-          },
-          "size": {
-            "w": 880,
-            "h": 370
-          },
-          "style": {
-            "fill": "#1e293b",
-            "borderRadius": 16
-          }
-        },
-        {
-          "id": "math-schrodinger",
-          "type": "text",
-          "content": "**Schrödinger Equation**\n\n$$i\\hbar \\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\left[-\\frac{\\hbar^2}{2m}\\nabla^2 + V(\\mathbf{r},t)\\right]\\Psi(\\mathbf{r},t)$$",
-          "position": {
-            "x": 60,
-            "y": 165
-          },
-          "size": {
-            "w": 420,
-            "h": 160
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#e2e8f0",
-            "lineHeight": 1.4
-          }
-        },
-        {
-          "id": "math-einstein",
-          "type": "text",
-          "content": "**Einstein Field Equations**\n\n$$R_{\\mu\\nu} - \\tfrac{1}{2}R\\,g_{\\mu\\nu} + \\Lambda g_{\\mu\\nu} = \\frac{8\\pi G}{c^4}T_{\\mu\\nu}$$",
-          "position": {
-            "x": 500,
-            "y": 165
-          },
-          "size": {
-            "w": 400,
-            "h": 160
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#e2e8f0",
-            "lineHeight": 1.4
-          }
-        },
-        {
-          "id": "math-maxwell",
-          "type": "text",
-          "content": "**Maxwell's Equations**\n\n$$\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}, \\quad \\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}, \\quad \\nabla \\cdot \\mathbf{B} = 0, \\quad \\nabla \\times \\mathbf{B} = \\mu_0\\mathbf{J} + \\mu_0\\varepsilon_0\\frac{\\partial \\mathbf{E}}{\\partial t}$$",
-          "position": {
-            "x": 60,
-            "y": 345
-          },
-          "size": {
-            "w": 840,
-            "h": 160
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#e2e8f0",
-            "lineHeight": 1.4
-          }
-        }
+        { "target": "shape-rect", "trigger": "onEnter", "effect": "fadeIn", "duration": 400 },
+        { "target": "shape-ellipse", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 100 },
+        { "target": "shape-line", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 200 },
+        { "target": "shape-arrow", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 300 }
       ]
     },
     {
       "id": "code",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "Code syntax highlighting via Shiki. Shows JSON and TypeScript with lineNumbers and highlightLines.",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "Code syntax highlighting via Shiki. Shows JSON, TypeScript, and Python.",
       "elements": [
         {
           "id": "code-title",
           "type": "text",
           "content": "## Code Highlighting (Shiki)",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
+          "position": { "x": 60, "y": 30 },
+          "size": { "w": 840, "h": 50 },
+          "style": { "fontSize": 36, "color": "#0f172a" }
         },
         {
           "id": "code-json",
           "type": "code",
           "language": "json",
           "content": "{\n  \"type\": \"text\",\n  \"content\": \"# Hello World\",\n  \"position\": { \"x\": 120, \"y\": 200 },\n  \"size\": { \"w\": 720, \"h\": 120 }\n}",
-          "position": {
-            "x": 60,
-            "y": 100
-          },
-          "size": {
-            "w": 420,
-            "h": 170
-          },
-          "style": {
-            "fontSize": 14,
-            "lineNumbers": true,
-            "borderRadius": 12
-          }
+          "position": { "x": 60, "y": 100 },
+          "size": { "w": 420, "h": 170 },
+          "style": { "fontSize": 14, "lineNumbers": true, "borderRadius": 12 }
         },
         {
           "id": "code-ts",
           "type": "code",
           "language": "typescript",
           "content": "export function computeSteps(\n  animations: Animation[]\n): AnimationStep[] {\n  const nonEnter = animations\n    .filter((a) => a.trigger !== \"onEnter\");\n  if (nonEnter.length === 0) return [];\n  return buildSequence(nonEnter);\n}",
-          "position": {
-            "x": 500,
-            "y": 100
-          },
-          "size": {
-            "w": 420,
-            "h": 170
-          },
+          "position": { "x": 500, "y": 100 },
+          "size": { "w": 420, "h": 170 },
           "style": {
             "fontSize": 14,
             "lineNumbers": true,
-            "highlightLines": [
-              1,
-              2,
-              3
-            ],
+            "highlightLines": [1, 2, 3],
             "borderRadius": 12
           }
         },
@@ -857,21 +358,12 @@
           "type": "code",
           "language": "python",
           "content": "import torch\nimport torch.nn as nn\n\nclass Transformer(nn.Module):\n    def __init__(self, d_model=512, nhead=8):\n        super().__init__()\n        self.attn = nn.MultiheadAttention(d_model, nhead)\n        self.norm = nn.LayerNorm(d_model)\n\n    def forward(self, x):\n        out, _ = self.attn(x, x, x)\n        return self.norm(x + out)",
-          "position": {
-            "x": 60,
-            "y": 290
-          },
-          "size": {
-            "w": 520,
-            "h": 230
-          },
+          "position": { "x": 60, "y": 290 },
+          "size": { "w": 520, "h": 230 },
           "style": {
             "fontSize": 14,
             "lineNumbers": true,
-            "highlightLines": [
-              7,
-              8
-            ],
+            "highlightLines": [7, 8],
             "borderRadius": 12
           }
         },
@@ -879,1745 +371,35 @@
           "id": "code-note",
           "type": "text",
           "content": "Supports **100+ languages** via Shiki.\n\n`lineNumbers`, `highlightLines`,\nand `theme` are configurable.",
-          "position": {
-            "x": 610,
-            "y": 320
-          },
-          "size": {
-            "w": 310,
-            "h": 140
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#94a3b8",
-            "lineHeight": 1.8
-          }
-        }
-      ]
-    },
-    {
-      "id": "tikz",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "TikZ/PGFPlots rendering — WASM-based compilation to SVG.",
-      "elements": [
-        {
-          "id": "tikz-title",
-          "type": "text",
-          "content": "## TikZ / PGFPlots",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "tikz-desc",
-          "type": "text",
-          "content": "Client-side TeX compilation via WASM: write TikZ code, get SVG output.",
-          "position": {
-            "x": 60,
-            "y": 85
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#64748b"
-          }
-        },
-        {
-          "id": "tikz-geo",
-          "type": "tikz",
-          "content": "\\begin{tikzpicture}[scale=1.5]\n  \\draw[thick, fill=blue!20] (0,0) -- (3,0) -- (1.5,2.6) -- cycle;\n  \\draw[thick, fill=red!20] (1.5,0) circle (1);\n  \\node at (1.5, -0.5) {Geometry};\n\\end{tikzpicture}",
-          "position": {
-            "x": 40,
-            "y": 130
-          },
-          "size": {
-            "w": 280,
-            "h": 250
-          },
-          "svgUrl": "./assets/tikz/tikz-geo.svg"
-        },
-        {
-          "id": "tikz-plot",
-          "type": "tikz",
-          "content": "\\begin{tikzpicture}\n  \\begin{axis}[\n    width=6cm, height=5cm,\n    xlabel=$x$, ylabel=$f(x)$,\n    grid=major,\n    title={$\\sin(x)$ and $\\cos(x)$}\n  ]\n    \\addplot[green, thick, domain=0:360, samples=100] {sin(x)};\n    \\addplot[red, thick, dashed, domain=0:360, samples=100] {cos(x)};\n    \\legend{$\\sin$, $\\cos$}\n  \\end{axis}\n\\end{tikzpicture}",
-          "position": {
-            "x": 340,
-            "y": 130
-          },
-          "size": {
-            "w": 280,
-            "h": 250
-          },
-          "svgUrl": "./assets/tikz/tikz-plot.svg"
-        },
-        {
-          "id": "tikz-flow",
-          "type": "tikz",
-          "content": "\\begin{tikzpicture}[node distance=1.5cm, auto,\n    block/.style={rectangle, draw, fill=blue!20, text width=4em, text centered, rounded corners, minimum height=2.5em},\n    line/.style={draw, -latex}]\n  \\node [block] (input) {Input};\n  \\node [block, right of=input, node distance=3cm] (process) {Process};\n  \\node [block, right of=process, node distance=3cm] (output) {Output};\n  \\path [line] (input) -- (process);\n  \\path [line] (process) -- (output);\n\\end{tikzpicture}",
-          "position": {
-            "x": 640,
-            "y": 130
-          },
-          "size": {
-            "w": 280,
-            "h": 250
-          },
-          "svgUrl": "./assets/tikz/tikz-flow.svg"
-        },
-        {
-          "id": "tikz-hint",
-          "type": "text",
-          "content": "Select a TikZ element and click **Render** in the property panel.",
-          "position": {
-            "x": 60,
-            "y": 430
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#475569"
-          }
-        }
-      ]
-    },
-    {
-      "id": "video",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "Video embedding: YouTube iframe + native local video with controls.",
-      "elements": [
-        {
-          "id": "video-title",
-          "type": "text",
-          "content": "## Video Embedding",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "video-yt",
-          "type": "video",
-          "src": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          "position": {
-            "x": 60,
-            "y": 100
-          },
-          "size": {
-            "w": 420,
-            "h": 236
-          },
-          "controls": true,
-          "muted": true
-        },
-        {
-          "id": "video-yt-label",
-          "type": "text",
-          "content": "**YouTube** embed (auto iframe)",
-          "position": {
-            "x": 60,
-            "y": 345
-          },
-          "size": {
-            "w": 420,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#94a3b8",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "video-local",
-          "type": "video",
-          "src": "./assets/sample-video.mp4",
-          "position": {
-            "x": 500,
-            "y": 100
-          },
-          "size": {
-            "w": 420,
-            "h": 236
-          },
-          "controls": true,
-          "muted": true
-        },
-        {
-          "id": "video-local-label",
-          "type": "text",
-          "content": "**Local MP4** (File System Access API)",
-          "position": {
-            "x": 500,
-            "y": 345
-          },
-          "size": {
-            "w": 420,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#94a3b8",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "video-code",
-          "type": "code",
-          "language": "json",
-          "content": "{ \"type\": \"video\", \"src\": \"https://youtube.com/watch?v=...\",\n  \"controls\": true, \"muted\": true, \"autoplay\": false, \"loop\": false }",
-          "position": {
-            "x": 140,
-            "y": 400
-          },
-          "size": {
-            "w": 680,
-            "h": 60
-          },
-          "style": {
-            "fontSize": 13,
-            "borderRadius": 8
-          }
-        },
-        {
-          "id": "video-note",
-          "type": "text",
-          "content": "Supports YouTube, Vimeo, and native video files (MP4, WebM).",
-          "position": {
-            "x": 60,
-            "y": 480
-          },
-          "size": {
-            "w": 840,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#475569",
-            "textAlign": "center"
-          }
-        }
-      ],
-      "animations": [
-        {
-          "target": "video-yt",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 500
-        },
-        {
-          "target": "video-local",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 500
-        }
-      ]
-    },
-    {
-      "id": "anim-onenter",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "onEnter animation effects: fadeIn, slideInRight, scaleIn, slideInUp, typewriter, fadeOut, scaleOut.",
-      "elements": [
-        {
-          "id": "ae-title",
-          "type": "text",
-          "content": "## Animations: onEnter",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "ae-desc",
-          "type": "text",
-          "content": "All effects auto-play when the slide loads.",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#64748b"
-          }
-        },
-        {
-          "id": "ae-fade-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 130
-          },
-          "size": {
-            "w": 200,
-            "h": 100
-          },
-          "style": {
-            "fill": "#3b82f6",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ae-fade-label",
-          "type": "text",
-          "content": "**fadeIn**",
-          "position": {
-            "x": 60,
-            "y": 155
-          },
-          "size": {
-            "w": 200,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff",
-            "textAlign": "center",
-            "verticalAlign": "middle"
-          }
-        },
-        {
-          "id": "ae-slide-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 280,
-            "y": 130
-          },
-          "size": {
-            "w": 200,
-            "h": 100
-          },
-          "style": {
-            "fill": "#8b5cf6",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ae-slide-label",
-          "type": "text",
-          "content": "**slideInRight**",
-          "position": {
-            "x": 280,
-            "y": 155
-          },
-          "size": {
-            "w": 200,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff",
-            "textAlign": "center",
-            "verticalAlign": "middle"
-          }
-        },
-        {
-          "id": "ae-scale-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 500,
-            "y": 130
-          },
-          "size": {
-            "w": 200,
-            "h": 100
-          },
-          "style": {
-            "fill": "#ec4899",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ae-scale-label",
-          "type": "text",
-          "content": "**scaleIn**",
-          "position": {
-            "x": 500,
-            "y": 155
-          },
-          "size": {
-            "w": 200,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff",
-            "textAlign": "center",
-            "verticalAlign": "middle"
-          }
-        },
-        {
-          "id": "ae-slidein-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 720,
-            "y": 130
-          },
-          "size": {
-            "w": 200,
-            "h": 100
-          },
-          "style": {
-            "fill": "#f59e0b",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ae-slidein-label",
-          "type": "text",
-          "content": "**slideInUp**",
-          "position": {
-            "x": 720,
-            "y": 155
-          },
-          "size": {
-            "w": 200,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff",
-            "textAlign": "center",
-            "verticalAlign": "middle"
-          }
-        },
-        {
-          "id": "ae-typewriter",
-          "type": "text",
-          "content": "This text uses the **typewriter** effect with a 1-second delay.",
-          "position": {
-            "x": 60,
-            "y": 270
-          },
-          "size": {
-            "w": 840,
-            "h": 35
-          },
-          "style": {
-            "fontSize": 22,
-            "color": "#92400e"
-          }
-        },
-        {
-          "id": "ae-fadeout-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 340
-          },
-          "size": {
-            "w": 200,
-            "h": 80
-          },
-          "style": {
-            "fill": "#ef4444",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ae-fadeout-label",
-          "type": "text",
-          "content": "**fadeOut** (3s delay)",
-          "position": {
-            "x": 60,
-            "y": 360
-          },
-          "size": {
-            "w": 200,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#fff",
-            "textAlign": "center",
-            "verticalAlign": "middle"
-          }
-        },
-        {
-          "id": "ae-scaleout-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 280,
-            "y": 340
-          },
-          "size": {
-            "w": 200,
-            "h": 80
-          },
-          "style": {
-            "fill": "#06b6d4",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ae-scaleout-label",
-          "type": "text",
-          "content": "**scaleOut** (3s delay)",
-          "position": {
-            "x": 280,
-            "y": 360
-          },
-          "size": {
-            "w": 200,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#fff",
-            "textAlign": "center",
-            "verticalAlign": "middle"
-          }
-        },
-        {
-          "id": "ae-hint",
-          "type": "text",
-          "content": "Enter **presentation mode** (F5) to see animations. In editor, elements are static.",
-          "position": {
-            "x": 60,
-            "y": 480
-          },
-          "size": {
-            "w": 840,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#475569",
-            "textAlign": "center"
-          }
-        }
-      ],
-      "animations": [
-        {
-          "target": "ae-fade-box",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 600
-        },
-        {
-          "target": "ae-fade-label",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 600
-        },
-        {
-          "target": "ae-slide-box",
-          "trigger": "onEnter",
-          "effect": "slideInRight",
-          "duration": 500,
-          "delay": 200
-        },
-        {
-          "target": "ae-slide-label",
-          "trigger": "onEnter",
-          "effect": "slideInRight",
-          "duration": 500,
-          "delay": 200
-        },
-        {
-          "target": "ae-scale-box",
-          "trigger": "onEnter",
-          "effect": "scaleIn",
-          "duration": 500,
-          "delay": 400
-        },
-        {
-          "target": "ae-scale-label",
-          "trigger": "onEnter",
-          "effect": "scaleIn",
-          "duration": 500,
-          "delay": 400
-        },
-        {
-          "target": "ae-slidein-box",
-          "trigger": "onEnter",
-          "effect": "slideInUp",
-          "duration": 500,
-          "delay": 600
-        },
-        {
-          "target": "ae-slidein-label",
-          "trigger": "onEnter",
-          "effect": "slideInUp",
-          "duration": 500,
-          "delay": 600
-        },
-        {
-          "target": "ae-typewriter",
-          "trigger": "onEnter",
-          "effect": "typewriter",
-          "duration": 1500,
-          "delay": 1000
-        },
-        {
-          "target": "ae-fadeout-box",
-          "trigger": "onEnter",
-          "effect": "fadeOut",
-          "duration": 800,
-          "delay": 3000
-        },
-        {
-          "target": "ae-fadeout-label",
-          "trigger": "onEnter",
-          "effect": "fadeOut",
-          "duration": 800,
-          "delay": 3000
-        },
-        {
-          "target": "ae-scaleout-box",
-          "trigger": "onEnter",
-          "effect": "scaleOut",
-          "duration": 800,
-          "delay": 3000
-        },
-        {
-          "target": "ae-scaleout-label",
-          "trigger": "onEnter",
-          "effect": "scaleOut",
-          "duration": 800,
-          "delay": 3000
-        }
-      ]
-    },
-    {
-      "id": "anim-onclick",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "onClick animation with order grouping. Click/Space to advance through 3 steps.",
-      "elements": [
-        {
-          "id": "ac-title",
-          "type": "text",
-          "content": "## Animations: onClick (ordered steps)",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 575,
-            "h": 28
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "ac-desc",
-          "type": "text",
-          "content": "Press **Space** or **click** to advance. Same `order` values play together.",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#64748b"
-          }
-        },
-        {
-          "id": "ac-step0-a",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 140
-          },
-          "size": {
-            "w": 260,
-            "h": 120
-          },
-          "style": {
-            "fill": "#3b82f6",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ac-step0-a-text",
-          "type": "text",
-          "content": "**Step 0 — A**\norder: 0",
-          "position": {
-            "x": 80,
-            "y": 170
-          },
-          "size": {
-            "w": 220,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "ac-step0-b",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 350,
-            "y": 140
-          },
-          "size": {
-            "w": 260,
-            "h": 120
-          },
-          "style": {
-            "fill": "#3b82f6",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ac-step0-b-text",
-          "type": "text",
-          "content": "**Step 0 — B**\norder: 0",
-          "position": {
-            "x": 370,
-            "y": 170
-          },
-          "size": {
-            "w": 220,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "ac-step1",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 290
-          },
-          "size": {
-            "w": 550,
-            "h": 100
-          },
-          "style": {
-            "fill": "#8b5cf6",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ac-step1-text",
-          "type": "text",
-          "content": "**Step 1** — second click reveals this (order: 1)",
-          "position": {
-            "x": 80,
-            "y": 320
-          },
-          "size": {
-            "w": 510,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff"
-          }
-        },
-        {
-          "id": "ac-step2",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 420
-          },
-          "size": {
-            "w": 550,
-            "h": 80
-          },
-          "style": {
-            "fill": "#ec4899",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ac-step2-text",
-          "type": "text",
-          "content": "**Step 2** — no order (auto-assigned, third click)",
-          "position": {
-            "x": 80,
-            "y": 442
-          },
-          "size": {
-            "w": 510,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff"
-          }
-        },
-        {
-          "id": "ac-counter",
-          "type": "text",
-          "content": "Click count:\n**0** → Step 0 (A+B)\n**1** → Step 1\n**2** → Step 2\n**3** → Next slide",
-          "position": {
-            "x": 680,
-            "y": 140
-          },
-          "size": {
-            "w": 240,
-            "h": 160
-          },
-          "style": {
-            "fontSize": 14,
-            "color": "#94a3b8",
-            "lineHeight": 1.8
-          }
-        }
-      ],
-      "animations": [
-        {
-          "target": "ac-step0-a",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 400,
-          "order": 0
-        },
-        {
-          "target": "ac-step0-a-text",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 400,
-          "order": 0
-        },
-        {
-          "target": "ac-step0-b",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 400,
-          "order": 0
-        },
-        {
-          "target": "ac-step0-b-text",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 400,
-          "order": 0
-        },
-        {
-          "target": "ac-step1",
-          "trigger": "onClick",
-          "effect": "slideInLeft",
-          "duration": 500,
-          "order": 1
-        },
-        {
-          "target": "ac-step1-text",
-          "trigger": "onClick",
-          "effect": "slideInLeft",
-          "duration": 500,
-          "order": 1
-        },
-        {
-          "target": "ac-step2",
-          "trigger": "onClick",
-          "effect": "scaleIn",
-          "duration": 500
-        },
-        {
-          "target": "ac-step2-text",
-          "trigger": "onClick",
-          "effect": "scaleIn",
-          "duration": 500
-        }
-      ]
-    },
-    {
-      "id": "anim-new",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "New trigger types: withPrevious (simultaneous), afterPrevious (chained), onKey (keypress). Press 'q' for Step 2.",
-      "elements": [
-        {
-          "id": "an-title",
-          "type": "text",
-          "content": "## Animations: New Triggers",
-          "position": {
-            "x": 60,
-            "y": 20
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "an-desc",
-          "type": "text",
-          "content": "**withPrevious** (simultaneous) + **afterPrevious** (chained) + **onKey** (keypress trigger)",
-          "position": {
-            "x": 60,
-            "y": 68
-          },
-          "size": {
-            "w": 840,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#64748b"
-          }
-        },
-        {
-          "id": "an-step0-label",
-          "type": "text",
-          "content": "**Step 0** — Click to trigger:",
-          "position": {
-            "x": 60,
-            "y": 105
-          },
-          "size": {
-            "w": 400,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "an-click-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 138
-          },
-          "size": {
-            "w": 250,
-            "h": 80
-          },
-          "style": {
-            "fill": "#3b82f6",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "an-click-text",
-          "type": "text",
-          "content": "**onClick**\nfadeIn (trigger)",
-          "position": {
-            "x": 75,
-            "y": 152
-          },
-          "size": {
-            "w": 220,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#fff",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "an-with-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 330,
-            "y": 138
-          },
-          "size": {
-            "w": 250,
-            "h": 80
-          },
-          "style": {
-            "fill": "#10b981",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "an-with-text",
-          "type": "text",
-          "content": "**withPrevious**\nslideInRight (simultaneous)",
-          "position": {
-            "x": 345,
-            "y": 152
-          },
-          "size": {
-            "w": 220,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#fff",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "an-after-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 600,
-            "y": 138
-          },
-          "size": {
-            "w": 300,
-            "h": 80
-          },
-          "style": {
-            "fill": "#f59e0b",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "an-after-text",
-          "type": "text",
-          "content": "**afterPrevious**\nscaleIn (after green finishes)",
-          "position": {
-            "x": 615,
-            "y": 152
-          },
-          "size": {
-            "w": 270,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#fff",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "an-step1-label",
-          "type": "text",
-          "content": "**Step 1** — Click again:",
-          "position": {
-            "x": 60,
-            "y": 240
-          },
-          "size": {
-            "w": 400,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "an-click2-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 273
-          },
-          "size": {
-            "w": 840,
-            "h": 60
-          },
-          "style": {
-            "fill": "#8b5cf6",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "an-click2-text",
-          "type": "text",
-          "content": "Second **onClick** step — slideInUp",
-          "position": {
-            "x": 80,
-            "y": 286
-          },
-          "size": {
-            "w": 800,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff"
-          }
-        },
-        {
-          "id": "an-step2-label",
-          "type": "text",
-          "content": "**Step 2** — Press the **q** key:",
-          "position": {
-            "x": 60,
-            "y": 355
-          },
-          "size": {
-            "w": 400,
-            "h": 25
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "an-key-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 388
-          },
-          "size": {
-            "w": 840,
-            "h": 60
-          },
-          "style": {
-            "fill": "#ec4899",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "an-key-text",
-          "type": "text",
-          "content": "**onKey \"q\"** — this appears when you press Q (or Space/Arrow also works)",
-          "position": {
-            "x": 80,
-            "y": 401
-          },
-          "size": {
-            "w": 800,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#fff"
-          }
-        },
-        {
-          "id": "an-timeline",
-          "type": "text",
-          "content": "Timeline: **click** → blue + green (simultaneous) → yellow (auto-chains) → **click** → purple → **press q** → pink → next slide",
-          "position": {
-            "x": 60,
-            "y": 475
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#475569",
-            "textAlign": "center"
-          }
-        }
-      ],
-      "animations": [
-        {
-          "target": "an-click-box",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 400
-        },
-        {
-          "target": "an-click-text",
-          "trigger": "onClick",
-          "effect": "fadeIn",
-          "duration": 400
-        },
-        {
-          "target": "an-with-box",
-          "trigger": "withPrevious",
-          "effect": "slideInRight",
-          "duration": 500
-        },
-        {
-          "target": "an-with-text",
-          "trigger": "withPrevious",
-          "effect": "slideInRight",
-          "duration": 500
-        },
-        {
-          "target": "an-after-box",
-          "trigger": "afterPrevious",
-          "effect": "scaleIn",
-          "duration": 500
-        },
-        {
-          "target": "an-after-text",
-          "trigger": "afterPrevious",
-          "effect": "scaleIn",
-          "duration": 500
-        },
-        {
-          "target": "an-click2-box",
-          "trigger": "onClick",
-          "effect": "slideInUp",
-          "duration": 500
-        },
-        {
-          "target": "an-click2-text",
-          "trigger": "onClick",
-          "effect": "slideInUp",
-          "duration": 500
-        },
-        {
-          "target": "an-key-box",
-          "trigger": "onKey",
-          "effect": "fadeIn",
-          "duration": 400,
-          "key": "q"
-        },
-        {
-          "target": "an-key-text",
-          "trigger": "onKey",
-          "effect": "fadeIn",
-          "duration": 400,
-          "key": "q"
-        }
-      ]
-    },
-    {
-      "id": "transitions",
-      "transition": {
-        "type": "slide",
-        "duration": 500
-      },
-      "notes": "This slide uses a 'slide' transition. Previous slides use 'fade'. Transition types: fade, slide, none.",
-      "elements": [
-        {
-          "id": "tr-title",
-          "type": "text",
-          "content": "## Slide Transitions",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#0f172a"
-          }
-        },
-        {
-          "id": "tr-desc",
-          "type": "text",
-          "content": "This slide entered with a **slide** transition (500ms). Most others use **fade** (300ms).",
-          "position": {
-            "x": 60,
-            "y": 90
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "tr-fade-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 160
-          },
-          "size": {
-            "w": 260,
-            "h": 140
-          },
-          "style": {
-            "fill": "#1e293b",
-            "stroke": "#3b82f6",
-            "strokeWidth": 2,
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "tr-fade-text",
-          "type": "text",
-          "content": "**fade**\n\nCrossfade opacity.\nDefault transition.",
-          "position": {
-            "x": 80,
-            "y": 175
-          },
-          "size": {
-            "w": 220,
-            "h": 110
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#e2e8f0",
-            "textAlign": "center",
-            "lineHeight": 1.6
-          }
-        },
-        {
-          "id": "tr-slide-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 350,
-            "y": 160
-          },
-          "size": {
-            "w": 260,
-            "h": 140
-          },
-          "style": {
-            "fill": "#1e293b",
-            "stroke": "#8b5cf6",
-            "strokeWidth": 2,
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "tr-slide-text",
-          "type": "text",
-          "content": "**slide**\n\nHorizontal motion\nwith opacity fade.",
-          "position": {
-            "x": 370,
-            "y": 175
-          },
-          "size": {
-            "w": 220,
-            "h": 110
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#e2e8f0",
-            "textAlign": "center",
-            "lineHeight": 1.6
-          }
-        },
-        {
-          "id": "tr-none-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 640,
-            "y": 160
-          },
-          "size": {
-            "w": 260,
-            "h": 140
-          },
-          "style": {
-            "fill": "#1e293b",
-            "stroke": "#64748b",
-            "strokeWidth": 2,
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "tr-none-text",
-          "type": "text",
-          "content": "**none**\n\nInstant swap.\nNo animation.",
-          "position": {
-            "x": 660,
-            "y": 175
-          },
-          "size": {
-            "w": 220,
-            "h": 110
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#e2e8f0",
-            "textAlign": "center",
-            "lineHeight": 1.6
-          }
-        },
-        {
-          "id": "tr-code",
-          "type": "code",
-          "language": "json",
-          "content": "\"transition\": { \"type\": \"slide\", \"duration\": 500 }",
-          "position": {
-            "x": 200,
-            "y": 340
-          },
-          "size": {
-            "w": 560,
-            "h": 40
-          },
-          "style": {
-            "fontSize": 14,
-            "borderRadius": 8
-          }
-        }
-      ]
-    },
-    {
-      "id": "theme-style",
-      "transition": {
-        "type": "none"
-      },
-      "background": {
-        "color": "#1a1a2e"
-      },
-      "notes": "Custom background color overrides theme. Demonstrates per-slide background, rotation, verticalAlign options. Transition: none (instant).",
-      "elements": [
-        {
-          "id": "ts-title",
-          "type": "text",
-          "content": "## Theme & Styling",
-          "position": {
-            "x": 60,
-            "y": 30
-          },
-          "size": {
-            "w": 840,
-            "h": 50
-          },
-          "style": {
-            "fontSize": 36,
-            "color": "#e2e8f0"
-          }
-        },
-        {
-          "id": "ts-desc",
-          "type": "text",
-          "content": "This slide has a **custom background** (#1a1a2e) overriding the theme default. Transition: **none** (instant).",
-          "position": {
-            "x": 60,
-            "y": 80
-          },
-          "size": {
-            "w": 840,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 16,
-            "color": "#94a3b8"
-          }
-        },
-        {
-          "id": "ts-theme-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 60,
-            "y": 140
-          },
-          "size": {
-            "w": 420,
-            "h": 200
-          },
-          "style": {
-            "fill": "#0f172a",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ts-theme-text",
-          "type": "text",
-          "content": "**Deck-level theme** sets defaults:\n- text: fontSize 18, color #e2e8f0\n- code: fontSize 14, borderRadius 8\n- shape: borderRadius 8\n\nElement `style` overrides theme.",
-          "position": {
-            "x": 80,
-            "y": 155
-          },
-          "size": {
-            "w": 380,
-            "h": 170
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#94a3b8",
-            "lineHeight": 1.7
-          }
-        },
-        {
-          "id": "ts-textstyle-box",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 500,
-            "y": 140
-          },
-          "size": {
-            "w": 420,
-            "h": 200
-          },
-          "style": {
-            "fill": "#0f172a",
-            "borderRadius": 12
-          }
-        },
-        {
-          "id": "ts-textstyle",
-          "type": "text",
-          "content": "**Text style properties:**\nfontFamily, fontSize, color,\ntextAlign (left/center/right),\nlineHeight, verticalAlign (top/middle/bottom)",
-          "position": {
-            "x": 520,
-            "y": 155
-          },
-          "size": {
-            "w": 380,
-            "h": 170
-          },
-          "style": {
-            "fontSize": 15,
-            "color": "#94a3b8",
-            "lineHeight": 1.7
-          }
-        },
-        {
-          "id": "ts-rotated",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 100,
-            "y": 390
-          },
-          "size": {
-            "w": 160,
-            "h": 80
-          },
-          "rotation": -10,
-          "style": {
-            "fill": "#ec4899",
-            "borderRadius": 12,
-            "opacity": 0.8
-          }
-        },
-        {
-          "id": "ts-rotated-label",
-          "type": "text",
-          "content": "rotation: -10°",
-          "position": {
-            "x": 110,
-            "y": 415
-          },
-          "size": {
-            "w": 140,
-            "h": 25
-          },
-          "rotation": -10,
-          "style": {
-            "fontSize": 14,
-            "color": "#fff",
-            "textAlign": "center"
-          }
-        },
-        {
-          "id": "ts-align-top",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 320,
-            "y": 370
-          },
-          "size": {
-            "w": 130,
-            "h": 120
-          },
-          "style": {
-            "fill": "#1e293b",
-            "borderRadius": 8,
-            "stroke": "#475569",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "ts-align-top-text",
-          "type": "text",
-          "content": "verticalAlign:\n**top**",
-          "position": {
-            "x": 325,
-            "y": 375
-          },
-          "size": {
-            "w": 120,
-            "h": 110
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8",
-            "textAlign": "center",
-            "verticalAlign": "top"
-          }
-        },
-        {
-          "id": "ts-align-mid",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 470,
-            "y": 370
-          },
-          "size": {
-            "w": 130,
-            "h": 120
-          },
-          "style": {
-            "fill": "#1e293b",
-            "borderRadius": 8,
-            "stroke": "#475569",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "ts-align-mid-text",
-          "type": "text",
-          "content": "verticalAlign:\n**middle**",
-          "position": {
-            "x": 475,
-            "y": 375
-          },
-          "size": {
-            "w": 120,
-            "h": 110
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8",
-            "textAlign": "center",
-            "verticalAlign": "middle"
-          }
-        },
-        {
-          "id": "ts-align-bot",
-          "type": "shape",
-          "shape": "rectangle",
-          "position": {
-            "x": 620,
-            "y": 370
-          },
-          "size": {
-            "w": 130,
-            "h": 120
-          },
-          "style": {
-            "fill": "#1e293b",
-            "borderRadius": 8,
-            "stroke": "#475569",
-            "strokeWidth": 1
-          }
-        },
-        {
-          "id": "ts-align-bot-text",
-          "type": "text",
-          "content": "verticalAlign:\n**bottom**",
-          "position": {
-            "x": 625,
-            "y": 375
-          },
-          "size": {
-            "w": 120,
-            "h": 110
-          },
-          "style": {
-            "fontSize": 13,
-            "color": "#94a3b8",
-            "textAlign": "center",
-            "verticalAlign": "bottom"
-          }
+          "position": { "x": 610, "y": 320 },
+          "size": { "w": 310, "h": 140 },
+          "style": { "fontSize": 16, "color": "#94a3b8", "lineHeight": 1.8 }
         }
       ]
     },
     {
       "id": "tables",
-      "transition": {
-        "type": "fade",
-        "duration": 300
-      },
-      "notes": "Table element — structured data with headers, striped rows, and theme-aware styling.",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "Table element with headers, striped rows, and inline LaTeX math in cells.",
       "elements": [
         {
           "id": "tbl-title",
           "type": "text",
-          "content": "## Table Element",
-          "position": { "x": 60, "y": 30 },
-          "size": { "w": 840, "h": 50 },
+          "content": "## Tables",
+          "position": { "x": 60, "y": 20 },
+          "size": { "w": 840, "h": 45 },
           "style": { "fontSize": 36, "color": "#0f172a" }
         },
         {
           "id": "tbl-desc",
           "type": "text",
-          "content": "Structured data with headers, configurable borders, and optional striped rows.",
-          "position": { "x": 60, "y": 80 },
-          "size": { "w": 840, "h": 30 },
+          "content": "Structured data with headers, striped rows, and inline `$\\LaTeX$` in cells.",
+          "position": { "x": 60, "y": 65 },
+          "size": { "w": 840, "h": 25 },
           "style": { "fontSize": 16, "color": "#64748b" }
         },
         {
           "id": "tbl-demo",
-          "type": "table",
-          "columns": ["Feature", "Type", "Default"],
-          "rows": [
-            ["fontSize", "number", "14"],
-            ["headerBackground", "string", "#1e293b"],
-            ["striped", "boolean", "false"],
-            ["borderColor", "string", "#334155"],
-            ["borderRadius", "number", "8"]
-          ],
-          "position": { "x": 60, "y": 130 },
-          "size": { "w": 440, "h": 220 },
-          "style": { "fontSize": 14, "striped": true, "borderRadius": 8 }
-        },
-        {
-          "id": "tbl-demo2",
           "type": "table",
           "columns": ["Quarter", "Revenue", "Growth"],
           "rows": [
@@ -2626,7 +408,7 @@
             ["Q3 2025", "$1.8M", "+20%"],
             ["Q4 2025", "$2.1M", "+17%"]
           ],
-          "position": { "x": 520, "y": 130 },
+          "position": { "x": 60, "y": 100 },
           "size": { "w": 380, "h": 200 },
           "style": {
             "fontSize": 14,
@@ -2637,43 +419,682 @@
           }
         },
         {
-          "id": "tbl-code",
+          "id": "tbl-latex",
+          "type": "table",
+          "columns": ["Name", "Formula", "Domain"],
+          "rows": [
+            ["Quadratic formula", "$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$", "$a \\neq 0$"],
+            ["Euler's identity", "$e^{i\\pi} + 1 = 0$", "$\\mathbb{C}$"],
+            ["Gaussian integral", "$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$", "$\\mathbb{R}$"],
+            ["Bayes' theorem", "$P(A|B) = \\frac{P(B|A)\\,P(A)}{P(B)}$", "$P(B) > 0$"]
+          ],
+          "position": { "x": 60, "y": 320 },
+          "size": { "w": 840, "h": 200 },
+          "style": {
+            "fontSize": 15,
+            "striped": true,
+            "borderRadius": 8,
+            "headerBackground": "#7c3aed",
+            "headerColor": "#ffffff",
+            "borderColor": "#a78bfa"
+          }
+        },
+        {
+          "id": "tbl-props",
+          "type": "table",
+          "columns": ["Feature", "Type", "Default"],
+          "rows": [
+            ["fontSize", "number", "14"],
+            ["headerBackground", "string", "#1e293b"],
+            ["striped", "boolean", "false"],
+            ["borderRadius", "number", "8"]
+          ],
+          "position": { "x": 460, "y": 100 },
+          "size": { "w": 440, "h": 190 },
+          "style": { "fontSize": 14, "striped": true, "borderRadius": 8 }
+        }
+      ]
+    },
+    {
+      "id": "tikz",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "TikZ/PGFPlots rendering via WASM — 6 diagrams: geometry, plot, flowchart, neural network, automaton, commutative diagram.",
+      "elements": [
+        {
+          "id": "tikz-title",
+          "type": "text",
+          "content": "## TikZ / PGFPlots",
+          "position": { "x": 60, "y": 15 },
+          "size": { "w": 840, "h": 40 },
+          "style": { "fontSize": 32, "color": "#0f172a" }
+        },
+        {
+          "id": "tikz-desc",
+          "type": "text",
+          "content": "Client-side TeX compilation via WASM: write TikZ code, get SVG output.",
+          "position": { "x": 60, "y": 55 },
+          "size": { "w": 840, "h": 25 },
+          "style": { "fontSize": 15, "color": "#64748b" }
+        },
+        {
+          "id": "tikz-geo",
+          "type": "tikz",
+          "content": "\\begin{tikzpicture}[scale=1.5]\n  \\draw[thick, fill=blue!20] (0,0) -- (3,0) -- (1.5,2.6) -- cycle;\n  \\draw[thick, fill=red!20] (1.5,0) circle (1);\n  \\node at (1.5, -0.5) {Geometry};\n\\end{tikzpicture}",
+          "position": { "x": 20, "y": 90 },
+          "size": { "w": 290, "h": 190 },
+          "svgUrl": "./assets/tikz/tikz-geo.svg"
+        },
+        {
+          "id": "tikz-plot",
+          "type": "tikz",
+          "content": "\\begin{tikzpicture}\n  \\begin{axis}[\n    width=6cm, height=5cm,\n    xlabel=$x$, ylabel=$f(x)$,\n    grid=major,\n    title={$\\sin(x)$ and $\\cos(x)$}\n  ]\n    \\addplot[green, thick, domain=0:360, samples=100] {sin(x)};\n    \\addplot[red, thick, dashed, domain=0:360, samples=100] {cos(x)};\n    \\legend{$\\sin$, $\\cos$}\n  \\end{axis}\n\\end{tikzpicture}",
+          "position": { "x": 330, "y": 90 },
+          "size": { "w": 290, "h": 190 },
+          "svgUrl": "./assets/tikz/tikz-plot.svg"
+        },
+        {
+          "id": "tikz-flow",
+          "type": "tikz",
+          "content": "\\begin{tikzpicture}[node distance=1.5cm, auto,\n    block/.style={rectangle, draw, fill=blue!20, text width=4em, text centered, rounded corners, minimum height=2.5em},\n    line/.style={draw, -latex}]\n  \\node [block] (input) {Input};\n  \\node [block, right of=input, node distance=3cm] (process) {Process};\n  \\node [block, right of=process, node distance=3cm] (output) {Output};\n  \\path [line] (input) -- (process);\n  \\path [line] (process) -- (output);\n\\end{tikzpicture}",
+          "position": { "x": 640, "y": 90 },
+          "size": { "w": 290, "h": 190 },
+          "svgUrl": "./assets/tikz/tikz-flow.svg"
+        },
+        {
+          "id": "tikzd-nn",
+          "type": "tikz",
+          "content": "\\begin{tikzpicture}[x=1.8cm, y=1.2cm,\n    node/.style={circle, draw, minimum size=6mm, inner sep=0pt, fill=blue!15},\n    >=latex]\n  \\foreach \\i in {1,...,3}\n    \\node[node] (I-\\i) at (0,-\\i) {};\n  \\foreach \\j in {1,...,4}\n    \\node[node, fill=orange!20] (H-\\j) at (1.5,-\\j+0.5) {};\n  \\foreach \\k in {1,...,2}\n    \\node[node, fill=green!20] (O-\\k) at (3,-\\k-0.5) {};\n  \\foreach \\i in {1,...,3}\n    \\foreach \\j in {1,...,4}\n      \\draw[->] (I-\\i) -- (H-\\j);\n  \\foreach \\j in {1,...,4}\n    \\foreach \\k in {1,...,2}\n      \\draw[->] (H-\\j) -- (O-\\k);\n  \\node[above] at (0,-0.5) {\\small Input};\n  \\node[above] at (1.5,0) {\\small Hidden};\n  \\node[above] at (3,-0.5) {\\small Output};\n\\end{tikzpicture}",
+          "position": { "x": 20, "y": 295 },
+          "size": { "w": 290, "h": 195 },
+          "svgUrl": "./assets/tikz/tikzd-nn.svg"
+        },
+        {
+          "id": "tikz-nn-label",
+          "type": "text",
+          "content": "**Neural Network**",
+          "position": { "x": 20, "y": 490 },
+          "size": { "w": 290, "h": 20 },
+          "style": { "fontSize": 12, "color": "#64748b", "textAlign": "center" }
+        },
+        {
+          "id": "tikzd-auto",
+          "type": "tikz",
+          "preamble": "\\usetikzlibrary{automata,positioning}",
+          "content": "\\begin{tikzpicture}[shorten >=1pt, node distance=2.5cm, auto,\n    every state/.style={minimum size=7mm, inner sep=0pt}]\n  \\node[state, initial] (q0) {$q_0$};\n  \\node[state] (q1) [right of=q0] {$q_1$};\n  \\node[state, accepting] (q2) [right of=q1] {$q_2$};\n  \\path[->] (q0) edge node {a} (q1)\n                  edge [loop above] node {b} ()\n            (q1) edge node {a,b} (q2)\n                  edge [loop above] node {a} ()\n            (q2) edge [loop above] node {b} ();\n\\end{tikzpicture}",
+          "position": { "x": 330, "y": 295 },
+          "size": { "w": 290, "h": 195 },
+          "svgUrl": "./assets/tikz/tikzd-auto.svg"
+        },
+        {
+          "id": "tikz-auto-label",
+          "type": "text",
+          "content": "**Finite Automaton (DFA)**",
+          "position": { "x": 330, "y": 490 },
+          "size": { "w": 290, "h": 20 },
+          "style": { "fontSize": 12, "color": "#64748b", "textAlign": "center" }
+        },
+        {
+          "id": "tikzd-cd",
+          "type": "tikz",
+          "content": "\\begin{tikzpicture}[node distance=2.5cm, >=latex]\n  \\node (A) {$A$};\n  \\node (B) [right of=A] {$B$};\n  \\node (C) [below of=A] {$C$};\n  \\node (D) [right of=C] {$D$};\n  \\draw[->] (A) -- node[above] {$f$} (B);\n  \\draw[->] (A) -- node[left] {$g$} (C);\n  \\draw[->] (B) -- node[right] {$h$} (D);\n  \\draw[->] (C) -- node[below] {$k$} (D);\n  \\draw[->, dashed] (A) -- node[above left=-2pt] {$\\exists!\\, \\varphi$} (D);\n\\end{tikzpicture}",
+          "position": { "x": 640, "y": 295 },
+          "size": { "w": 290, "h": 195 },
+          "svgUrl": "./assets/tikz/tikzd-cd.svg"
+        },
+        {
+          "id": "tikz-cd-label",
+          "type": "text",
+          "content": "**Commutative Diagram**",
+          "position": { "x": 640, "y": 490 },
+          "size": { "w": 290, "h": 20 },
+          "style": { "fontSize": 12, "color": "#64748b", "textAlign": "center" }
+        }
+      ]
+    },
+    {
+      "id": "video",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "Video embedding: YouTube iframe + native local video.",
+      "elements": [
+        {
+          "id": "video-title",
+          "type": "text",
+          "content": "## Video Embedding",
+          "position": { "x": 60, "y": 30 },
+          "size": { "w": 840, "h": 50 },
+          "style": { "fontSize": 36, "color": "#0f172a" }
+        },
+        {
+          "id": "video-yt",
+          "type": "video",
+          "src": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "position": { "x": 60, "y": 100 },
+          "size": { "w": 420, "h": 236 },
+          "controls": true,
+          "muted": true
+        },
+        {
+          "id": "video-yt-label",
+          "type": "text",
+          "content": "**YouTube** embed (auto iframe)",
+          "position": { "x": 60, "y": 345 },
+          "size": { "w": 420, "h": 25 },
+          "style": { "fontSize": 14, "color": "#94a3b8", "textAlign": "center" }
+        },
+        {
+          "id": "video-local",
+          "type": "video",
+          "src": "./assets/sample-video.mp4",
+          "position": { "x": 500, "y": 100 },
+          "size": { "w": 420, "h": 236 },
+          "controls": true,
+          "muted": true
+        },
+        {
+          "id": "video-local-label",
+          "type": "text",
+          "content": "**Local MP4** (File System Access API)",
+          "position": { "x": 500, "y": 345 },
+          "size": { "w": 420, "h": 25 },
+          "style": { "fontSize": 14, "color": "#94a3b8", "textAlign": "center" }
+        },
+        {
+          "id": "video-code",
           "type": "code",
           "language": "json",
-          "content": "{ \"type\": \"table\", \"columns\": [\"A\", \"B\"],\n  \"rows\": [[\"1\", \"2\"], [\"3\", \"4\"]], \"style\": { \"striped\": true } }",
+          "content": "{ \"type\": \"video\", \"src\": \"https://youtube.com/watch?v=...\",\n  \"controls\": true, \"muted\": true, \"autoplay\": false, \"loop\": false }",
           "position": { "x": 140, "y": 400 },
           "size": { "w": 680, "h": 60 },
           "style": { "fontSize": 13, "borderRadius": 8 }
         },
         {
-          "id": "tbl-hint",
+          "id": "video-note",
           "type": "text",
-          "content": "Add/remove rows and columns in the **Property Panel**. PPTX export is supported.",
+          "content": "Supports YouTube, Vimeo, and native video files (MP4, WebM).",
           "position": { "x": 60, "y": 480 },
           "size": { "w": 840, "h": 25 },
           "style": { "fontSize": 14, "color": "#475569", "textAlign": "center" }
         }
+      ],
+      "animations": [
+        { "target": "video-yt", "trigger": "onClick", "effect": "fadeIn", "duration": 500 },
+        { "target": "video-local", "trigger": "onClick", "effect": "fadeIn", "duration": 500 }
+      ]
+    },
+    {
+      "id": "scene3d",
+      "notes": "Consolidated 3D scene — interactive box/sphere with keyframe animations, plus a mini torus/cone scene.",
+      "transition": { "type": "fade", "duration": 400 },
+      "elements": [
+        {
+          "id": "s3d-title",
+          "type": "text",
+          "content": "## 3D Scenes",
+          "position": { "x": 30, "y": 15 },
+          "size": { "w": 300, "h": 40 },
+          "style": { "fontSize": 28, "color": "#0f172a" }
+        },
+        {
+          "id": "s3d-desc",
+          "type": "text",
+          "content": "Interactive Three.js scenes with orbit controls, lighting, and keyframe animations. Drag to rotate.",
+          "position": { "x": 30, "y": 60 },
+          "size": { "w": 350, "h": 60 },
+          "style": { "fontSize": 14, "color": "#64748b", "lineHeight": 1.5 }
+        },
+        {
+          "id": "s3d-main",
+          "type": "scene3d",
+          "position": { "x": 19, "y": 137 },
+          "size": { "w": 520, "h": 380 },
+          "scene": {
+            "camera": { "position": [4, 3, 4], "target": [0, 0, 0], "fov": 50 },
+            "ambientLight": 0.4,
+            "directionalLight": { "position": [5, 10, 5], "intensity": 0.9 },
+            "objects": [
+              {
+                "id": "cube",
+                "geometry": "box",
+                "position": [0, 0.5, 0],
+                "material": { "color": "#60a5fa", "metalness": 0.3, "roughness": 0.5 }
+              },
+              {
+                "id": "sphere",
+                "geometry": "sphere",
+                "position": [2, 0.5, 0],
+                "scale": [0.8, 0.8, 0.8],
+                "material": { "color": "#fbbf24", "metalness": 0.5, "roughness": 0.3 },
+                "visible": false
+              },
+              {
+                "id": "floor",
+                "geometry": "plane",
+                "position": [0, 0, 0],
+                "rotation": [-1.5708, 0, 0],
+                "scale": [6, 6, 1],
+                "material": { "color": "#e8edf5", "roughness": 0.8 }
+              }
+            ],
+            "orbitControls": true,
+            "helpers": { "grid": true, "axes": true }
+          },
+          "keyframes": [
+            {
+              "duration": 800,
+              "camera": { "position": [0, 5, 6] },
+              "changes": [
+                { "target": "cube", "rotation": [0, 0.785, 0] }
+              ]
+            },
+            {
+              "duration": 600,
+              "changes": [
+                { "target": "sphere", "visible": true },
+                { "target": "cube", "material": { "color": "#a78bfa" } }
+              ]
+            },
+            {
+              "duration": 700,
+              "camera": { "position": [5, 2, 5] },
+              "changes": [
+                { "target": "sphere", "position": [2, 1.5, 0], "material": { "color": "#f87171" } },
+                { "target": "cube", "scale": [1.3, 1.3, 1.3] }
+              ]
+            }
+          ],
+          "style": { "borderRadius": 12 }
+        },
+        {
+          "id": "s3d-features",
+          "type": "text",
+          "content": "**Features**\n- 8 geometry types (box, sphere, cylinder, cone, torus, plane, line, surface)\n- Parametric surfaces: `y = f(x, z)` with color gradients\n- Standard material (color, metalness, roughness, wireframe)\n- Orbit controls for mouse interaction\n- Keyframe animations triggered by onClick",
+          "position": { "x": 580, "y": 130 },
+          "size": { "w": 350, "h": 180 },
+          "style": { "fontSize": 14, "color": "#475569", "lineHeight": 1.6 }
+        },
+        {
+          "id": "s3d-surface",
+          "type": "scene3d",
+          "position": { "x": 580, "y": 330 },
+          "size": { "w": 350, "h": 180 },
+          "scene": {
+            "background": "#0f172a",
+            "camera": { "position": [5, 4, 5], "target": [0, 0, 0], "fov": 45 },
+            "ambientLight": 0.4,
+            "directionalLight": { "position": [5, 8, 3], "intensity": 0.8 },
+            "objects": [
+              {
+                "id": "wave",
+                "geometry": "surface",
+                "surface": {
+                  "fn": "sin(sqrt(x*x + z*z) * 2) * 0.8",
+                  "xRange": [-3, 3],
+                  "zRange": [-3, 3],
+                  "resolution": 64,
+                  "colorRange": ["#3b82f6", "#f472b6"]
+                },
+                "material": { "opacity": 0.9, "metalness": 0.3, "roughness": 0.4 }
+              }
+            ],
+            "orbitControls": true
+          },
+          "style": { "borderRadius": 8 }
+        }
+      ],
+      "animations": [
+        { "target": "s3d-title", "trigger": "onEnter", "effect": "fadeIn", "duration": 400 },
+        { "target": "s3d-desc", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 200 },
+        { "target": "s3d-main", "trigger": "onEnter", "effect": "scaleIn", "duration": 500, "delay": 300 },
+        { "target": "s3d-features", "trigger": "onEnter", "effect": "slideInRight", "duration": 400, "delay": 400 },
+        { "target": "s3d-surface", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 500 },
+        { "target": "s3d-main", "trigger": "onClick", "effect": "scene3dStep", "order": 1 },
+        { "target": "s3d-main", "trigger": "onClick", "effect": "scene3dStep", "order": 2 },
+        { "target": "s3d-main", "trigger": "onClick", "effect": "scene3dStep", "order": 3 }
+      ]
+    },
+    {
+      "id": "anim-onenter",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "onEnter animation effects: fadeIn, slideInRight, scaleIn, slideInUp, typewriter, fadeOut, scaleOut.",
+      "elements": [
+        {
+          "id": "ae-title",
+          "type": "text",
+          "content": "## Animations: onEnter",
+          "position": { "x": 60, "y": 30 },
+          "size": { "w": 840, "h": 50 },
+          "style": { "fontSize": 36, "color": "#0f172a" }
+        },
+        {
+          "id": "ae-desc",
+          "type": "text",
+          "content": "All effects auto-play when the slide loads.",
+          "position": { "x": 60, "y": 80 },
+          "size": { "w": 840, "h": 25 },
+          "style": { "fontSize": 16, "color": "#64748b" }
+        },
+        {
+          "id": "ae-fade-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 130 },
+          "size": { "w": 200, "h": 100 },
+          "style": { "fill": "#3b82f6", "borderRadius": 12 }
+        },
+        {
+          "id": "ae-fade-label",
+          "type": "text",
+          "content": "**fadeIn**",
+          "position": { "x": 60, "y": 155 },
+          "size": { "w": 200, "h": 40 },
+          "style": { "fontSize": 18, "color": "#fff", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "ae-slide-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 280, "y": 130 },
+          "size": { "w": 200, "h": 100 },
+          "style": { "fill": "#8b5cf6", "borderRadius": 12 }
+        },
+        {
+          "id": "ae-slide-label",
+          "type": "text",
+          "content": "**slideInRight**",
+          "position": { "x": 280, "y": 155 },
+          "size": { "w": 200, "h": 40 },
+          "style": { "fontSize": 18, "color": "#fff", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "ae-scale-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 500, "y": 130 },
+          "size": { "w": 200, "h": 100 },
+          "style": { "fill": "#ec4899", "borderRadius": 12 }
+        },
+        {
+          "id": "ae-scale-label",
+          "type": "text",
+          "content": "**scaleIn**",
+          "position": { "x": 500, "y": 155 },
+          "size": { "w": 200, "h": 40 },
+          "style": { "fontSize": 18, "color": "#fff", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "ae-slidein-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 720, "y": 130 },
+          "size": { "w": 200, "h": 100 },
+          "style": { "fill": "#f59e0b", "borderRadius": 12 }
+        },
+        {
+          "id": "ae-slidein-label",
+          "type": "text",
+          "content": "**slideInUp**",
+          "position": { "x": 720, "y": 155 },
+          "size": { "w": 200, "h": 40 },
+          "style": { "fontSize": 18, "color": "#fff", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "ae-typewriter",
+          "type": "text",
+          "content": "This text uses the **typewriter** effect with a 1-second delay.",
+          "position": { "x": 60, "y": 270 },
+          "size": { "w": 840, "h": 35 },
+          "style": { "fontSize": 22, "color": "#92400e" }
+        },
+        {
+          "id": "ae-fadeout-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 340 },
+          "size": { "w": 200, "h": 80 },
+          "style": { "fill": "#ef4444", "borderRadius": 12 }
+        },
+        {
+          "id": "ae-fadeout-label",
+          "type": "text",
+          "content": "**fadeOut** (3s delay)",
+          "position": { "x": 60, "y": 360 },
+          "size": { "w": 200, "h": 30 },
+          "style": { "fontSize": 14, "color": "#fff", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "ae-scaleout-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 280, "y": 340 },
+          "size": { "w": 200, "h": 80 },
+          "style": { "fill": "#06b6d4", "borderRadius": 12 }
+        },
+        {
+          "id": "ae-scaleout-label",
+          "type": "text",
+          "content": "**scaleOut** (3s delay)",
+          "position": { "x": 280, "y": 360 },
+          "size": { "w": 200, "h": 30 },
+          "style": { "fontSize": 14, "color": "#fff", "textAlign": "center", "verticalAlign": "middle" }
+        },
+        {
+          "id": "ae-hint",
+          "type": "text",
+          "content": "Enter **presentation mode** (F5) to see animations. In editor, elements are static.",
+          "position": { "x": 60, "y": 480 },
+          "size": { "w": 840, "h": 25 },
+          "style": { "fontSize": 14, "color": "#475569", "textAlign": "center" }
+        }
+      ],
+      "animations": [
+        { "target": "ae-fade-box", "trigger": "onEnter", "effect": "fadeIn", "duration": 600 },
+        { "target": "ae-fade-label", "trigger": "onEnter", "effect": "fadeIn", "duration": 600 },
+        { "target": "ae-slide-box", "trigger": "onEnter", "effect": "slideInRight", "duration": 500, "delay": 200 },
+        { "target": "ae-slide-label", "trigger": "onEnter", "effect": "slideInRight", "duration": 500, "delay": 200 },
+        { "target": "ae-scale-box", "trigger": "onEnter", "effect": "scaleIn", "duration": 500, "delay": 400 },
+        { "target": "ae-scale-label", "trigger": "onEnter", "effect": "scaleIn", "duration": 500, "delay": 400 },
+        { "target": "ae-slidein-box", "trigger": "onEnter", "effect": "slideInUp", "duration": 500, "delay": 600 },
+        { "target": "ae-slidein-label", "trigger": "onEnter", "effect": "slideInUp", "duration": 500, "delay": 600 },
+        { "target": "ae-typewriter", "trigger": "onEnter", "effect": "typewriter", "duration": 1500, "delay": 1000 },
+        { "target": "ae-fadeout-box", "trigger": "onEnter", "effect": "fadeOut", "duration": 800, "delay": 3000 },
+        { "target": "ae-fadeout-label", "trigger": "onEnter", "effect": "fadeOut", "duration": 800, "delay": 3000 },
+        { "target": "ae-scaleout-box", "trigger": "onEnter", "effect": "scaleOut", "duration": 800, "delay": 3000 },
+        { "target": "ae-scaleout-label", "trigger": "onEnter", "effect": "scaleOut", "duration": 800, "delay": 3000 }
+      ]
+    },
+    {
+      "id": "anim-onclick",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "onClick steps + withPrevious/afterPrevious/onKey triggers. Click to advance, press 'q' for the last step.",
+      "elements": [
+        {
+          "id": "ac-title",
+          "type": "text",
+          "content": "## Animations: Interactive Triggers",
+          "position": { "x": 60, "y": 15 },
+          "size": { "w": 600, "h": 35 },
+          "style": { "fontSize": 32, "color": "#0f172a" }
+        },
+        {
+          "id": "ac-desc",
+          "type": "text",
+          "content": "**onClick**, **withPrevious**, **afterPrevious**, and **onKey** triggers.",
+          "position": { "x": 60, "y": 52 },
+          "size": { "w": 840, "h": 22 },
+          "style": { "fontSize": 15, "color": "#64748b" }
+        },
+        {
+          "id": "ac-click-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 85 },
+          "size": { "w": 250, "h": 70 },
+          "style": { "fill": "#3b82f6", "borderRadius": 12 }
+        },
+        {
+          "id": "ac-click-text",
+          "type": "text",
+          "content": "**onClick**\nfadeIn (trigger)",
+          "position": { "x": 75, "y": 96 },
+          "size": { "w": 220, "h": 45 },
+          "style": { "fontSize": 14, "color": "#fff", "textAlign": "center" }
+        },
+        {
+          "id": "ac-with-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 330, "y": 85 },
+          "size": { "w": 250, "h": 70 },
+          "style": { "fill": "#10b981", "borderRadius": 12 }
+        },
+        {
+          "id": "ac-with-text",
+          "type": "text",
+          "content": "**withPrevious**\nslideInRight (simultaneous)",
+          "position": { "x": 345, "y": 96 },
+          "size": { "w": 220, "h": 45 },
+          "style": { "fontSize": 14, "color": "#fff", "textAlign": "center" }
+        },
+        {
+          "id": "ac-after-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 600, "y": 85 },
+          "size": { "w": 300, "h": 70 },
+          "style": { "fill": "#f59e0b", "borderRadius": 12 }
+        },
+        {
+          "id": "ac-after-text",
+          "type": "text",
+          "content": "**afterPrevious**\nscaleIn (after green finishes)",
+          "position": { "x": 615, "y": 96 },
+          "size": { "w": 270, "h": 45 },
+          "style": { "fontSize": 14, "color": "#fff", "textAlign": "center" }
+        },
+        {
+          "id": "ac-step1-label",
+          "type": "text",
+          "content": "**Step 1** \u2014 Click again:",
+          "position": { "x": 60, "y": 170 },
+          "size": { "w": 400, "h": 22 },
+          "style": { "fontSize": 14, "color": "#94a3b8" }
+        },
+        {
+          "id": "ac-step1-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 198 },
+          "size": { "w": 840, "h": 55 },
+          "style": { "fill": "#8b5cf6", "borderRadius": 12 }
+        },
+        {
+          "id": "ac-step1-text",
+          "type": "text",
+          "content": "Second **onClick** step \u2014 slideInUp",
+          "position": { "x": 80, "y": 210 },
+          "size": { "w": 800, "h": 28 },
+          "style": { "fontSize": 17, "color": "#fff" }
+        },
+        {
+          "id": "ac-step2-label",
+          "type": "text",
+          "content": "**Step 2** \u2014 Press the **q** key:",
+          "position": { "x": 60, "y": 268 },
+          "size": { "w": 400, "h": 22 },
+          "style": { "fontSize": 14, "color": "#94a3b8" }
+        },
+        {
+          "id": "ac-key-box",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 296 },
+          "size": { "w": 840, "h": 55 },
+          "style": { "fill": "#ec4899", "borderRadius": 12 }
+        },
+        {
+          "id": "ac-key-text",
+          "type": "text",
+          "content": "**onKey \"q\"** \u2014 this appears when you press Q (or Space/Arrow also works)",
+          "position": { "x": 80, "y": 308 },
+          "size": { "w": 800, "h": 28 },
+          "style": { "fontSize": 17, "color": "#fff" }
+        },
+        {
+          "id": "ac-step3-label",
+          "type": "text",
+          "content": "**Step 3** \u2014 Click for ordered group:",
+          "position": { "x": 60, "y": 368 },
+          "size": { "w": 400, "h": 22 },
+          "style": { "fontSize": 14, "color": "#94a3b8" }
+        },
+        {
+          "id": "ac-ord-a",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 396 },
+          "size": { "w": 400, "h": 55 },
+          "style": { "fill": "#3b82f6", "borderRadius": 12 }
+        },
+        {
+          "id": "ac-ord-a-text",
+          "type": "text",
+          "content": "**order: 3 \u2014 A** (plays together with B)",
+          "position": { "x": 80, "y": 408 },
+          "size": { "w": 360, "h": 28 },
+          "style": { "fontSize": 15, "color": "#fff" }
+        },
+        {
+          "id": "ac-ord-b",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 480, "y": 396 },
+          "size": { "w": 420, "h": 55 },
+          "style": { "fill": "#3b82f6", "borderRadius": 12 }
+        },
+        {
+          "id": "ac-ord-b-text",
+          "type": "text",
+          "content": "**order: 3 \u2014 B** (same order = simultaneous)",
+          "position": { "x": 500, "y": 408 },
+          "size": { "w": 380, "h": 28 },
+          "style": { "fontSize": 15, "color": "#fff" }
+        },
+        {
+          "id": "ac-timeline",
+          "type": "text",
+          "content": "Timeline: **click** \u2192 blue + green + yellow \u2192 **click** \u2192 purple \u2192 **press q** \u2192 pink \u2192 **click** \u2192 A+B \u2192 next slide",
+          "position": { "x": 60, "y": 475 },
+          "size": { "w": 840, "h": 30 },
+          "style": { "fontSize": 13, "color": "#475569", "textAlign": "center" }
+        }
+      ],
+      "animations": [
+        { "target": "ac-click-box", "trigger": "onClick", "effect": "fadeIn", "duration": 400 },
+        { "target": "ac-click-text", "trigger": "onClick", "effect": "fadeIn", "duration": 400 },
+        { "target": "ac-with-box", "trigger": "withPrevious", "effect": "slideInRight", "duration": 500 },
+        { "target": "ac-with-text", "trigger": "withPrevious", "effect": "slideInRight", "duration": 500 },
+        { "target": "ac-after-box", "trigger": "afterPrevious", "effect": "scaleIn", "duration": 500 },
+        { "target": "ac-after-text", "trigger": "afterPrevious", "effect": "scaleIn", "duration": 500 },
+        { "target": "ac-step1-box", "trigger": "onClick", "effect": "slideInUp", "duration": 500 },
+        { "target": "ac-step1-text", "trigger": "onClick", "effect": "slideInUp", "duration": 500 },
+        { "target": "ac-key-box", "trigger": "onKey", "effect": "fadeIn", "duration": 400, "key": "q" },
+        { "target": "ac-key-text", "trigger": "onKey", "effect": "fadeIn", "duration": 400, "key": "q" },
+        { "target": "ac-ord-a", "trigger": "onClick", "effect": "fadeIn", "duration": 400, "order": 3 },
+        { "target": "ac-ord-a-text", "trigger": "onClick", "effect": "fadeIn", "duration": 400, "order": 3 },
+        { "target": "ac-ord-b", "trigger": "onClick", "effect": "fadeIn", "duration": 400, "order": 3 },
+        { "target": "ac-ord-b-text", "trigger": "onClick", "effect": "fadeIn", "duration": 400, "order": 3 }
       ]
     },
     {
       "id": "end",
-      "transition": {
-        "type": "fade",
-        "duration": 400
-      },
+      "transition": { "type": "fade", "duration": 400 },
       "elements": [
         {
           "id": "end-text",
           "type": "text",
           "content": "# Feature Showcase Complete",
-          "position": {
-            "x": 130,
-            "y": 180
-          },
-          "size": {
-            "w": 700,
-            "h": 80
-          },
+          "position": { "x": 130, "y": 180 },
+          "size": { "w": 700, "h": 80 },
           "style": {
             "fontSize": 42,
             "color": "#0f172a",
@@ -2684,59 +1105,24 @@
         {
           "id": "end-sub",
           "type": "text",
-          "content": "All element types, animations, transitions, and styling options covered.",
-          "position": {
-            "x": 180,
-            "y": 280
-          },
-          "size": {
-            "w": 600,
-            "h": 30
-          },
-          "style": {
-            "fontSize": 18,
-            "color": "#64748b",
-            "textAlign": "center"
-          }
+          "content": "All element types, animations, and styling options covered.",
+          "position": { "x": 180, "y": 280 },
+          "size": { "w": 600, "h": 30 },
+          "style": { "fontSize": 18, "color": "#64748b", "textAlign": "center" }
         },
         {
           "id": "end-divider",
           "type": "shape",
           "shape": "rectangle",
-          "position": {
-            "x": 400,
-            "y": 340
-          },
-          "size": {
-            "w": 160,
-            "h": 3
-          },
-          "style": {
-            "fill": "#3b82f6"
-          }
+          "position": { "x": 400, "y": 340 },
+          "size": { "w": 160, "h": 3 },
+          "style": { "fill": "#3b82f6" }
         }
       ],
       "animations": [
-        {
-          "target": "end-text",
-          "trigger": "onEnter",
-          "effect": "fadeIn",
-          "duration": 600
-        },
-        {
-          "target": "end-sub",
-          "trigger": "onEnter",
-          "effect": "slideInUp",
-          "duration": 500,
-          "delay": 300
-        },
-        {
-          "target": "end-divider",
-          "trigger": "onEnter",
-          "effect": "scaleIn",
-          "duration": 400,
-          "delay": 600
-        }
+        { "target": "end-text", "trigger": "onEnter", "effect": "fadeIn", "duration": 600 },
+        { "target": "end-sub", "trigger": "onEnter", "effect": "slideInUp", "duration": 500, "delay": 300 },
+        { "target": "end-divider", "trigger": "onEnter", "effect": "scaleIn", "duration": 400, "delay": 600 }
       ]
     }
   ]

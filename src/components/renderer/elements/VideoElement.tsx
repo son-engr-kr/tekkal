@@ -69,15 +69,26 @@ export function VideoElementRenderer({ element, thumbnail, videoStep }: Props) {
 
   const hasPlayVideoEffect = videoStep !== undefined;
 
+  const handleClick = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  };
+
   return (
     <video
       ref={videoRef}
       src={embedUrl}
-      autoPlay={hasPlayVideoEffect ? false : element.autoplay}
-      loop={element.loop}
-      muted={element.muted}
+      autoPlay={hasPlayVideoEffect ? false : (element.autoplay ?? true)}
+      loop={element.loop ?? true}
+      muted={element.muted ?? true}
       controls={element.controls}
-      style={commonStyle}
+      style={{ ...commonStyle, cursor: "pointer" }}
+      onClick={handleClick}
     />
   );
 }
