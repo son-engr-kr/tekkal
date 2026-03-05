@@ -973,6 +973,23 @@ function drawScene3DPlaceholder(doc: jsPDF, el: SlideElement): void {
   doc.text("[3D Scene]", x + w / 2, y + h / 2, { align: "center" });
 }
 
+function drawMermaidPlaceholder(doc: jsPDF, el: SlideElement): void {
+  const { x, y } = el.position;
+  const { w, h } = el.size;
+
+  setFillColor(doc, "#1e1e2e");
+  doc.rect(x, y, w, h, "F");
+
+  setDrawColor(doc, "#445566");
+  doc.setLineWidth(1);
+  doc.rect(x, y, w, h, "S");
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(14);
+  setTextColor(doc, "#88aacc");
+  doc.text("[Mermaid]", x + w / 2, y + h / 2, { align: "center" });
+}
+
 // ========================================================================
 // Slide rendering
 // ========================================================================
@@ -1033,6 +1050,9 @@ async function renderSlide(
         break;
       case "tikz":
         await drawTikZ(doc, el, deck, adapter);
+        break;
+      case "mermaid":
+        drawMermaidPlaceholder(doc, el);
         break;
       case "video":
         drawVideo(doc, el);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { AnimatePresence, motion, useIsPresent } from "framer-motion";
 import { useDeckStore } from "@/stores/deckStore";
 import { SlideRenderer } from "./SlideRenderer";
+import { MorphTransition } from "./MorphTransition";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import type { Slide, SlideTransition, DeckTheme } from "@/types/deck";
 import { computeSteps } from "@/utils/animationSteps";
@@ -22,6 +23,11 @@ const transitionVariants = {
     initial: {},
     animate: {},
     exit: {},
+  },
+  morph: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
   },
 };
 
@@ -70,30 +76,42 @@ export function SlideViewer() {
   assert(slide !== undefined, `Slide at index ${currentSlideIndex} not found`);
 
   const transition: SlideTransition = slide.transition ?? { type: "fade", duration: 300 };
-  const variant = transitionVariants[transition.type] ?? transitionVariants.fade;
-  const duration = (transition.duration ?? 300) / 1000;
+  const duration = transition.duration ?? 300;
+  const isMorph = transition.type === "morph";
 
   return (
     <div ref={containerRef} className="h-full w-full flex items-center justify-center bg-zinc-950 overflow-hidden">
       <div className="relative">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.id}
-            initial={variant.initial}
-            animate={variant.animate}
-            exit={variant.exit}
-            transition={{ duration }}
-          >
-            <SlideWithSteps
-              slide={slide}
-              scale={scale}
-              goingBack={goingBackRef.current}
-              onNextSlide={nextSlide}
-              onPrevSlide={prevSlide}
-              theme={deck.theme}
-            />
-          </motion.div>
-        </AnimatePresence>
+        {isMorph ? (
+          <MorphSlideWithSteps
+            slide={slide}
+            scale={scale}
+            duration={duration}
+            goingBack={goingBackRef.current}
+            onNextSlide={nextSlide}
+            onPrevSlide={prevSlide}
+            theme={deck.theme}
+          />
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slide.id}
+              initial={transitionVariants[transition.type]?.initial ?? transitionVariants.fade.initial}
+              animate={transitionVariants[transition.type]?.animate ?? transitionVariants.fade.animate}
+              exit={transitionVariants[transition.type]?.exit ?? transitionVariants.fade.exit}
+              transition={{ duration: duration / 1000 }}
+            >
+              <SlideWithSteps
+                slide={slide}
+                scale={scale}
+                goingBack={goingBackRef.current}
+                onNextSlide={nextSlide}
+                onPrevSlide={prevSlide}
+                theme={deck.theme}
+              />
+            </motion.div>
+          </AnimatePresence>
+        )}
       </div>
 
       <div className="absolute bottom-4 right-4 text-zinc-500 text-sm font-mono">
@@ -182,6 +200,87 @@ function SlideWithSteps({
       steps={steps}
       onAdvance={advance}
       theme={theme}
+    />
+  );
+}
+
+function MorphSlideWithSteps({
+  slide,
+  scale,
+  duration,
+  goingBack,
+  onNextSlide,
+  onPrevSlide,
+  theme,
+}: {
+  slide: Slide;
+  scale: number;
+  duration: number;
+  goingBack: boolean;
+  onNextSlide: () => void;
+  onPrevSlide: () => void;
+  theme?: DeckTheme;
+}) {
+  const steps = useMemo(
+    () => computeSteps(slide.animations ?? []),
+    [slide.animations],
+  );
+  const [activeStep, setActiveStep] = useState(
+    () => (goingBack ? steps.length : 0),
+  );
+
+  // Reset activeStep on slide change
+  const prevSlideIdRef = useRef(slide.id);
+  if (slide.id !== prevSlideIdRef.current) {
+    setActiveStep(goingBack ? steps.length : 0);
+    prevSlideIdRef.current = slide.id;
+  }
+
+  const activeStepRef = useRef(activeStep);
+  activeStepRef.current = activeStep;
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
+
+  const advance = useCallback(() => {
+    if (activeStepRef.current < stepsRef.current.length) {
+      setActiveStep((prev) => prev + 1);
+    } else {
+      onNextSlide();
+    }
+  }, [onNextSlide]);
+
+  const advanceRef = useRef(advance);
+  advanceRef.current = advance;
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        e.preventDefault();
+        advanceRef.current();
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        onPrevSlide();
+      } else {
+        const currentStep = stepsRef.current[activeStepRef.current];
+        if (currentStep?.trigger === "onKey" && currentStep.key === e.key) {
+          e.preventDefault();
+          advanceRef.current();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onPrevSlide]);
+
+  return (
+    <MorphTransition
+      slide={slide}
+      scale={scale}
+      duration={duration}
+      theme={theme}
+      activeStep={activeStep}
+      steps={steps}
+      onAdvance={advance}
     />
   );
 }

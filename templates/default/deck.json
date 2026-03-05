@@ -1086,6 +1086,345 @@
       ]
     },
     {
+      "id": "mermaid",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "Mermaid diagrams render entirely client-side. No server needed.",
+      "elements": [
+        {
+          "id": "mmd-title",
+          "type": "text",
+          "content": "## Mermaid Diagrams",
+          "position": { "x": 60, "y": 30 },
+          "size": { "w": 400, "h": 40 },
+          "style": { "fontSize": 28, "color": "#0f172a" }
+        },
+        {
+          "id": "mmd-desc",
+          "type": "text",
+          "content": "Client-side rendering via **mermaid.js** \u2014 flowcharts, sequence diagrams, class diagrams, and more. No server required.",
+          "position": { "x": 60, "y": 75 },
+          "size": { "w": 500, "h": 40 },
+          "style": { "fontSize": 14, "color": "#64748b" }
+        },
+        {
+          "id": "mmd-flowchart",
+          "type": "mermaid",
+          "content": "graph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[Process]\n  B -->|No| D[Cancel]\n  C --> E[End]\n  D --> E",
+          "position": { "x": 40, "y": 125 },
+          "size": { "w": 280, "h": 260 },
+          "style": { "backgroundColor": "#f8fafc", "borderRadius": 8 }
+        },
+        {
+          "id": "mmd-flow-label",
+          "type": "text",
+          "content": "**Flowchart**",
+          "position": { "x": 40, "y": 390 },
+          "size": { "w": 280, "h": 24 },
+          "style": { "fontSize": 13, "color": "#475569", "textAlign": "center" }
+        },
+        {
+          "id": "mmd-sequence",
+          "type": "mermaid",
+          "content": "sequenceDiagram\n  participant C as Client\n  participant S as Server\n  participant D as Database\n  C->>S: HTTP Request\n  S->>D: Query\n  D-->>S: Results\n  S-->>C: JSON Response",
+          "position": { "x": 340, "y": 125 },
+          "size": { "w": 280, "h": 260 },
+          "style": { "backgroundColor": "#f8fafc", "borderRadius": 8 }
+        },
+        {
+          "id": "mmd-seq-label",
+          "type": "text",
+          "content": "**Sequence Diagram**",
+          "position": { "x": 340, "y": 390 },
+          "size": { "w": 280, "h": 24 },
+          "style": { "fontSize": 13, "color": "#475569", "textAlign": "center" }
+        },
+        {
+          "id": "mmd-pie",
+          "type": "mermaid",
+          "content": "pie title Tech Stack\n  \"React\" : 40\n  \"TypeScript\" : 30\n  \"Tailwind\" : 20\n  \"Vite\" : 10",
+          "position": { "x": 640, "y": 125 },
+          "size": { "w": 280, "h": 260 },
+          "style": { "backgroundColor": "#f8fafc", "borderRadius": 8 }
+        },
+        {
+          "id": "mmd-pie-label",
+          "type": "text",
+          "content": "**Pie Chart**",
+          "position": { "x": 640, "y": 390 },
+          "size": { "w": 280, "h": 24 },
+          "style": { "fontSize": 13, "color": "#475569", "textAlign": "center" }
+        },
+        {
+          "id": "mmd-note",
+          "type": "text",
+          "content": "Supports all Mermaid syntax: flowcharts, sequence, class, state, ER, Gantt, pie, git graphs, etc.\nRendered SVG is cached \u2014 re-renders only when content changes.",
+          "position": { "x": 60, "y": 430 },
+          "size": { "w": 840, "h": 50 },
+          "style": { "fontSize": 13, "color": "#94a3b8", "textAlign": "center" }
+        }
+      ],
+      "animations": [
+        { "target": "mmd-title", "trigger": "onEnter", "effect": "fadeIn", "duration": 400 },
+        { "target": "mmd-desc", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 200 },
+        { "target": "mmd-flowchart", "trigger": "onEnter", "effect": "scaleIn", "duration": 500, "delay": 300 },
+        { "target": "mmd-flow-label", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 600 },
+        { "target": "mmd-sequence", "trigger": "onEnter", "effect": "scaleIn", "duration": 500, "delay": 500 },
+        { "target": "mmd-seq-label", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
+        { "target": "mmd-pie", "trigger": "onEnter", "effect": "scaleIn", "duration": 500, "delay": 700 },
+        { "target": "mmd-pie-label", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 1000 },
+        { "target": "mmd-note", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 1000 }
+      ]
+    },
+    {
+      "id": "morph-a",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "This slide sets up elements for the morph transition to the next slide.\nThe next slide has transition type 'morph' \u2014 shared elements animate position/size.",
+      "elements": [
+        {
+          "id": "morph-title",
+          "type": "text",
+          "content": "## Morph Transition",
+          "position": { "x": 60, "y": 40 },
+          "size": { "w": 400, "h": 40 },
+          "style": { "fontSize": 28, "color": "#0f172a" }
+        },
+        {
+          "id": "morph-desc",
+          "type": "text",
+          "content": "Elements with the **same ID** across slides animate their position and size automatically.",
+          "position": { "x": 60, "y": 90 },
+          "size": { "w": 500, "h": 35 },
+          "style": { "fontSize": 14, "color": "#64748b" }
+        },
+        {
+          "id": "morph-card",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 160 },
+          "size": { "w": 200, "h": 120 },
+          "style": { "fill": "#3b82f6", "borderRadius": 12 }
+        },
+        {
+          "id": "morph-card-text",
+          "type": "text",
+          "content": "**Card A**",
+          "position": { "x": 60, "y": 200 },
+          "size": { "w": 200, "h": 40 },
+          "style": { "fontSize": 20, "color": "#ffffff", "textAlign": "center" }
+        },
+        {
+          "id": "morph-circle",
+          "type": "shape",
+          "shape": "ellipse",
+          "position": { "x": 100, "y": 340 },
+          "size": { "w": 120, "h": 120 },
+          "style": { "fill": "#8b5cf6" }
+        },
+        {
+          "id": "morph-circle-text",
+          "type": "text",
+          "content": "**B**",
+          "position": { "x": 100, "y": 375 },
+          "size": { "w": 120, "h": 50 },
+          "style": { "fontSize": 24, "color": "#ffffff", "textAlign": "center" }
+        },
+        {
+          "id": "morph-arrow-hint",
+          "type": "text",
+          "content": "\u2192 **Press right arrow** to see morph transition",
+          "position": { "x": 340, "y": 250 },
+          "size": { "w": 400, "h": 30 },
+          "style": { "fontSize": 16, "color": "#3b82f6" }
+        },
+        {
+          "id": "morph-only-old",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 700, "y": 400 },
+          "size": { "w": 180, "h": 60 },
+          "style": { "fill": "#f97316", "borderRadius": 8 }
+        },
+        {
+          "id": "morph-only-old-text",
+          "type": "text",
+          "content": "Fades out",
+          "position": { "x": 700, "y": 415 },
+          "size": { "w": 180, "h": 30 },
+          "style": { "fontSize": 14, "color": "#ffffff", "textAlign": "center" }
+        }
+      ]
+    },
+    {
+      "id": "morph-b",
+      "transition": { "type": "morph", "duration": 600 },
+      "notes": "This slide uses morph transition.\n- morph-card moved to right side and grew larger\n- morph-circle moved to center\n- morph-only-old is gone (faded out)\n- morph-only-new appeared (faded in)",
+      "elements": [
+        {
+          "id": "morph-title",
+          "type": "text",
+          "content": "## After Morph",
+          "position": { "x": 60, "y": 40 },
+          "size": { "w": 400, "h": 40 },
+          "style": { "fontSize": 28, "color": "#0f172a" }
+        },
+        {
+          "id": "morph-desc",
+          "type": "text",
+          "content": "Same elements, **new positions**. Unique elements fade in/out.",
+          "position": { "x": 60, "y": 90 },
+          "size": { "w": 500, "h": 35 },
+          "style": { "fontSize": 14, "color": "#64748b" }
+        },
+        {
+          "id": "morph-card",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 500, "y": 140 },
+          "size": { "w": 400, "h": 200 },
+          "style": { "fill": "#3b82f6", "borderRadius": 16 }
+        },
+        {
+          "id": "morph-card-text",
+          "type": "text",
+          "content": "**Card A** (moved & resized)",
+          "position": { "x": 540, "y": 220 },
+          "size": { "w": 320, "h": 40 },
+          "style": { "fontSize": 22, "color": "#ffffff", "textAlign": "center" }
+        },
+        {
+          "id": "morph-circle",
+          "type": "shape",
+          "shape": "ellipse",
+          "position": { "x": 200, "y": 200 },
+          "size": { "w": 180, "h": 180 },
+          "style": { "fill": "#8b5cf6" }
+        },
+        {
+          "id": "morph-circle-text",
+          "type": "text",
+          "content": "**B**\nmoved",
+          "position": { "x": 200, "y": 260 },
+          "size": { "w": 180, "h": 60 },
+          "style": { "fontSize": 22, "color": "#ffffff", "textAlign": "center" }
+        },
+        {
+          "id": "morph-only-new",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 60, "y": 430 },
+          "size": { "w": 200, "h": 60 },
+          "style": { "fill": "#10b981", "borderRadius": 8 }
+        },
+        {
+          "id": "morph-only-new-text",
+          "type": "text",
+          "content": "Faded in (new)",
+          "position": { "x": 60, "y": 445 },
+          "size": { "w": 200, "h": 30 },
+          "style": { "fontSize": 14, "color": "#ffffff", "textAlign": "center" }
+        }
+      ]
+    },
+    {
+      "id": "diff-info",
+      "transition": { "type": "fade", "duration": 300 },
+      "notes": "Diff is an editor-only feature, not visible in presentation mode.",
+      "elements": [
+        {
+          "id": "diff-title",
+          "type": "text",
+          "content": "## Visual Slide Diff",
+          "position": { "x": 60, "y": 40 },
+          "size": { "w": 400, "h": 40 },
+          "style": { "fontSize": 28, "color": "#0f172a" }
+        },
+        {
+          "id": "diff-desc",
+          "type": "text",
+          "content": "Compare current slide state against undo history \u2014 an **editor-only** feature.",
+          "position": { "x": 60, "y": 90 },
+          "size": { "w": 600, "h": 35 },
+          "style": { "fontSize": 14, "color": "#64748b" }
+        },
+        {
+          "id": "diff-how",
+          "type": "text",
+          "content": "### How to use\n\n- Press `Ctrl+Shift+D` or click the **Diff** button in the toolbar\n- Use the **timeline slider** to pick a past state\n- **Side-by-side** comparison with color overlays:\n  - Green = added element\n  - Red = removed element\n  - Yellow = modified element\n- Bottom panel shows **field-level** changes",
+          "position": { "x": 60, "y": 145 },
+          "size": { "w": 500, "h": 250 },
+          "style": { "fontSize": 16, "color": "#334155", "lineHeight": 1.8 }
+        },
+        {
+          "id": "diff-box-added",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 620, "y": 160 },
+          "size": { "w": 120, "h": 70 },
+          "style": { "fill": "rgba(34, 197, 94, 0.15)", "stroke": "#22c55e", "strokeWidth": 2, "borderRadius": 8 }
+        },
+        {
+          "id": "diff-label-added",
+          "type": "text",
+          "content": "added",
+          "position": { "x": 620, "y": 182 },
+          "size": { "w": 120, "h": 24 },
+          "style": { "fontSize": 14, "color": "#22c55e", "textAlign": "center" }
+        },
+        {
+          "id": "diff-box-removed",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 770, "y": 160 },
+          "size": { "w": 120, "h": 70 },
+          "style": { "fill": "rgba(239, 68, 68, 0.15)", "stroke": "#ef4444", "strokeWidth": 2, "borderRadius": 8 }
+        },
+        {
+          "id": "diff-label-removed",
+          "type": "text",
+          "content": "removed",
+          "position": { "x": 770, "y": 182 },
+          "size": { "w": 120, "h": 24 },
+          "style": { "fontSize": 14, "color": "#ef4444", "textAlign": "center" }
+        },
+        {
+          "id": "diff-box-modified",
+          "type": "shape",
+          "shape": "rectangle",
+          "position": { "x": 690, "y": 260 },
+          "size": { "w": 120, "h": 70 },
+          "style": { "fill": "rgba(234, 179, 8, 0.15)", "stroke": "#eab308", "strokeWidth": 2, "borderRadius": 8 }
+        },
+        {
+          "id": "diff-label-modified",
+          "type": "text",
+          "content": "modified",
+          "position": { "x": 690, "y": 282 },
+          "size": { "w": 120, "h": 24 },
+          "style": { "fontSize": 14, "color": "#eab308", "textAlign": "center" }
+        },
+        {
+          "id": "diff-note",
+          "type": "text",
+          "content": "Powered by Zundo temporal store \u2014 tracks up to 50 undo checkpoints.",
+          "position": { "x": 60, "y": 460 },
+          "size": { "w": 840, "h": 30 },
+          "style": { "fontSize": 13, "color": "#94a3b8", "textAlign": "center" }
+        }
+      ],
+      "animations": [
+        { "target": "diff-title", "trigger": "onEnter", "effect": "fadeIn", "duration": 400 },
+        { "target": "diff-desc", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 200 },
+        { "target": "diff-how", "trigger": "onEnter", "effect": "slideInLeft", "duration": 500, "delay": 300 },
+        { "target": "diff-box-added", "trigger": "onEnter", "effect": "scaleIn", "duration": 400, "delay": 500 },
+        { "target": "diff-label-added", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 700 },
+        { "target": "diff-box-removed", "trigger": "onEnter", "effect": "scaleIn", "duration": 400, "delay": 600 },
+        { "target": "diff-label-removed", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 800 },
+        { "target": "diff-box-modified", "trigger": "onEnter", "effect": "scaleIn", "duration": 400, "delay": 700 },
+        { "target": "diff-label-modified", "trigger": "onEnter", "effect": "fadeIn", "duration": 300, "delay": 900 },
+        { "target": "diff-note", "trigger": "onEnter", "effect": "fadeIn", "duration": 400, "delay": 1000 }
+      ]
+    },
+    {
       "id": "end",
       "transition": { "type": "fade", "duration": 400 },
       "elements": [

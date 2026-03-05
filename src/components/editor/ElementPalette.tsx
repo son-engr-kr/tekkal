@@ -87,6 +87,16 @@ const ELEMENT_PRESETS: { label: string; create: () => SlideElement }[] = [
     }),
   },
   {
+    label: "Mermaid",
+    create: () => ({
+      id: nextElementId(),
+      type: "mermaid" as const,
+      content: "graph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[OK]\n  B -->|No| D[Cancel]",
+      position: { x: 200, y: 100 },
+      size: { w: 400, h: 300 },
+    }),
+  },
+  {
     label: "3D Scene",
     create: () => ({
       id: nextElementId(),

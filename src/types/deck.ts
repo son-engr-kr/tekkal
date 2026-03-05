@@ -19,7 +19,7 @@ export interface SlideBackground {
 
 // ----- Slide Transition -----
 
-export type TransitionType = "fade" | "slide" | "none";
+export type TransitionType = "fade" | "slide" | "morph" | "none";
 
 export interface SlideTransition {
   type: TransitionType;
@@ -71,6 +71,11 @@ export interface VideoStyle {
 }
 
 export interface TikZStyle {
+  backgroundColor?: string;
+  borderRadius?: number;
+}
+
+export interface MermaidStyle {
   backgroundColor?: string;
   borderRadius?: number;
 }
@@ -224,6 +229,15 @@ export interface CustomElement extends BaseElement {
   props?: Record<string, unknown>;
 }
 
+export interface MermaidElement extends BaseElement {
+  type: "mermaid";
+  content: string;
+  renderedSvg?: string;
+  renderedContent?: string;
+  renderError?: string;
+  style?: MermaidStyle;
+}
+
 export interface Scene3DElement extends BaseElement {
   type: "scene3d";
   scene: Scene3DConfig;
@@ -231,7 +245,7 @@ export interface Scene3DElement extends BaseElement {
   style?: Scene3DStyle;
 }
 
-export type SlideElement = TextElement | ImageElement | CodeElement | ShapeElement | VideoElement | TikZElement | TableElement | CustomElement | Scene3DElement;
+export type SlideElement = TextElement | ImageElement | CodeElement | ShapeElement | VideoElement | TikZElement | TableElement | CustomElement | Scene3DElement | MermaidElement;
 
 // ----- Animations -----
 
@@ -285,6 +299,7 @@ export interface DeckTheme {
   image?: Partial<ImageStyle>;
   video?: Partial<VideoStyle>;
   tikz?: Partial<TikZStyle>;
+  mermaid?: Partial<MermaidStyle>;
   table?: Partial<TableStyle>;
   scene3d?: Partial<Scene3DStyle>;
 }

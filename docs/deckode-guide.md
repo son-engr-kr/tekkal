@@ -617,6 +617,35 @@ Use `"onClick"` for the first element in each group, `"withPrevious"` for siblin
 
 Use `rgba()` fills at 6–8% opacity with the matching stroke color for a cohesive look.
 
+### `"mermaid"`
+
+Renders a Mermaid diagram client-side. Unlike TikZ, no server-side adapter is needed — the `mermaid` library runs entirely in the browser.
+
+```json
+{
+  "id": "e-mermaid",
+  "type": "mermaid",
+  "content": "graph TD\n  A[Start] --> B{Decision}\n  B -->|Yes| C[OK]\n  B -->|No| D[Cancel]",
+  "position": { "x": 200, "y": 100 },
+  "size": { "w": 400, "h": 300 },
+  "style": {
+    "backgroundColor": "#1e1e2e",
+    "borderRadius": 8
+  }
+}
+```
+
+**Content format**: Any valid Mermaid diagram syntax — flowcharts, sequence diagrams, class diagrams, state diagrams, ER diagrams, Gantt charts, pie charts, etc.
+
+**Caching**: On successful render, `renderedSvg` and `renderedContent` are stored on the element. Re-renders only trigger when `content` changes.
+
+**Style fields**:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backgroundColor` | string | `"transparent"` | Background behind the diagram |
+| `borderRadius` | number | `0` | Corner rounding in px |
+
 ### `"table"`
 
 Renders a data table with column headers and rows.

@@ -9,6 +9,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import type { SlideTransition } from "@/types/deck";
 import type { FileSystemAdapter } from "@/adapters/types";
 import { AnimatePresence, motion } from "framer-motion";
+import { MorphTransition } from "@/components/renderer/MorphTransition";
 
 const transitionVariants = {
   fade: {
@@ -22,6 +23,7 @@ const transitionVariants = {
     exit: { opacity: 0, x: -80 },
   },
   none: { initial: {}, animate: {}, exit: {} },
+  morph: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
 };
 
 /**
@@ -47,7 +49,6 @@ export function PresenterView() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const hideTimerRef = useRef(0);
-
   const slide = deck?.slides[currentSlideIndex];
   const steps = useMemo(
     () => computeSteps(slide?.animations ?? []),
@@ -154,30 +155,43 @@ export function PresenterView() {
     type: "fade",
     duration: 300,
   };
-  const variant =
-    transitionVariants[transition.type] ?? transitionVariants.fade;
+  const isMorph = transition.type === "morph";
+  const variant = isMorph
+    ? transitionVariants.fade
+    : transitionVariants[transition.type] ?? transitionVariants.fade;
 
   const content = (
     <div className="h-screen w-screen bg-black flex items-center justify-center relative">
       <div className="relative">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.id}
-            initial={variant.initial}
-            animate={variant.animate}
-            exit={variant.exit}
-            transition={{ duration: (transition.duration ?? 300) / 1000 }}
-          >
-            <SlideRenderer
-              slide={slide}
-              scale={scale}
-              animate
-              activeStep={activeStep}
-              steps={steps}
-              theme={deck.theme}
-            />
-          </motion.div>
-        </AnimatePresence>
+        {isMorph ? (
+          <MorphTransition
+            slide={slide}
+            scale={scale}
+            duration={transition.duration ?? 300}
+            theme={deck.theme}
+            activeStep={activeStep}
+            steps={steps}
+          />
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slide.id}
+              initial={variant.initial}
+              animate={variant.animate}
+              exit={variant.exit}
+              transition={{ duration: (transition.duration ?? 300) / 1000 }}
+            >
+              <SlideRenderer
+                slide={slide}
+                scale={scale}
+                animate
+                activeStep={activeStep}
+                steps={steps}
+                theme={deck.theme}
+              />
+            </motion.div>
+          </AnimatePresence>
+        )}
         {pointer.visible && (
           <div
             className="absolute w-3 h-3 rounded-full bg-red-500 pointer-events-none"
