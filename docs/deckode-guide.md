@@ -262,6 +262,8 @@ Renders Markdown text content.
 - Inline math (`$E = mc^2$`)
 - Block math (`$$\int_0^1 f(x) dx$$`)
 
+**LaTeX math bold**: Do NOT use Markdown `**` inside math expressions — it renders as plain text. Use `\bm{}` (bold-italic, recommended for symbols) or `\mathbf{}` (bold-upright) instead. Example: `$\bm{\kappa}$` → **κ**, `$\mathbf{A}$` → **A**.
+
 **Style fields**:
 
 | Field | Type | Default | Description |
