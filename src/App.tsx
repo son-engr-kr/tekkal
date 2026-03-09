@@ -10,8 +10,9 @@ import { ViteApiAdapter } from "@/adapters/viteApi";
 import { ReadOnlyAdapter } from "@/adapters/readOnly";
 import { loadDeckFromDisk } from "@/utils/api";
 import { parseGitHubParam, buildGitHubRawBase, fetchGitHubDeck } from "@/utils/github";
+import { restoreHandle } from "@/utils/handleStore";
 import type { FileSystemAdapter } from "@/adapters/types";
-import type { FsAccessAdapter } from "@/adapters/fsAccess";
+import { FsAccessAdapter } from "@/adapters/fsAccess";
 import type { Deck } from "@/types/deck";
 import { assert } from "@/utils/assert";
 
@@ -43,8 +44,15 @@ export function App() {
   const currentProject = useDeckStore((s) => s.currentProject);
   const [adapter, setAdapter] = useState<FileSystemAdapter | null>(null);
   const [externalChange, setExternalChange] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Synchronously detect if we need to auto-open from URL so we can show
+  // a loading state immediately and prevent ProjectSelector from mounting.
+  const [loading, setLoading] = useState(() => {
+    if (!IS_DEV) return false;
+    const params = new URLSearchParams(window.location.search);
+    return !params.has("demo") && !params.has("gh") && params.has("project");
+  });
 
   // Capture URL params once on mount
   const [isPresentMode] = useState(() => {
@@ -104,33 +112,56 @@ export function App() {
     }
   }, [openReadOnly]);
 
-  // In dev mode, auto-open project from URL query param
+  // In dev mode, auto-open project from URL query param.
+  // `loading` is already true (set synchronously in useState) to block ProjectSelector.
+  // Tries Vite API first; falls back to IndexedDB FsAccess handle restoration.
+  const autoOpenProjectRef = useRef(
+    IS_DEV ? new URLSearchParams(window.location.search).get("project") : null,
+  );
   useEffect(() => {
-    if (!IS_DEV) return;
-    const params = new URLSearchParams(window.location.search);
-    // Skip if demo or gh param is present (handled above)
-    if (params.has("demo") || params.has("gh")) return;
-    const project = params.get("project");
-    if (project) {
+    const project = autoOpenProjectRef.current;
+    if (!project) return;
+
+    const tryViteApi = async (): Promise<boolean> => {
+      const deck = await loadDeckFromDisk(project);
+      if (!deck) return false;
       const viteAdapter = new ViteApiAdapter(project);
       setAdapter(viteAdapter);
       setStoreAdapter(viteAdapter);
-      loadDeckFromDisk(project).then((deck) => {
-        if (deck) useDeckStore.getState().openProject(project, deck);
-      });
-    }
+      useDeckStore.getState().openProject(project, deck);
+      return true;
+    };
+
+    const tryFsAccessRestore = async (): Promise<boolean> => {
+      const handle = await restoreHandle();
+      if (!handle) return false;
+      const fsAdapter = FsAccessAdapter.fromHandle(handle);
+      const deck = await fsAdapter.loadDeck();
+      setAdapter(fsAdapter);
+      setStoreAdapter(fsAdapter);
+      useDeckStore.getState().openProject(fsAdapter.projectName, deck);
+      return true;
+    };
+
+    tryViteApi()
+      .then((ok) => ok || tryFsAccessRestore())
+      .catch(() => false)
+      .then(() => setLoading(false));
   }, []);
 
-  // Sync URL when project changes (dev mode only)
+  // Sync URL when project changes (dev mode only).
+  // Write ?project= so the auto-open effect can restore on refresh
+  // (tries Vite API first, then falls back to IndexedDB FsAccess handle).
+  const hadProjectRef = useRef(false);
   useEffect(() => {
     if (!IS_DEV) return;
-    // Don't overwrite URL for demo/gh modes
     const params = new URLSearchParams(window.location.search);
     if (params.has("demo") || params.has("gh")) return;
     if (currentProject) {
+      hadProjectRef.current = true;
       params.set("project", currentProject);
       history.replaceState(null, "", `?${params.toString()}`);
-    } else {
+    } else if (hadProjectRef.current) {
       history.replaceState(null, "", window.location.pathname);
     }
   }, [currentProject]);
