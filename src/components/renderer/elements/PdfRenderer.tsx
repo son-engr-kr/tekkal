@@ -6,8 +6,12 @@ GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).href;
 
-// Module-level cache: src → per-page snapshot { dataUrl, displayHeight }
+// Module-level cache: "src:width" → per-page snapshot { dataUrl, displayHeight }
 const pageCache = new Map<string, { dataUrl: string; displayHeight: number }[]>();
+
+function cacheKey(src: string, width: number): string {
+  return `${src}:${width}`;
+}
 
 interface Props {
   src: string;
@@ -19,7 +23,7 @@ interface Props {
 
 export default function PdfRenderer({ src, width, height, borderRadius, opacity }: Props) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
-  const cached = pageCache.get(src);
+  const cached = pageCache.get(cacheKey(src, width));
 
   useEffect(() => {
     let cancelled = false;
@@ -175,10 +179,11 @@ function PdfPageCanvas({
 
       // Cache rendered page as image snapshot
       const dataUrl = canvas.toDataURL("image/png");
-      let pages = pageCache.get(src);
+      const key = cacheKey(src, containerWidth);
+      let pages = pageCache.get(key);
       if (!pages) {
         pages = new Array(pageCount);
-        pageCache.set(src, pages);
+        pageCache.set(key, pages);
       }
       pages[pageNumber - 1] = { dataUrl, displayHeight };
     },
@@ -192,7 +197,7 @@ function PdfPageCanvas({
   }, [visible, pdf, pageNumber, renderPage]);
 
   // Show cached image while canvas renders
-  const cachedPage = pageCache.get(src)?.[pageNumber - 1];
+  const cachedPage = pageCache.get(cacheKey(src, containerWidth))?.[pageNumber - 1];
 
   return (
     <>
