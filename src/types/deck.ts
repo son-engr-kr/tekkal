@@ -198,6 +198,7 @@ export interface ShapeElement extends BaseElement {
 export interface VideoElement extends BaseElement {
   type: "video";
   src: string;
+  alt?: string;
   autoplay?: boolean;
   loop?: boolean;
   muted?: boolean;

@@ -174,6 +174,7 @@ export function PropertyPanel() {
               }}
             />
           </div>
+          <TextField label="Alt Text" value={element.alt} onChange={(v) => updateElement(slide.id, element.id, { alt: v } as Partial<SlideElement>)} placeholder="Describe the video" />
           <div>
             <FieldLabel>Options</FieldLabel>
             <div className="space-y-1">
