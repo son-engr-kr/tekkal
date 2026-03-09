@@ -26,6 +26,8 @@ import {
   fetchImageAsBase64,
   resolveStyle,
   resolveAssetSrc,
+  isPdfSrc,
+  rasterizePdfToBase64,
   DEFAULT_BG,
   DEFAULT_TEXT_COLOR,
   DEFAULT_TEXT_SIZE,
@@ -416,8 +418,16 @@ async function buildImage(
   // Resolve via the active adapter (blob URL on FsAccess, server path on Vite)
   // then pre-fetch as base64 to avoid CORS issues in html-to-image capture
   const resolved = await resolveAssetSrc(el.src, adapter);
-  const b64 = await fetchImageAsBase64(resolved);
-  img.src = b64 ?? resolved;
+
+  // PDF files can't be rendered in <img> — rasterize first page via pdfjs
+  if (isPdfSrc(el.src)) {
+    const pdfPng = await rasterizePdfToBase64(resolved, el.size.w, el.size.h);
+    if (!pdfPng) return null;
+    img.src = pdfPng;
+  } else {
+    const b64 = await fetchImageAsBase64(resolved);
+    img.src = b64 ?? resolved;
+  }
 
   d.appendChild(img);
   return d;

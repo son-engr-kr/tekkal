@@ -77,6 +77,49 @@ export async function fetchImageAsBase64(src: string): Promise<string | null> {
   return null;
 }
 
+/** Check if a source path points to a PDF file. */
+export function isPdfSrc(src: string): boolean {
+  const path = src.split("?")[0]!;
+  return path.toLowerCase().endsWith(".pdf");
+}
+
+/**
+ * Render the first page of a PDF to a PNG data URI.
+ * Used by PDF/PPTX exporters to handle PDF-as-image elements.
+ */
+export async function rasterizePdfToBase64(
+  src: string,
+  width: number,
+  height: number,
+): Promise<string | null> {
+  const { GlobalWorkerOptions, getDocument } = await import("pdfjs-dist");
+  GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).href;
+
+  let doc;
+  try {
+    doc = await getDocument(src).promise;
+  } catch {
+    return null;
+  }
+
+  const page = await doc.getPage(1);
+  const baseViewport = page.getViewport({ scale: 1 });
+  const scale = (width / baseViewport.width) * 2; // 2x for quality
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: canvas.getContext("2d")!, viewport }).promise;
+
+  const dataUrl = canvas.toDataURL("image/png");
+  doc.destroy();
+  return dataUrl;
+}
+
 export function hexToRgb(hex: string): [number, number, number] {
   let clean = hex.replace(/^#/, "");
   // Short hex: #RGB → RRGGBB

@@ -23,6 +23,8 @@ import {
   resolveStyle,
   resolveAssetSrc,
   fetchImageAsBase64,
+  isPdfSrc,
+  rasterizePdfToBase64,
   hexToRgb,
   DEFAULT_BG,
   DEFAULT_TEXT_COLOR,
@@ -45,6 +47,15 @@ import {
 
 const MIN_FONT_SIZE = 6;
 const RASTER_SCALE = 2;
+
+/** Detect image format from a data URI for jsPDF addImage(). */
+function detectImageFormat(dataUri: string): string {
+  const m = dataUri.match(/^data:image\/(\w+)/);
+  if (!m) return "PNG";
+  const fmt = m[1]!.toUpperCase();
+  if (fmt === "JPG") return "JPEG";
+  return fmt;
+}
 
 // Regex to detect characters that jsPDF's standard 14 fonts cannot render:
 // CJK Unified Ideographs, Hangul, Hiragana, Katakana, CJK symbols, etc.
@@ -739,7 +750,10 @@ async function drawImage(
     resolved.endsWith(".svg") || resolved.startsWith("data:image/svg");
 
   let imgData: string | null;
-  if (isSvg) {
+  if (isPdfSrc(el.src)) {
+    // PDF files can't be embedded directly — rasterize first page via pdfjs
+    imgData = await rasterizePdfToBase64(resolved, el.size.w, el.size.h);
+  } else if (isSvg) {
     // SVGs must be rasterized — jsPDF can't embed SVGs directly.
     // rasterizeSvg already preserves aspect ratio in the canvas.
     imgData = await rasterizeSvg(resolved, el.size.w, el.size.h);
@@ -759,8 +773,10 @@ async function drawImage(
     img.src = imgData!;
   });
 
+  const imgFormat = detectImageFormat(imgData);
+
   if (!loaded) {
-    doc.addImage(imgData, "PNG", x, y, w, h);
+    doc.addImage(imgData, imgFormat, x, y, w, h);
     return;
   }
 
@@ -802,7 +818,7 @@ async function drawImage(
     doc.setGState(new doc.GState({ opacity }));
   }
 
-  doc.addImage(imgData, "PNG", imgX, imgY, rw, rh);
+  doc.addImage(imgData, imgFormat, imgX, imgY, rw, rh);
 
   if (opacity < 1) {
     doc.restoreGraphicsState();
