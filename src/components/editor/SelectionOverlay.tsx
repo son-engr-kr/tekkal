@@ -122,6 +122,7 @@ export function SelectionOverlay({ slide, scale }: Props) {
           element={element}
           slideId={slide.id}
           isSelected={selectedElementIds.includes(element.id) || moveTargetIds.has(element.id)}
+          isPassthrough={element.type === "video" && selectedElementIds.includes(element.id)}
           showResizeHandles={element.id === singleSelectedId && !element.groupId}
           onSelect={(e: React.MouseEvent) => handleSelect(element, e)}
           onMove={(dx, dy) => {
@@ -194,6 +195,9 @@ interface InteractiveProps {
   element: SlideElement;
   slideId: string;
   isSelected: boolean;
+  /** Let clicks pass through to the rendered element below (e.g. video controls),
+   *  but render a click shield behind to prevent selecting elements underneath. */
+  isPassthrough: boolean;
   showResizeHandles: boolean;
   isHighlighted: boolean;
   hasComment: boolean;
@@ -204,7 +208,7 @@ interface InteractiveProps {
   scale: number;
 }
 
-function InteractiveElement({ element, isSelected, showResizeHandles, isHighlighted, hasComment, onSelect, onMove, onResize, onContextMenu, scale }: InteractiveProps) {
+function InteractiveElement({ element, isSelected, isPassthrough, showResizeHandles, isHighlighted, hasComment, onSelect, onMove, onResize, onContextMenu, scale }: InteractiveProps) {
   const dragStart = useRef<{ x: number; y: number; ex: number; ey: number } | null>(null);
 
   const handleMouseDown = useCallback(
@@ -356,25 +360,38 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
   );
 
   return (
-    <motion.div
-      className="absolute cursor-move select-none"
-      style={{
-        ...getElementPositionStyle(element),
-        // outline instead of ring: framer-motion's boxShadow animate overrides Tailwind ring (both use box-shadow)
-        outline: isSelected ? "2px solid rgb(59,130,246)" : "none",
-        // auto: re-enable events (parent is pointer-events:none)
-        // Selected video: let clicks pass through to native <video> controls
-        pointerEvents: element.type === "video" && isSelected ? "none" : "auto",
-      }}
-      draggable={false}
-      initial={isHighlighted ? { boxShadow: "0 0 0 3px rgba(34,197,94,0.7)" } : false}
-      animate={{ boxShadow: "0 0 0 0px rgba(34,197,94,0)" }}
-      transition={{ duration: 0.8 }}
-      onMouseDown={handleMouseDown}
-      onContextMenu={handleContextMenu}
-    >
-      {/* Transparent overlay to capture mouse events */}
-      <div className="absolute inset-0" />
+    <>
+      {/* Click shield: when passthrough is active (e.g. selected video), this sits behind
+          the element to catch clicks that fall through, preventing elements underneath
+          from being accidentally selected. */}
+      {isPassthrough && (
+        <div
+          className="absolute"
+          style={{
+            ...getElementPositionStyle(element),
+            pointerEvents: "auto",
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        />
+      )}
+      <motion.div
+        className="absolute cursor-move select-none"
+        style={{
+          ...getElementPositionStyle(element),
+          outline: isSelected ? "2px solid rgb(59,130,246)" : "none",
+          // auto: re-enable events (parent is pointer-events:none)
+          // Passthrough: let clicks reach rendered element below (e.g. video controls)
+          pointerEvents: isPassthrough ? "none" : "auto",
+        }}
+        draggable={false}
+        initial={isHighlighted ? { boxShadow: "0 0 0 3px rgba(34,197,94,0.7)" } : false}
+        animate={{ boxShadow: "0 0 0 0px rgba(34,197,94,0)" }}
+        transition={{ duration: 0.8 }}
+        onMouseDown={handleMouseDown}
+        onContextMenu={handleContextMenu}
+      >
+        {/* Transparent overlay to capture mouse events */}
+        <div className="absolute inset-0" />
 
       {/* Selected video: drag handle on the side closer to canvas center */}
       {element.type === "video" && isSelected && (
@@ -399,6 +416,7 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
         />
       )}
     </motion.div>
+    </>
   );
 }
 
