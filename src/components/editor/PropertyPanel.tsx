@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDeckStore } from "@/stores/deckStore";
-import type { Slide, SlideElement, TikZElement, MermaidElement, TableElement, CustomElement, Scene3DElement } from "@/types/deck";
+import type { Slide, SlideElement, TikZElement, MermaidElement, TableElement, CustomElement, Scene3DElement, ImageElement, VideoElement } from "@/types/deck";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { AnimationEditor } from "./AnimationEditor";
 import { CommentList } from "./CommentList";
@@ -194,6 +194,11 @@ export function PropertyPanel() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Crop (image/video only) */}
+      {(element.type === "image" || element.type === "video") && (
+        <CropActions element={element} slideId={slide.id} />
       )}
 
       {/* Style */}
@@ -956,6 +961,52 @@ function MermaidEditor({
         </div>
       )}
     </>
+  );
+}
+
+function CropActions({
+  element,
+  slideId,
+}: {
+  element: ImageElement | VideoElement;
+  slideId: string;
+}) {
+  const setCropElement = useDeckStore((s) => s.setCropElement);
+  const cropElementId = useDeckStore((s) => s.cropElementId);
+  const updateElement = useDeckStore((s) => s.updateElement);
+  const hasCrop = !!element.style?.crop;
+  const isActive = cropElementId === element.id;
+
+  return (
+    <div>
+      <FieldLabel>Crop</FieldLabel>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setCropElement(isActive ? null : element.id)}
+          className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+            isActive
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-700 hover:border-zinc-500"
+          }`}
+        >
+          {isActive ? "Done" : "Crop"}
+        </button>
+        {hasCrop && (
+          <button
+            onClick={() => {
+              const { crop: _, ...rest } = element.style!;
+              updateElement(slideId, element.id, {
+                style: rest,
+              } as Partial<SlideElement>);
+              if (isActive) setCropElement(null);
+            }}
+            className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-500 transition-colors"
+          >
+            Reset Crop
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

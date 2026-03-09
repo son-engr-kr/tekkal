@@ -24,6 +24,7 @@ interface DeckState {
   selectedSlideIds: string[];
   selectedElementIds: string[];
   highlightedElementIds: string[];
+  cropElementId: string | null;
   isDirty: boolean;
   isSaving: boolean;
 
@@ -58,6 +59,7 @@ interface DeckState {
   updateTheme: (patch: Partial<DeckTheme>) => void;
   toggleSlideHidden: (slideId: string) => void;
   highlightElements: (ids: string[]) => void;
+  setCropElement: (id: string | null) => void;
   patchElementById: (elementId: string, patch: Partial<SlideElement>) => void;
   bringToFront: (slideId: string, elementId: string) => void;
   sendToBack: (slideId: string, elementId: string) => void;
@@ -91,6 +93,7 @@ export const useDeckStore = create<DeckState>()(
         selectedSlideIds: [],
         selectedElementIds: [],
         highlightedElementIds: [],
+        cropElementId: null,
         isDirty: false,
         isSaving: false,
 
@@ -474,6 +477,9 @@ export const useDeckStore = create<DeckState>()(
           }, 800);
         },
 
+        setCropElement: (id) =>
+          set((state) => { state.cropElementId = id; }),
+
         bringToFront: (slideId, elementId) =>
           set((state) => {
             assert(state.deck !== null, "No deck loaded");
@@ -543,6 +549,24 @@ useDeckStore.subscribe(
       batchStartState = null;
     }
     useDeckStore.temporal.getState().clear();
+  },
+);
+
+// Auto-clear crop mode when selection or slide changes
+useDeckStore.subscribe(
+  (s) => s.selectedElementIds,
+  () => {
+    if (useDeckStore.getState().cropElementId) {
+      useDeckStore.getState().setCropElement(null);
+    }
+  },
+);
+useDeckStore.subscribe(
+  (s) => s.currentSlideIndex,
+  () => {
+    if (useDeckStore.getState().cropElementId) {
+      useDeckStore.getState().setCropElement(null);
+    }
   },
 );
 

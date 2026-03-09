@@ -149,6 +149,16 @@ export function EditorLayout() {
         return;
       }
 
+      // Exit crop mode on Escape or Enter
+      if (e.key === "Escape" || e.key === "Enter") {
+        const { cropElementId, setCropElement } = useDeckStore.getState();
+        if (cropElementId) {
+          e.preventDefault();
+          setCropElement(null);
+          return;
+        }
+      }
+
       // Skip remaining shortcuts if typing in an input
       if (isInput) return;
 

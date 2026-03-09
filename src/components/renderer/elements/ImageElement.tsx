@@ -53,6 +53,11 @@ export function ImageElementRenderer({ element }: Props) {
     );
   }
 
+  const crop = style.crop;
+  const clipPath = crop
+    ? `inset(${crop.top * 100}% ${crop.right * 100}% ${crop.bottom * 100}% ${crop.left * 100}%)`
+    : undefined;
+
   return (
     <img
       src={resolvedSrc}
@@ -65,6 +70,7 @@ export function ImageElementRenderer({ element }: Props) {
         borderRadius: style.borderRadius ?? 0,
         opacity: style.opacity ?? 1,
         border: style.border,
+        clipPath,
       }}
     />
   );

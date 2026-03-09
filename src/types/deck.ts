@@ -26,6 +26,15 @@ export interface SlideTransition {
   duration?: number;
 }
 
+// ----- Crop -----
+
+export interface CropRect {
+  top: number;    // 0-1 fraction cropped from top
+  right: number;  // 0-1 fraction cropped from right
+  bottom: number; // 0-1 fraction cropped from bottom
+  left: number;   // 0-1 fraction cropped from left
+}
+
 // ----- Element Styles -----
 
 export type TextSizing = "flexible" | "fixed";
@@ -45,6 +54,7 @@ export interface ImageStyle {
   borderRadius?: number;
   opacity?: number;
   border?: string;
+  crop?: CropRect;
 }
 
 export interface CodeStyle {
@@ -68,6 +78,7 @@ export interface ShapeStyle {
 export interface VideoStyle {
   objectFit?: "contain" | "cover" | "fill";
   borderRadius?: number;
+  crop?: CropRect;
 }
 
 export interface TikZStyle {

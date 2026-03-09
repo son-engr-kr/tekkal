@@ -27,11 +27,17 @@ export function VideoElementRenderer({ element, thumbnail, videoStep }: Props) {
   const style = useElementStyle<VideoStyle>("video", element.style);
   const resolvedSrc = useAssetUrl(element.src);
 
+  const crop = style.crop;
+  const clipPath = crop
+    ? `inset(${crop.top * 100}% ${crop.right * 100}% ${crop.bottom * 100}% ${crop.left * 100}%)`
+    : undefined;
+
   const commonStyle: React.CSSProperties = {
     width: element.size.w,
     height: element.size.h,
     objectFit: (style.objectFit ?? "contain") as React.CSSProperties["objectFit"],
     borderRadius: style.borderRadius ?? 0,
+    clipPath,
   };
 
   // Thumbnail mode: static placeholder, no video loading

@@ -4,6 +4,7 @@ import { useDeckStore, setDeckDragging } from "@/stores/deckStore";
 import type { Slide, SlideElement } from "@/types/deck";
 import { CANVAS_HEIGHT } from "@/types/deck";
 import { getElementPositionStyle } from "@/utils/elementStyle";
+import { CropOverlay } from "./CropOverlay";
 
 function getGroupBounds(elements: SlideElement[]) {
   let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
@@ -31,6 +32,8 @@ interface ContextMenuState {
 export function SelectionOverlay({ slide, scale }: Props) {
   const selectedElementIds = useDeckStore((s) => s.selectedElementIds);
   const highlightedElementIds = useDeckStore((s) => s.highlightedElementIds);
+  const cropElementId = useDeckStore((s) => s.cropElementId);
+  const setCropElement = useDeckStore((s) => s.setCropElement);
   const selectElement = useDeckStore((s) => s.selectElement);
   const selectElements = useDeckStore((s) => s.selectElements);
   const updateElement = useDeckStore((s) => s.updateElement);
@@ -68,8 +71,9 @@ export function SelectionOverlay({ slide, scale }: Props) {
     return ids;
   }, [selectedElementIds, activeGroupIds, slide.elements]);
 
-  // Only show individual resize handles for ungrouped single selection
+  // Only show individual resize handles for ungrouped single selection (not during crop)
   const singleSelectedId = selectedElementIds.length === 1 ? selectedElementIds[0] : null;
+  const isCropping = cropElementId !== null;
 
   // Group-aware select: clicking a grouped element always selects the whole group
   const handleSelect = useCallback(
@@ -122,9 +126,14 @@ export function SelectionOverlay({ slide, scale }: Props) {
           element={element}
           slideId={slide.id}
           isSelected={selectedElementIds.includes(element.id) || moveTargetIds.has(element.id)}
-          isPassthrough={element.type === "video" && selectedElementIds.includes(element.id)}
-          showResizeHandles={element.id === singleSelectedId && !element.groupId}
+          isPassthrough={element.type === "video" && selectedElementIds.includes(element.id) && !isCropping}
+          showResizeHandles={element.id === singleSelectedId && !element.groupId && !isCropping}
           onSelect={(e: React.MouseEvent) => handleSelect(element, e)}
+          onDoubleClick={() => {
+            if ((element.type === "image" || element.type === "video") && !isCropping) {
+              setCropElement(element.id);
+            }
+          }}
           onMove={(dx, dy) => {
             // Read latest selection from store (not stale closure)
             // so first click-drag on a group member works immediately.
@@ -179,6 +188,12 @@ export function SelectionOverlay({ slide, scale }: Props) {
           updateElement={updateElement}
         />
       ))}
+      {/* Crop overlay — rendered at canvas level for full-canvas dimming */}
+      {cropElementId && (() => {
+        const cropEl = slide.elements.find((e) => e.id === cropElementId);
+        if (!cropEl) return null;
+        return <CropOverlay element={cropEl} slideId={slide.id} scale={scale} />;
+      })()}
       {contextMenu && (
         <ElementContextMenu
           {...contextMenu}
@@ -202,13 +217,14 @@ interface InteractiveProps {
   isHighlighted: boolean;
   hasComment: boolean;
   onSelect: (e: React.MouseEvent) => void;
+  onDoubleClick: () => void;
   onMove: (dx: number, dy: number) => void;
   onResize: (dx: number, dy: number, dw: number, dh: number) => void;
   onContextMenu: (x: number, y: number) => void;
   scale: number;
 }
 
-function InteractiveElement({ element, isSelected, isPassthrough, showResizeHandles, isHighlighted, hasComment, onSelect, onMove, onResize, onContextMenu, scale }: InteractiveProps) {
+function InteractiveElement({ element, isSelected, isPassthrough, showResizeHandles, isHighlighted, hasComment, onSelect, onDoubleClick, onMove, onResize, onContextMenu, scale }: InteractiveProps) {
   const dragStart = useRef<{ x: number; y: number; ex: number; ey: number } | null>(null);
 
   const handleMouseDown = useCallback(
@@ -388,6 +404,10 @@ function InteractiveElement({ element, isSelected, isPassthrough, showResizeHand
         animate={{ boxShadow: "0 0 0 0px rgba(34,197,94,0)" }}
         transition={{ duration: 0.8 }}
         onMouseDown={handleMouseDown}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          onDoubleClick();
+        }}
         onContextMenu={handleContextMenu}
       >
         {/* Transparent overlay to capture mouse events */}
@@ -415,6 +435,7 @@ function InteractiveElement({ element, isSelected, isPassthrough, showResizeHand
           style={{ pointerEvents: "none" }}
         />
       )}
+
     </motion.div>
     </>
   );
@@ -437,6 +458,7 @@ function ElementContextMenu({
   const deleteElement = useDeckStore((s) => s.deleteElement);
   const groupElements = useDeckStore((s) => s.groupElements);
   const ungroupElements = useDeckStore((s) => s.ungroupElements);
+  const setCropElement = useDeckStore((s) => s.setCropElement);
 
   const handleAction = useCallback(
     (action: () => void) => {
@@ -445,6 +467,12 @@ function ElementContextMenu({
     },
     [onClose],
   );
+
+  // Determine crop eligibility
+  const canCrop = (() => {
+    const el = deck?.slides.find((s) => s.id === slideId)?.elements.find((e) => e.id === elementId);
+    return el?.type === "image" || el?.type === "video";
+  })();
 
   // Determine group context
   const slide = deck?.slides.find((s) => s.id === slideId);
@@ -485,6 +513,15 @@ function ElementContextMenu({
           label="Send to Back"
           onClick={() => handleAction(() => sendToBack(slideId, elementId))}
         />
+        {canCrop && (
+          <>
+            <div className="h-px bg-zinc-700 my-1" />
+            <ContextMenuItem
+              label="Crop"
+              onClick={() => handleAction(() => setCropElement(elementId))}
+            />
+          </>
+        )}
         <div className="h-px bg-zinc-700 my-1" />
         {canGroup && (
           <ContextMenuItem
