@@ -30,7 +30,8 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
   const resolvedSrc = useAssetUrl(element.src);
 
   const crop = style.crop;
-  const clipPath = crop
+  // Editor mode: skip clip-path so native controls aren't clipped
+  const clipPath = crop && !editorMode
     ? `inset(${crop.top * 100}% ${crop.right * 100}% ${crop.bottom * 100}% ${crop.left * 100}%)`
     : undefined;
 
