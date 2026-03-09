@@ -296,6 +296,7 @@ export function EditorCanvas() {
           previewAnimations={previewAnimations ?? undefined}
           previewDelayOverrides={previewDelayOverrides ?? undefined}
           previewKey={previewKey}
+          editorMode
         />
         <SelectionOverlay slide={slide} scale={scale} />
         {marquee && (

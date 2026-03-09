@@ -34,13 +34,15 @@ interface Props {
   previewKey?: number;
   /** Skip absolute positioning — parent handles position (e.g. MorphTransition) */
   noPosition?: boolean;
+  /** Suppress autoplay for videos in editor */
+  editorMode?: boolean;
 }
 
-export function ElementRenderer({ element, animations, activeAnimations, delayOverrides, thumbnail, previewMode, previewKey, noPosition }: Props) {
+export function ElementRenderer({ element, animations, activeAnimations, delayOverrides, thumbnail, previewMode, previewKey, noPosition, editorMode }: Props) {
   const positionStyle = noPosition
     ? { width: "100%" as const, height: "100%" as const }
     : getElementPositionStyle(element);
-  const child = renderByType(element, thumbnail, animations, activeAnimations);
+  const child = renderByType(element, thumbnail, animations, activeAnimations, editorMode);
 
   // No animations → plain div (zero overhead in editor)
   if (!animations || animations.length === 0) {
@@ -162,6 +164,7 @@ function renderByType(
   thumbnail?: boolean,
   animations?: Animation[],
   activeAnimations?: Set<Animation>,
+  editorMode?: boolean,
 ) {
   switch (element.type) {
     case "text":
@@ -174,7 +177,7 @@ function renderByType(
       return <ShapeElementRenderer element={element} />;
     case "video": {
       const videoStep = computeVideoStep(animations, activeAnimations);
-      return <VideoElementRenderer element={element} thumbnail={thumbnail} videoStep={videoStep} />;
+      return <VideoElementRenderer element={element} thumbnail={thumbnail} videoStep={videoStep} editorMode={editorMode} />;
     }
     case "tikz":
       return <TikZElementRenderer element={element} thumbnail={thumbnail} />;

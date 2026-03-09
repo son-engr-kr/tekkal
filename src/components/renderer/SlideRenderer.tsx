@@ -25,9 +25,11 @@ interface Props {
   previewDelayOverrides?: Map<Animation, number>;
   /** Incrementing key to force remount for replay */
   previewKey?: number;
+  /** Suppress video autoplay in editor */
+  editorMode?: boolean;
 }
 
-export function SlideRenderer({ slide, scale, animate, thumbnail, activeStep, steps, onAdvance, theme, previewAnimations, previewDelayOverrides, previewKey }: Props) {
+export function SlideRenderer({ slide, scale, animate, thumbnail, activeStep, steps, onAdvance, theme, previewAnimations, previewDelayOverrides, previewKey, editorMode }: Props) {
   const bg = slide.background;
   const themeBgColor = theme?.slide?.background?.color;
   const resolvedBgImage = useAssetUrl(bg?.image);
@@ -112,6 +114,7 @@ export function SlideRenderer({ slide, scale, animate, thumbnail, activeStep, st
             thumbnail={thumbnail}
             previewMode={isPreview}
             previewKey={isPreview ? previewKey : undefined}
+            editorMode={editorMode}
           />
         ))}
       </div>
