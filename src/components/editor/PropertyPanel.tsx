@@ -193,6 +193,7 @@ export function PropertyPanel() {
               ))}
             </div>
           </div>
+          <TrimActions element={element} slideId={slide.id} />
         </>
       )}
 
@@ -1006,6 +1007,84 @@ function CropActions({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function TrimActions({
+  element,
+  slideId,
+}: {
+  element: VideoElement;
+  slideId: string;
+}) {
+  const setTrimElement = useDeckStore((s) => s.setTrimElement);
+  const trimElementId = useDeckStore((s) => s.trimElementId);
+  const updateElement = useDeckStore((s) => s.updateElement);
+  const [duration, setDuration] = useState(0);
+
+  const hasTrim = element.trimStart !== undefined || element.trimEnd !== undefined;
+  const isActive = trimElementId === element.id;
+
+  useEffect(() => {
+    const vid = document.querySelector(
+      `[data-element-id="${element.id}"] video`,
+    ) as HTMLVideoElement | null;
+    if (!vid) return;
+    const onDur = () => setDuration(vid.duration || 0);
+    vid.addEventListener("loadedmetadata", onDur);
+    vid.addEventListener("durationchange", onDur);
+    if (vid.duration) setDuration(vid.duration);
+    return () => {
+      vid.removeEventListener("loadedmetadata", onDur);
+      vid.removeEventListener("durationchange", onDur);
+    };
+  }, [element.id]);
+
+  const trimStart = element.trimStart ?? 0;
+  const trimEnd = element.trimEnd ?? duration;
+  const trimDuration = Math.max(0, trimEnd - trimStart);
+
+  const fmt = (s: number) => {
+    if (!isFinite(s) || s === 0) return "0.0s";
+    return `${s.toFixed(1)}s`;
+  };
+
+  return (
+    <div>
+      <FieldLabel>Trim</FieldLabel>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setTrimElement(isActive ? null : element.id)}
+          className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+            isActive
+              ? "bg-amber-600 text-white"
+              : "bg-zinc-800 text-zinc-300 hover:text-zinc-100 border border-zinc-700 hover:border-zinc-500"
+          }`}
+        >
+          {isActive ? "Done" : "Trim"}
+        </button>
+        {hasTrim && (
+          <button
+            onClick={() => {
+              updateElement(slideId, element.id, {
+                trimStart: undefined,
+                trimEnd: undefined,
+              } as Partial<SlideElement>);
+              if (isActive) setTrimElement(null);
+            }}
+            className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-500 transition-colors"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+      {/* Trim info summary */}
+      {hasTrim && duration > 0 && (
+        <div className="mt-1.5 text-xs text-zinc-400 font-mono bg-zinc-800/50 rounded px-2 py-1">
+          {fmt(trimStart)} ~ {fmt(trimEnd)} / {fmt(duration)} ({fmt(trimDuration)})
+        </div>
+      )}
     </div>
   );
 }

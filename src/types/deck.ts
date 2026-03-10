@@ -214,6 +214,8 @@ export interface VideoElement extends BaseElement {
   loop?: boolean;
   muted?: boolean;
   controls?: boolean;
+  trimStart?: number;  // seconds, undefined = 0
+  trimEnd?: number;    // seconds, undefined = full duration
   style?: VideoStyle;
 }
 

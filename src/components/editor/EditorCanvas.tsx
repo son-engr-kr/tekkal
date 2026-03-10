@@ -4,7 +4,7 @@ import { usePreviewStore } from "@/stores/previewStore";
 import { SlideRenderer } from "@/components/renderer/SlideRenderer";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import type { ImageElement, VideoElement, SlideElement } from "@/types/deck";
-import { SelectionOverlay } from "./SelectionOverlay";
+import { SelectionOverlay, TrimOverlay } from "./SelectionOverlay";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { assert } from "@/utils/assert";
 
@@ -21,6 +21,7 @@ export function EditorCanvas() {
   const selectElement = useDeckStore((s) => s.selectElement);
   const selectElements = useDeckStore((s) => s.selectElements);
   const addElement = useDeckStore((s) => s.addElement);
+  const trimElementId = useDeckStore((s) => s.trimElementId);
   const adapter = useAdapter();
 
   const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
@@ -274,7 +275,7 @@ export function EditorCanvas() {
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex items-center justify-center bg-zinc-900 overflow-hidden"
+      className="flex-1 relative flex items-center justify-center bg-zinc-900 overflow-hidden"
       onMouseDown={handleCanvasMouseDown}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -330,6 +331,16 @@ export function EditorCanvas() {
           />
         )}
       </div>
+      {/* Trim overlay — floating at bottom of canvas area */}
+      {trimElementId && slide && (() => {
+        const trimEl = slide.elements.find((e) => e.id === trimElementId);
+        if (!trimEl || trimEl.type !== "video") return null;
+        return (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2" style={{ width: CANVAS_WIDTH * scale, zIndex: 50 }}>
+            <TrimOverlay element={trimEl} slideId={slide.id} />
+          </div>
+        );
+      })()}
     </div>
   );
 }

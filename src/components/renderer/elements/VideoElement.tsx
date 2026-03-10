@@ -23,9 +23,49 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
       video.play().catch(() => {});
     } else {
       video.pause();
-      video.currentTime = 0;
+      video.currentTime = element.trimStart ?? 0;
     }
-  }, [videoStep]);
+  }, [videoStep, element.trimStart]);
+
+  // Enforce trim boundaries during playback
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const trimStart = element.trimStart;
+    const trimEnd = element.trimEnd;
+    if (trimStart === undefined && trimEnd === undefined) return;
+
+    const onLoaded = () => {
+      if (trimStart !== undefined && video.currentTime < trimStart) {
+        video.currentTime = trimStart;
+      }
+    };
+
+    const onTimeUpdate = () => {
+      const end = trimEnd ?? video.duration;
+      const start = trimStart ?? 0;
+      if (video.currentTime >= end) {
+        if (element.loop) {
+          video.currentTime = start;
+        } else {
+          video.pause();
+          video.currentTime = end;
+        }
+      }
+    };
+
+    video.addEventListener("loadedmetadata", onLoaded);
+    video.addEventListener("timeupdate", onTimeUpdate);
+
+    // Apply immediately if metadata already loaded
+    if (video.readyState >= 1) onLoaded();
+
+    return () => {
+      video.removeEventListener("loadedmetadata", onLoaded);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+    };
+  }, [element.trimStart, element.trimEnd, element.loop]);
+
   const style = useElementStyle<VideoStyle>("video", element.style);
   const resolvedSrc = useAssetUrl(element.src);
 

@@ -34,6 +34,7 @@ export function SelectionOverlay({ slide, scale }: Props) {
   const highlightedElementIds = useDeckStore((s) => s.highlightedElementIds);
   const cropElementId = useDeckStore((s) => s.cropElementId);
   const setCropElement = useDeckStore((s) => s.setCropElement);
+  const trimElementId = useDeckStore((s) => s.trimElementId);
   const selectElement = useDeckStore((s) => s.selectElement);
   const selectElements = useDeckStore((s) => s.selectElements);
   const updateElement = useDeckStore((s) => s.updateElement);
@@ -74,6 +75,7 @@ export function SelectionOverlay({ slide, scale }: Props) {
   // Only show individual resize handles for ungrouped single selection (not during crop)
   const singleSelectedId = selectedElementIds.length === 1 ? selectedElementIds[0] : null;
   const isCropping = cropElementId !== null;
+  const isTrimming = trimElementId !== null;
 
   // Group-aware select: clicking a grouped element always selects the whole group
   const handleSelect = useCallback(
@@ -181,7 +183,7 @@ export function SelectionOverlay({ slide, scale }: Props) {
       {slide.elements.map((element) => {
         if (element.type !== "video") return null;
         if (!selectedElementIds.includes(element.id)) return null;
-        if (isCropping) return null;
+        if (isCropping || isTrimming) return null;
         return <VideoControls key={`vc-${element.id}`} element={element} />;
       })}
       {/* Group bounding boxes with resize handles */}
@@ -694,7 +696,8 @@ function VideoControls({ element }: { element: SlideElement }) {
   const [duration, setDuration] = useState(0);
   const progressRef = useRef<HTMLDivElement>(null);
 
-  const crop = (element as VideoElementType).style?.crop;
+  const videoEl = element as VideoElementType;
+  const crop = videoEl.style?.crop;
   const { x, y } = element.position;
   const { w, h } = element.size;
 
@@ -706,6 +709,9 @@ function VideoControls({ element }: { element: SlideElement }) {
   const visW = w * (1 - cl - cr);
   const visBottom = y + h * (1 - cb);
 
+  const trimStart = videoEl.trimStart ?? 0;
+  const trimEnd = videoEl.trimEnd;
+
   const getVideo = useCallback(() => {
     return document.querySelector(
       `[data-element-id="${element.id}"] video`,
@@ -713,51 +719,54 @@ function VideoControls({ element }: { element: SlideElement }) {
   }, [element.id]);
 
   useEffect(() => {
-    const videoEl = getVideo();
-    if (!videoEl) return;
+    const vid = getVideo();
+    if (!vid) return;
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
-    const onTime = () => setCurrentTime(videoEl.currentTime);
-    const onDur = () => setDuration(videoEl.duration || 0);
+    const onTime = () => setCurrentTime(vid.currentTime);
+    const onDur = () => setDuration(vid.duration || 0);
 
-    videoEl.addEventListener("play", onPlay);
-    videoEl.addEventListener("pause", onPause);
-    videoEl.addEventListener("timeupdate", onTime);
-    videoEl.addEventListener("loadedmetadata", onDur);
-    videoEl.addEventListener("durationchange", onDur);
+    vid.addEventListener("play", onPlay);
+    vid.addEventListener("pause", onPause);
+    vid.addEventListener("timeupdate", onTime);
+    vid.addEventListener("loadedmetadata", onDur);
+    vid.addEventListener("durationchange", onDur);
 
-    setIsPlaying(!videoEl.paused);
-    setCurrentTime(videoEl.currentTime);
-    if (videoEl.duration) setDuration(videoEl.duration);
+    setIsPlaying(!vid.paused);
+    setCurrentTime(vid.currentTime);
+    if (vid.duration) setDuration(vid.duration);
 
     return () => {
-      videoEl.removeEventListener("play", onPlay);
-      videoEl.removeEventListener("pause", onPause);
-      videoEl.removeEventListener("timeupdate", onTime);
-      videoEl.removeEventListener("loadedmetadata", onDur);
-      videoEl.removeEventListener("durationchange", onDur);
+      vid.removeEventListener("play", onPlay);
+      vid.removeEventListener("pause", onPause);
+      vid.removeEventListener("timeupdate", onTime);
+      vid.removeEventListener("loadedmetadata", onDur);
+      vid.removeEventListener("durationchange", onDur);
     };
   }, [getVideo]);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const videoEl = getVideo();
-    if (!videoEl) return;
-    if (videoEl.paused) videoEl.play().catch(() => {});
-    else videoEl.pause();
+    const vid = getVideo();
+    if (!vid) return;
+    if (vid.paused) vid.play().catch(() => {});
+    else vid.pause();
   };
+
+  const effectiveTrimEnd = trimEnd ?? duration;
 
   const handleSeekDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     const bar = progressRef.current;
-    const videoEl = getVideo();
-    if (!bar || !videoEl || !duration) return;
+    const vid = getVideo();
+    if (!bar || !vid || !duration) return;
 
     const seek = (clientX: number) => {
       const rect = bar.getBoundingClientRect();
       const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      videoEl.currentTime = ratio * duration;
+      const time = ratio * duration;
+      vid.currentTime = Math.max(trimStart, Math.min(effectiveTrimEnd, time));
     };
     seek(e.clientX);
 
@@ -776,6 +785,9 @@ function VideoControls({ element }: { element: SlideElement }) {
     return `${m}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
   };
 
+  const hasTrim = videoEl.trimStart !== undefined || videoEl.trimEnd !== undefined;
+  const trimStartPct = duration > 0 ? trimStart / duration : 0;
+  const trimEndPct = duration > 0 ? effectiveTrimEnd / duration : 1;
   const pct = duration > 0 ? currentTime / duration : 0;
   const barH = 28;
 
@@ -816,11 +828,192 @@ function VideoControls({ element }: { element: SlideElement }) {
         onMouseDown={handleSeekDown}
         style={{ flex: 1, height: 4, backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 2, cursor: "pointer", position: "relative" }}
       >
+        {/* Gray-out regions outside trim range */}
+        {hasTrim && trimStartPct > 0 && (
+          <div style={{ position: "absolute", left: 0, top: 0, width: `${trimStartPct * 100}%`, height: "100%", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: "2px 0 0 2px" }} />
+        )}
+        {hasTrim && trimEndPct < 1 && (
+          <div style={{ position: "absolute", right: 0, top: 0, width: `${(1 - trimEndPct) * 100}%`, height: "100%", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: "0 2px 2px 0" }} />
+        )}
         <div style={{ width: `${pct * 100}%`, height: "100%", backgroundColor: "#3b82f6", borderRadius: 2 }} />
       </div>
       <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 10, fontFamily: "monospace", whiteSpace: "nowrap" }}>
         {fmt(currentTime)}/{fmt(duration)}
       </span>
+    </div>
+  );
+}
+
+// ── Trim Overlay (rendered outside canvas in EditorCanvas) ──────────
+
+export function TrimOverlay({ element, slideId }: { element: SlideElement; slideId: string }) {
+  const updateElement = useDeckStore((s) => s.updateElement);
+  const setTrimElement = useDeckStore((s) => s.setTrimElement);
+  const [duration, setDuration] = useState(0);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  const videoEl = element as VideoElementType;
+  const trimStart = videoEl.trimStart ?? 0;
+  const trimEnd = videoEl.trimEnd;
+
+  const getVideo = useCallback(() => {
+    return document.querySelector(
+      `[data-element-id="${element.id}"] video`,
+    ) as HTMLVideoElement | null;
+  }, [element.id]);
+
+  useEffect(() => {
+    const vid = getVideo();
+    if (!vid) return;
+    const onDur = () => setDuration(vid.duration || 0);
+    vid.addEventListener("loadedmetadata", onDur);
+    vid.addEventListener("durationchange", onDur);
+    if (vid.duration) setDuration(vid.duration);
+    vid.pause();
+    return () => {
+      vid.removeEventListener("loadedmetadata", onDur);
+      vid.removeEventListener("durationchange", onDur);
+    };
+  }, [getVideo]);
+
+  const effectiveTrimEnd = trimEnd ?? duration;
+  const trimStartPct = duration > 0 ? trimStart / duration : 0;
+  const trimEndPct = duration > 0 ? effectiveTrimEnd / duration : 1;
+  const trimDuration = Math.max(0, effectiveTrimEnd - trimStart);
+
+  const handleDrag = useCallback((e: React.MouseEvent, which: "start" | "end") => {
+    e.stopPropagation();
+    e.preventDefault();
+    const bar = barRef.current;
+    const vid = getVideo();
+    if (!bar || !vid || !duration) return;
+
+    const doSeek = (clientX: number) => {
+      const rect = bar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const time = Math.round(ratio * duration * 10) / 10;
+
+      if (which === "start") {
+        const maxStart = (trimEnd ?? duration) - 0.1;
+        const clamped = Math.max(0, Math.min(maxStart, time));
+        vid.currentTime = clamped;
+        updateElement(slideId, element.id, {
+          trimStart: clamped <= 0 ? undefined : clamped,
+        } as Partial<SlideElement>);
+      } else {
+        const minEnd = trimStart + 0.1;
+        const clamped = Math.max(minEnd, Math.min(duration, time));
+        vid.currentTime = clamped;
+        updateElement(slideId, element.id, {
+          trimEnd: clamped >= duration ? undefined : clamped,
+        } as Partial<SlideElement>);
+      }
+    };
+    doSeek(e.clientX);
+
+    const onMove = (me: MouseEvent) => doSeek(me.clientX);
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [getVideo, duration, trimStart, trimEnd, slideId, element.id, updateElement]);
+
+  const fmt = (s: number) => {
+    if (!isFinite(s)) return "0.0s";
+    return `${s.toFixed(1)}s`;
+  };
+
+  return (
+    <div
+      style={{
+          backgroundColor: "rgba(24,24,27,0.95)",
+          borderRadius: 8,
+          padding: "10px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          border: "1px solid rgba(245,158,11,0.3)",
+        }}
+      >
+        {/* Trim bar */}
+        <div
+          ref={barRef}
+          style={{ flex: 1, height: 12, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 6, position: "relative", cursor: "default" }}
+        >
+          {/* Active trim region */}
+          <div style={{
+            position: "absolute",
+            left: `${trimStartPct * 100}%`,
+            width: `${(trimEndPct - trimStartPct) * 100}%`,
+            height: "100%",
+            backgroundColor: "rgba(59,130,246,0.4)",
+            borderRadius: 6,
+          }} />
+          {/* Dimmed outside regions */}
+          {trimStartPct > 0 && (
+            <div style={{ position: "absolute", left: 0, top: 0, width: `${trimStartPct * 100}%`, height: "100%", backgroundColor: "rgba(0,0,0,0.45)", borderRadius: "6px 0 0 6px" }} />
+          )}
+          {trimEndPct < 1 && (
+            <div style={{ position: "absolute", right: 0, top: 0, width: `${(1 - trimEndPct) * 100}%`, height: "100%", backgroundColor: "rgba(0,0,0,0.45)", borderRadius: "0 6px 6px 0" }} />
+          )}
+          {/* Start handle */}
+          <div
+            onMouseDown={(e) => handleDrag(e, "start")}
+            style={{
+              position: "absolute",
+              left: `${trimStartPct * 100}%`,
+              top: -3,
+              width: 8,
+              height: 18,
+              backgroundColor: "#f59e0b",
+              borderRadius: 3,
+              cursor: "ew-resize",
+              transform: "translateX(-4px)",
+              zIndex: 2,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+            }}
+          />
+          {/* End handle */}
+          <div
+            onMouseDown={(e) => handleDrag(e, "end")}
+            style={{
+              position: "absolute",
+              left: `${trimEndPct * 100}%`,
+              top: -3,
+              width: 8,
+              height: 18,
+              backgroundColor: "#f59e0b",
+              borderRadius: 3,
+              cursor: "ew-resize",
+              transform: "translateX(-4px)",
+              zIndex: 2,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+            }}
+          />
+        </div>
+        {/* Time info */}
+        <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontFamily: "monospace", whiteSpace: "nowrap" }}>
+          {fmt(trimStart)} ~ {fmt(effectiveTrimEnd)} / {fmt(duration)} ({fmt(trimDuration)})
+        </span>
+        {/* Done button */}
+        <button
+          onClick={() => setTrimElement(null)}
+          style={{
+            background: "#f59e0b",
+            border: "none",
+            borderRadius: 4,
+            color: "#18181b",
+            fontSize: 11,
+            fontWeight: 600,
+            padding: "3px 12px",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Done
+        </button>
     </div>
   );
 }

@@ -25,6 +25,7 @@ interface DeckState {
   selectedElementIds: string[];
   highlightedElementIds: string[];
   cropElementId: string | null;
+  trimElementId: string | null;
   isDirty: boolean;
   isSaving: boolean;
 
@@ -60,6 +61,7 @@ interface DeckState {
   toggleSlideHidden: (slideId: string) => void;
   highlightElements: (ids: string[]) => void;
   setCropElement: (id: string | null) => void;
+  setTrimElement: (id: string | null) => void;
   patchElementById: (elementId: string, patch: Partial<SlideElement>) => void;
   bringToFront: (slideId: string, elementId: string) => void;
   sendToBack: (slideId: string, elementId: string) => void;
@@ -94,6 +96,7 @@ export const useDeckStore = create<DeckState>()(
         selectedElementIds: [],
         highlightedElementIds: [],
         cropElementId: null,
+        trimElementId: null,
         isDirty: false,
         isSaving: false,
 
@@ -480,6 +483,9 @@ export const useDeckStore = create<DeckState>()(
         setCropElement: (id) =>
           set((state) => { state.cropElementId = id; }),
 
+        setTrimElement: (id) =>
+          set((state) => { state.trimElementId = id; }),
+
         bringToFront: (slideId, elementId) =>
           set((state) => {
             assert(state.deck !== null, "No deck loaded");
@@ -552,21 +558,21 @@ useDeckStore.subscribe(
   },
 );
 
-// Auto-clear crop mode when selection or slide changes
+// Auto-clear crop/trim mode when selection or slide changes
 useDeckStore.subscribe(
   (s) => s.selectedElementIds,
   () => {
-    if (useDeckStore.getState().cropElementId) {
-      useDeckStore.getState().setCropElement(null);
-    }
+    const state = useDeckStore.getState();
+    if (state.cropElementId) state.setCropElement(null);
+    if (state.trimElementId) state.setTrimElement(null);
   },
 );
 useDeckStore.subscribe(
   (s) => s.currentSlideIndex,
   () => {
-    if (useDeckStore.getState().cropElementId) {
-      useDeckStore.getState().setCropElement(null);
-    }
+    const state = useDeckStore.getState();
+    if (state.cropElementId) state.setCropElement(null);
+    if (state.trimElementId) state.setTrimElement(null);
   },
 );
 
