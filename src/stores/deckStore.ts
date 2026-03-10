@@ -4,7 +4,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 import { temporal } from "zundo";
 import type { Animation, Comment, Deck, DeckTheme, Slide, SlideElement } from "@/types/deck";
 import type { FileSystemAdapter } from "@/adapters/types";
-import { nextElementId } from "@/utils/id";
+import { nextElementId, syncCounters } from "@/utils/id";
 import { assert } from "@/utils/assert";
 
 // Module-level adapter reference, set by App when adapter is created
@@ -100,7 +100,8 @@ export const useDeckStore = create<DeckState>()(
         isDirty: false,
         isSaving: false,
 
-        openProject: (project, deck) =>
+        openProject: (project, deck) => {
+          syncCounters(deck);
           set((state) => {
             state.currentProject = project;
             state.deck = deck;
@@ -108,7 +109,8 @@ export const useDeckStore = create<DeckState>()(
             state.selectedSlideIds = deck.slides.length > 0 ? [deck.slides[0]!.id] : [];
             state.selectedElementIds = [];
             state.isDirty = false;
-          }),
+          });
+        },
 
         closeProject: () =>
           set((state) => {
@@ -120,14 +122,16 @@ export const useDeckStore = create<DeckState>()(
             state.isDirty = false;
           }),
 
-        loadDeck: (deck) =>
+        loadDeck: (deck) => {
+          syncCounters(deck);
           set((state) => {
             state.deck = deck;
             state.currentSlideIndex = 0;
             state.selectedSlideIds = deck.slides.length > 0 ? [deck.slides[0]!.id] : [];
             state.selectedElementIds = [];
             state.isDirty = false;
-          }),
+          });
+        },
 
         replaceDeck: (deck) =>
           set((state) => {
