@@ -314,6 +314,20 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
     [],
   );
 
+  // Crop data for image/video elements
+  const crop: CropRect | undefined =
+    (element.type === "image" ? (element as ImageElementType).style?.crop
+    : element.type === "video" ? (element as VideoElementType).style?.crop
+    : undefined);
+  const hasCrop = crop && (crop.top || crop.right || crop.bottom || crop.left);
+
+  const cl = crop?.left ?? 0;
+  const cr = crop?.right ?? 0;
+  const ct = crop?.top ?? 0;
+  const cb = crop?.bottom ?? 0;
+  const visScaleX = (1 - cl - cr) || 1;
+  const visScaleY = (1 - ct - cb) || 1;
+
   const handleResizeMouseDown = useCallback(
     (e: React.MouseEvent, corner: Corner) => {
       e.stopPropagation();
@@ -337,34 +351,36 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
         const rawDy = (me.clientY - startY) / scale;
 
         let dx = 0, dy = 0, dw = 0, dh = 0;
-        switch (corner) {
-          case "se":
-            dw = Math.round(rawDx);
-            dh = Math.round(rawDy);
-            break;
-          case "sw":
-            dx = Math.round(rawDx);
-            dw = -Math.round(rawDx);
-            dh = Math.round(rawDy);
-            break;
-          case "ne":
-            dy = Math.round(rawDy);
-            dw = Math.round(rawDx);
-            dh = -Math.round(rawDy);
-            break;
-          case "nw":
-            dx = Math.round(rawDx);
-            dy = Math.round(rawDy);
-            dw = -Math.round(rawDx);
-            dh = -Math.round(rawDy);
-            break;
+
+        // Handles are at crop corners. Mouse delta = visible corner movement.
+        // Convert to element delta, keeping opposite crop corner anchored.
+        const isLeft = corner === "nw" || corner === "sw";
+        const isTop = corner === "nw" || corner === "ne";
+
+        if (isLeft) {
+          dw = Math.round(-rawDx / visScaleX);
+          dx = Math.round(-(1 - cr) * dw);
+        } else {
+          dw = Math.round(rawDx / visScaleX);
+          dx = Math.round(-cl * dw);
+        }
+        if (isTop) {
+          dh = Math.round(-rawDy / visScaleY);
+          dy = Math.round(-(1 - cb) * dh);
+        } else {
+          dh = Math.round(rawDy / visScaleY);
+          dy = Math.round(-ct * dh);
         }
 
         // Enforce minimum size
-        const newW = origW + dw;
-        const newH = origH + dh;
-        if (newW < 20) { dw = 20 - origW; if (corner === "sw" || corner === "nw") dx = origW - 20; }
-        if (newH < 20) { dh = 20 - origH; if (corner === "nw" || corner === "ne") dy = origH - 20; }
+        if (origW + dw < 20) {
+          dw = 20 - origW;
+          dx = isLeft ? Math.round(-(1 - cr) * dw) : Math.round(-cl * dw);
+        }
+        if (origH + dh < 20) {
+          dh = 20 - origH;
+          dy = isTop ? Math.round(-(1 - cb) * dh) : Math.round(-ct * dh);
+        }
 
         onResize(
           (origX + dx) - element.position.x,
@@ -377,21 +393,8 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [element.position.x, element.position.y, element.size.w, element.size.h, scale, onResize],
+    [element.position.x, element.position.y, element.size.w, element.size.h, scale, onResize, cl, cr, ct, cb, visScaleX, visScaleY],
   );
-
-  // Crop-aware outline: for image/video with crop, outline + handles follow the visible region
-  const crop: CropRect | undefined =
-    (element.type === "image" ? (element as ImageElementType).style?.crop
-    : element.type === "video" ? (element as VideoElementType).style?.crop
-    : undefined);
-  const hasCrop = crop && (crop.top || crop.right || crop.bottom || crop.left);
-
-  // Crop insets as percentages of element size
-  const cropTop = hasCrop ? crop.top * 100 : 0;
-  const cropRight = hasCrop ? crop.right * 100 : 0;
-  const cropBottom = hasCrop ? crop.bottom * 100 : 0;
-  const cropLeft = hasCrop ? crop.left * 100 : 0;
 
   return (
     <>
@@ -399,30 +402,38 @@ function InteractiveElement({ element, isSelected, showResizeHandles, isHighligh
         className="absolute cursor-move select-none"
         style={{
           ...getElementPositionStyle(element),
-          pointerEvents: "auto",
+          pointerEvents: "none",
         }}
         draggable={false}
         initial={isHighlighted ? { boxShadow: "0 0 0 3px rgba(34,197,94,0.7)" } : false}
         animate={{ boxShadow: "0 0 0 0px rgba(34,197,94,0)" }}
         transition={{ duration: 0.8 }}
-        onMouseDown={handleMouseDown}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          onDoubleClick();
-        }}
         onContextMenu={handleContextMenu}
       >
-        {/* Transparent overlay to capture mouse events */}
-        <div className="absolute inset-0" />
+        {/* Hit-test area: matches crop bounds so clicks outside crop don't select */}
+        <div
+          className="absolute inset-0"
+          style={{
+            pointerEvents: "auto",
+            clipPath: hasCrop
+              ? `inset(${ct * 100}% ${cr * 100}% ${cb * 100}% ${cl * 100}%)`
+              : undefined,
+          }}
+          onMouseDown={handleMouseDown}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onDoubleClick();
+          }}
+        />
 
-        {/* Outline + handles: follows crop bounds if cropped */}
+        {/* Outline + handles: follows crop bounds */}
         <div
           className="absolute"
           style={{
-            top: `${cropTop}%`,
-            left: `${cropLeft}%`,
-            right: `${cropRight}%`,
-            bottom: `${cropBottom}%`,
+            top: `${ct * 100}%`,
+            left: `${cl * 100}%`,
+            right: `${cr * 100}%`,
+            bottom: `${cb * 100}%`,
             outline: isSelected ? "2px solid rgb(59,130,246)" : "none",
             pointerEvents: "none",
           }}
