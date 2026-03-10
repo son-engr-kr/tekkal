@@ -35,5 +35,5 @@ export interface FileSystemAdapter {
   loadLayout(layoutName: string): Promise<import("@/types/deck").Slide>;
   readonly mode: "vite" | "fs-access" | "readonly";
   readonly projectName: string;
-  readonly lastSaveTs: number;
+  readonly lastSaveHash: number | null;
 }

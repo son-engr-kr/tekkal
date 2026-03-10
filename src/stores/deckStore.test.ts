@@ -228,13 +228,22 @@ describe("deckStore - BUG: drag element must not reset slide index", () => {
 // ============================================================
 
 describe("deckStore - replaceDeck vs loadDeck", () => {
-  it("loadDeck resets currentSlideIndex to 0", () => {
+  it("loadDeck preserves currentSlideIndex", () => {
     useDeckStore.getState().loadDeck(makeDeck(3));
     useDeckStore.getState().setCurrentSlide(2);
 
-    // loadDeck should reset to 0
+    // loadDeck should preserve current position
     useDeckStore.getState().loadDeck(makeDeck(3));
-    expect(useDeckStore.getState().currentSlideIndex).toBe(0);
+    expect(useDeckStore.getState().currentSlideIndex).toBe(2);
+  });
+
+  it("loadDeck clamps index when slides are removed", () => {
+    useDeckStore.getState().loadDeck(makeDeck(5));
+    useDeckStore.getState().setCurrentSlide(4);
+
+    // Reload with fewer slides — index should clamp
+    useDeckStore.getState().loadDeck(makeDeck(2));
+    expect(useDeckStore.getState().currentSlideIndex).toBe(1);
   });
 
   it("replaceDeck preserves currentSlideIndex", () => {

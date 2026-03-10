@@ -7,6 +7,26 @@ import type { FileSystemAdapter } from "@/adapters/types";
 import { nextElementId, syncCounters } from "@/utils/id";
 import { assert } from "@/utils/assert";
 
+// -- Session-persisted slide index helpers --
+
+function slideIndexKey(project: string): string {
+  return `deckode:slideIndex:${project}`;
+}
+
+function saveSlideIndex(project: string | null, index: number): void {
+  if (!project || typeof sessionStorage === "undefined") return;
+  sessionStorage.setItem(slideIndexKey(project), String(index));
+}
+
+function loadSlideIndex(project: string, slideCount: number): number {
+  if (typeof sessionStorage === "undefined") return 0;
+  const raw = sessionStorage.getItem(slideIndexKey(project));
+  if (raw === null) return 0;
+  const idx = parseInt(raw, 10);
+  if (Number.isNaN(idx) || idx < 0) return 0;
+  return Math.min(idx, slideCount - 1);
+}
+
 // Module-level adapter reference, set by App when adapter is created
 let _adapter: FileSystemAdapter | null = null;
 export function setStoreAdapter(adapter: FileSystemAdapter | null) {
@@ -28,7 +48,9 @@ interface DeckState {
   trimElementId: string | null;
   isDirty: boolean;
   isSaving: boolean;
+  savePaused: boolean;
 
+  setSavePaused: (paused: boolean) => void;
   openProject: (project: string, deck: Deck) => void;
   closeProject: () => void;
   loadDeck: (deck: Deck) => void;
@@ -99,16 +121,24 @@ export const useDeckStore = create<DeckState>()(
         trimElementId: null,
         isDirty: false,
         isSaving: false,
+        savePaused: false,
+
+        setSavePaused: (paused) =>
+          set((state) => { state.savePaused = paused; }),
 
         openProject: (project, deck) => {
           syncCounters(deck);
+          const restoredIndex = loadSlideIndex(project, deck.slides.length);
           set((state) => {
             state.currentProject = project;
             state.deck = deck;
-            state.currentSlideIndex = 0;
-            state.selectedSlideIds = deck.slides.length > 0 ? [deck.slides[0]!.id] : [];
+            state.currentSlideIndex = restoredIndex;
+            state.selectedSlideIds = deck.slides.length > 0
+              ? [deck.slides[restoredIndex]!.id]
+              : [];
             state.selectedElementIds = [];
             state.isDirty = false;
+            state.savePaused = false;
           });
         },
 
@@ -120,14 +150,22 @@ export const useDeckStore = create<DeckState>()(
             state.selectedSlideIds = [];
             state.selectedElementIds = [];
             state.isDirty = false;
+            state.savePaused = false;
           }),
 
         loadDeck: (deck) => {
           syncCounters(deck);
           set((state) => {
             state.deck = deck;
-            state.currentSlideIndex = 0;
-            state.selectedSlideIds = deck.slides.length > 0 ? [deck.slides[0]!.id] : [];
+            // Preserve current slide position (clamp if slides were removed)
+            const clamped = Math.min(
+              state.currentSlideIndex,
+              Math.max(0, deck.slides.length - 1),
+            );
+            state.currentSlideIndex = clamped;
+            state.selectedSlideIds = deck.slides.length > 0
+              ? [deck.slides[clamped]!.id]
+              : [];
             state.selectedElementIds = [];
             state.isDirty = false;
           });
@@ -140,6 +178,7 @@ export const useDeckStore = create<DeckState>()(
             if (state.currentSlideIndex >= deck.slides.length) {
               state.currentSlideIndex = Math.max(0, deck.slides.length - 1);
             }
+            saveSlideIndex(state.currentProject, state.currentSlideIndex);
             state.isDirty = true;
           }),
 
@@ -179,6 +218,7 @@ export const useDeckStore = create<DeckState>()(
             state.currentSlideIndex = index;
             state.selectedSlideIds = [state.deck.slides[index]!.id];
             state.selectedElementIds = [];
+            saveSlideIndex(state.currentProject, index);
           }),
 
         setSelectedSlides: (ids) =>
@@ -193,6 +233,7 @@ export const useDeckStore = create<DeckState>()(
               state.currentSlideIndex += 1;
               state.selectedSlideIds = [state.deck.slides[state.currentSlideIndex]!.id];
               state.selectedElementIds = [];
+              saveSlideIndex(state.currentProject, state.currentSlideIndex);
             }
           }),
 
@@ -203,6 +244,7 @@ export const useDeckStore = create<DeckState>()(
               state.currentSlideIndex -= 1;
               state.selectedSlideIds = [state.deck.slides[state.currentSlideIndex]!.id];
               state.selectedElementIds = [];
+              saveSlideIndex(state.currentProject, state.currentSlideIndex);
             }
           }),
 
@@ -313,6 +355,7 @@ export const useDeckStore = create<DeckState>()(
             if (state.currentSlideIndex >= state.deck.slides.length) {
               state.currentSlideIndex = Math.max(0, state.deck.slides.length - 1);
             }
+            saveSlideIndex(state.currentProject, state.currentSlideIndex);
             state.isDirty = true;
           }),
 
@@ -332,6 +375,7 @@ export const useDeckStore = create<DeckState>()(
             } else if (fromIndex > state.currentSlideIndex && toIndex <= state.currentSlideIndex) {
               state.currentSlideIndex += 1;
             }
+            saveSlideIndex(state.currentProject, state.currentSlideIndex);
             state.isDirty = true;
           }),
 
@@ -587,10 +631,22 @@ useDeckStore.subscribe(
   (s) => s.isDirty,
   (isDirty) => {
     if (!isDirty) return;
+    if (useDeckStore.getState().savePaused) return;
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
       useDeckStore.getState().saveToDisk();
     }, 1000);
+  },
+);
+
+// Cancel pending auto-save when savePaused becomes true
+useDeckStore.subscribe(
+  (s) => s.savePaused,
+  (paused) => {
+    if (paused && saveTimeout) {
+      clearTimeout(saveTimeout);
+      saveTimeout = null;
+    }
   },
 );
 

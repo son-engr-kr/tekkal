@@ -5,7 +5,7 @@ import { assert } from "@/utils/assert";
 
 export class ReadOnlyAdapter implements FileSystemAdapter {
   readonly mode = "readonly" as const;
-  readonly lastSaveTs = 0;
+  readonly lastSaveHash: number | null = null;
   readonly projectName: string;
 
   private deck: Deck;

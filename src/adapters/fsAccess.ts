@@ -4,6 +4,7 @@ import type { NewProjectConfig } from "@/utils/projectTemplates";
 import { saveHandle, clearHandle } from "@/utils/handleStore";
 import { generateBlankDeck, generateWizardDeck } from "@/utils/projectTemplates";
 import { assert } from "@/utils/assert";
+import { fnv1aHash } from "@/utils/hash";
 
 // Bundled template data for prod/FS Access mode (no server available)
 import exampleDeck from "../../templates/default/deck.json";
@@ -35,10 +36,10 @@ export class FsAccessAdapter implements FileSystemAdapter {
     return this.blobUrlCache_;
   }
   readonly projectName: string;
-  private _lastSaveTs = 0;
+  private _lastSaveHash: number | null = null;
 
-  get lastSaveTs(): number {
-    return this._lastSaveTs;
+  get lastSaveHash(): number | null {
+    return this._lastSaveHash;
   }
 
   constructor(dirHandle: FileSystemDirectoryHandle) {
@@ -152,9 +153,10 @@ export class FsAccessAdapter implements FileSystemAdapter {
     await this.splitSlideRefs(mutableDeck);
     const fileHandle = await this.dirHandle.getFileHandle("deck.json", { create: true });
     const writable = await fileHandle.createWritable();
-    await writable.write(JSON.stringify(mutableDeck, null, 2));
+    const serialized = JSON.stringify(mutableDeck, null, 2);
+    await writable.write(serialized);
     await writable.close();
-    this._lastSaveTs = Date.now();
+    this._lastSaveHash = fnv1aHash(serialized);
   }
 
   /** Write slides with `_ref` to their external files and replace them with `{ "$ref": "..." }`. */

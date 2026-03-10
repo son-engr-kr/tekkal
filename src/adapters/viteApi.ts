@@ -17,7 +17,7 @@ import {
 
 export class ViteApiAdapter implements FileSystemAdapter {
   readonly mode = "vite" as const;
-  readonly lastSaveTs = 0;
+  readonly lastSaveHash: number | null = null;
 
   constructor(public readonly projectName: string) {}
 

@@ -117,8 +117,18 @@ export function deckApiPlugin(): Plugin {
   let validate: ReturnType<typeof createValidator>;
   let viteServer: Parameters<NonNullable<Plugin["configureServer"]>>[0];
 
-  /** Timestamp of the most recent save-deck write per project */
-  const lastSaveTs = new Map<string, number>();
+  /** FNV-1a 32-bit hash (inline — server can't import client utils) */
+  function fnv1aHash(str: string): number {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return h >>> 0;
+  }
+
+  /** Content hash of the most recent editor save per project */
+  const lastSaveHash = new Map<string, number>();
   /** Active fs.watch handles per project */
   const watchers = new Map<string, fs.FSWatcher[]>();
 
@@ -141,8 +151,10 @@ export function deckApiPlugin(): Plugin {
     const onChange = () => {
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(() => {
-        const lastSave = lastSaveTs.get(project) ?? 0;
-        if (Date.now() - lastSave < 2000) return; // our own save
+        // Compare file content hash against last editor save
+        const content = fs.readFileSync(dp, "utf-8");
+        const hash = fnv1aHash(content);
+        if (hash === lastSaveHash.get(project)) return; // our own save
         notifyDeckChanged(project);
       }, 300);
     };
@@ -472,9 +484,10 @@ export function deckApiPlugin(): Plugin {
         const dp = deckPath(project);
         const dir = path.dirname(dp);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        lastSaveTs.set(project, Date.now());
         splitSlideRefs(deck, path.dirname(dp));
-        fs.writeFileSync(dp, JSON.stringify(deck, null, 2), "utf-8");
+        const serialized = JSON.stringify(deck, null, 2);
+        fs.writeFileSync(dp, serialized, "utf-8");
+        lastSaveHash.set(project, fnv1aHash(serialized));
         jsonResponse(res, 200, { ok: true });
       });
 

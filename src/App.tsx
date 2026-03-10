@@ -15,6 +15,7 @@ import type { FileSystemAdapter } from "@/adapters/types";
 import { FsAccessAdapter } from "@/adapters/fsAccess";
 import type { Deck } from "@/types/deck";
 import { assert } from "@/utils/assert";
+import { fnv1aHash } from "@/utils/hash";
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -178,6 +179,7 @@ export function App() {
           useDeckStore.getState().loadDeck(deck);
         });
       } else {
+        useDeckStore.getState().setSavePaused(true);
         setExternalChange(true);
       }
     };
@@ -206,7 +208,10 @@ export function App() {
       if (modified === lastModifiedRef.current) return;
       lastModifiedRef.current = modified;
 
-      if (Date.now() - fsAdapter.lastSaveTs < 2000) return;
+      // Hash-based self-save detection: read file text and compare hash
+      const text = await file.text();
+      const fileHash = fnv1aHash(text);
+      if (fileHash === fsAdapter.lastSaveHash) return; // our own save
 
       const state = useDeckStore.getState();
       if (!state.isDirty) {
@@ -214,6 +219,7 @@ export function App() {
           useDeckStore.getState().loadDeck(deck);
         });
       } else {
+        useDeckStore.getState().setSavePaused(true);
         setExternalChange(true);
       }
     };
@@ -224,6 +230,7 @@ export function App() {
 
   const handleReloadExternal = useCallback(() => {
     if (!adapter) return;
+    useDeckStore.getState().setSavePaused(false);
     adapter.loadDeck().then((deck) => {
       useDeckStore.getState().loadDeck(deck);
       setExternalChange(false);
@@ -231,7 +238,9 @@ export function App() {
   }, [adapter]);
 
   const handleKeepMine = useCallback(() => {
+    useDeckStore.getState().setSavePaused(false);
     setExternalChange(false);
+    useDeckStore.getState().saveToDisk();
   }, []);
 
   const handleAdapterReady = useCallback((newAdapter: FileSystemAdapter) => {
