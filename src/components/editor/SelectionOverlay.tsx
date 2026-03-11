@@ -346,6 +346,25 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
       const origH = element.size.h;
       let rafId = 0;
 
+      // Lock aspect ratio for image/video using natural content dimensions
+      let aspectRatio: number | null = null;
+      if (element.type === "image" || element.type === "video") {
+        const container = document.querySelector(`[data-element-id="${element.id}"]`);
+        if (element.type === "image") {
+          const img = container?.querySelector("img");
+          if (img && img.naturalWidth && img.naturalHeight) {
+            aspectRatio = img.naturalWidth / img.naturalHeight;
+          }
+        } else {
+          const video = container?.querySelector("video");
+          if (video && video.videoWidth && video.videoHeight) {
+            aspectRatio = video.videoWidth / video.videoHeight;
+          }
+        }
+        // Fallback to current element ratio
+        if (!aspectRatio) aspectRatio = origW / origH;
+      }
+
       const handleMouseUp = () => {
         cancelAnimationFrame(rafId);
         setDeckDragging(false);
@@ -360,34 +379,41 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
           const rawDx = (me.clientX - startX) / scale;
           const rawDy = (me.clientY - startY) / scale;
 
-          let dx = 0, dy = 0, dw = 0, dh = 0;
-
           const isLeft = corner === "nw" || corner === "sw";
           const isTop = corner === "nw" || corner === "ne";
 
-          if (isLeft) {
-            dw = Math.round(-rawDx / visScaleX);
-            dx = Math.round(-(1 - cr) * dw);
-          } else {
-            dw = Math.round(rawDx / visScaleX);
-            dx = Math.round(-cl * dw);
-          }
-          if (isTop) {
-            dh = Math.round(-rawDy / visScaleY);
-            dy = Math.round(-(1 - cb) * dh);
-          } else {
-            dh = Math.round(rawDy / visScaleY);
-            dy = Math.round(-ct * dh);
+          // Step 1: compute raw dw/dh from mouse delta
+          let dw = isLeft
+            ? Math.round(-rawDx / visScaleX)
+            : Math.round(rawDx / visScaleX);
+          let dh = isTop
+            ? Math.round(-rawDy / visScaleY)
+            : Math.round(rawDy / visScaleY);
+
+          // Step 2: enforce aspect ratio for image/video
+          if (aspectRatio !== null) {
+            const relW = Math.abs(dw) / (origW || 1);
+            const relH = Math.abs(dh) / (origH || 1);
+            if (relW >= relH) {
+              dh = Math.round((origW + dw) / aspectRatio) - origH;
+            } else {
+              dw = Math.round((origH + dh) * aspectRatio) - origW;
+            }
           }
 
+          // Step 3: minimum size constraints
           if (origW + dw < 20) {
             dw = 20 - origW;
-            dx = isLeft ? Math.round(-(1 - cr) * dw) : Math.round(-cl * dw);
+            if (aspectRatio !== null) dh = Math.round((origW + dw) / aspectRatio) - origH;
           }
           if (origH + dh < 20) {
             dh = 20 - origH;
-            dy = isTop ? Math.round(-(1 - cb) * dh) : Math.round(-ct * dh);
+            if (aspectRatio !== null) dw = Math.round((origH + dh) * aspectRatio) - origW;
           }
+
+          // Step 4: compute position offsets from finalized dw/dh
+          const dx = isLeft ? Math.round(-(1 - cr) * dw) : Math.round(-cl * dw);
+          const dy = isTop ? Math.round(-(1 - cb) * dh) : Math.round(-ct * dh);
 
           onResize(
             (origX + dx) - element.position.x,
@@ -401,7 +427,7 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [element.position.x, element.position.y, element.size.w, element.size.h, scale, onResize, cl, cr, ct, cb, visScaleX, visScaleY],
+    [element.position.x, element.position.y, element.size.w, element.size.h, element.type, element.id, scale, onResize, cl, cr, ct, cb, visScaleX, visScaleY],
   );
 
   return (
