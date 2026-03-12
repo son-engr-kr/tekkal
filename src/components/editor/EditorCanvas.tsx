@@ -3,7 +3,7 @@ import { useDeckStore } from "@/stores/deckStore";
 import { usePreviewStore } from "@/stores/previewStore";
 import { SlideRenderer } from "@/components/renderer/SlideRenderer";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
-import type { ImageElement, VideoElement, SlideElement } from "@/types/deck";
+import type { ImageElement, VideoElement, SlideElement, ShapeElement } from "@/types/deck";
 import { SelectionOverlay, TrimOverlay } from "./SelectionOverlay";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { assert } from "@/utils/assert";
@@ -187,10 +187,28 @@ export function EditorCanvas() {
         if (currentSlide) {
           const hitIds = currentSlide.elements
             .filter((el: SlideElement) => {
-              const ex1 = el.position.x;
-              const ey1 = el.position.y;
-              const ex2 = ex1 + el.size.w;
-              const ey2 = ey1 + el.size.h;
+              let ex1 = el.position.x;
+              let ey1 = el.position.y;
+              let ex2 = ex1 + el.size.w;
+              let ey2 = ey1 + el.size.h;
+              // For line/arrow with waypoints, use waypoint-derived bounds
+              if (el.type === "shape") {
+                const shape = el as ShapeElement;
+                if ((shape.shape === "line" || shape.shape === "arrow") && shape.style?.waypoints && shape.style.waypoints.length >= 2) {
+                  const wps = shape.style.waypoints;
+                  let wMinX = Infinity, wMinY = Infinity, wMaxX = -Infinity, wMaxY = -Infinity;
+                  for (const p of wps) {
+                    wMinX = Math.min(wMinX, p.x);
+                    wMinY = Math.min(wMinY, p.y);
+                    wMaxX = Math.max(wMaxX, p.x);
+                    wMaxY = Math.max(wMaxY, p.y);
+                  }
+                  ex1 = el.position.x + wMinX;
+                  ey1 = el.position.y + wMinY;
+                  ex2 = el.position.x + wMaxX;
+                  ey2 = el.position.y + wMaxY;
+                }
+              }
               return ex1 < mx2 && ex2 > mx1 && ey1 < my2 && ey2 > my1;
             })
             .map((el: SlideElement) => el.id);
