@@ -63,7 +63,7 @@ export function TextElementRenderer({ element }: Props) {
         height: element.size.h,
         fontFamily: style.fontFamily ?? "Inter, system-ui, sans-serif",
         fontSize,
-        color: style.color ?? "#ffffff",
+        color: style.color ?? "#1e293b",
         textAlign: (style.textAlign ?? "left") as React.CSSProperties["textAlign"],
         lineHeight: style.lineHeight ?? 1.5,
         alignItems,

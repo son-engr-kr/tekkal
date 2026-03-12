@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useDeckStore } from "@/stores/deckStore";
-import type { Slide, SlideElement, TikZElement, MermaidElement, TableElement, CustomElement, Scene3DElement, ImageElement, VideoElement, ShapeElement, CropRect } from "@/types/deck";
+import type { Slide, SlideElement, TikZElement, MermaidElement, TableElement, CustomElement, Scene3DElement, ImageElement, VideoElement, ShapeElement, CropRect, DeckTheme } from "@/types/deck";
+import { resolveStyle } from "@/contexts/ThemeContext";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { AnimationEditor } from "./AnimationEditor";
 import { CommentList } from "./CommentList";
@@ -207,6 +208,7 @@ export function PropertyPanel() {
         element={element}
         slideId={slide.id}
         updateElement={updateElement}
+        theme={theme}
       />
 
       {/* Animations */}
@@ -351,10 +353,12 @@ function ElementStyleEditor({
   element,
   slideId,
   updateElement,
+  theme,
 }: {
   element: SlideElement;
   slideId: string;
   updateElement: (slideId: string, elementId: string, patch: Partial<SlideElement>) => void;
+  theme?: DeckTheme;
 }) {
   if (element.type === "custom" || element.type === "scene3d") return null;
 
@@ -364,13 +368,18 @@ function ElementStyleEditor({
     } as Partial<SlideElement>);
   };
 
+  // Merge theme + element style so color pickers show the effective value
+  const themeKey = element.type as keyof DeckTheme;
+  const merged = resolveStyle(theme?.[themeKey] as Record<string, unknown> | undefined, element.style as Record<string, unknown> | undefined);
+  const isInherited = (prop: string) => element.style?.[prop as keyof typeof element.style] === undefined && merged[prop] !== undefined;
+
   return (
     <div>
       <FieldLabel>Style</FieldLabel>
       <div className="space-y-2">
         {element.type === "text" && (
           <>
-            <ColorField label="Color" value={element.style?.color} onChange={(v) => patchStyle("color", v)} />
+            <ColorField label="Color" value={merged.color as string | undefined} inherited={isInherited("color")} onChange={(v) => patchStyle("color", v)} />
             <TextField label="Font Family" value={element.style?.fontFamily} onChange={(v) => patchStyle("fontFamily", v)} placeholder="sans-serif" />
             <NumberField label="Font Size" value={element.style?.fontSize} onChange={(v) => patchStyle("fontSize", v)} min={8} max={200} />
             <SelectField label="Text Sizing" value={element.style?.textSizing} options={TEXT_SIZING_OPTIONS} onChange={(v) => patchStyle("textSizing", v)} />
@@ -388,9 +397,9 @@ function ElementStyleEditor({
         )}
         {element.type === "shape" && (
           <>
-            <ColorField label="Fill" value={element.style?.fill} onChange={(v) => patchStyle("fill", v)} />
+            <ColorField label="Fill" value={merged.fill as string | undefined} inherited={isInherited("fill")} onChange={(v) => patchStyle("fill", v)} />
             <NumberField label="Fill Opacity" value={element.style?.fillOpacity ?? 1} onChange={(v) => patchStyle("fillOpacity", v)} min={0} max={1} step={0.05} />
-            <ColorField label="Stroke" value={element.style?.stroke} onChange={(v) => patchStyle("stroke", v)} />
+            <ColorField label="Stroke" value={merged.stroke as string | undefined} inherited={isInherited("stroke")} onChange={(v) => patchStyle("stroke", v)} />
             <NumberField label="Stroke Opacity" value={element.style?.strokeOpacity ?? 1} onChange={(v) => patchStyle("strokeOpacity", v)} min={0} max={1} step={0.05} />
             <NumberField label="Stroke Width" value={element.style?.strokeWidth} onChange={(v) => patchStyle("strokeWidth", v)} min={0} max={20} />
             <NumberField label="Border Radius" value={element.style?.borderRadius ?? 0} onChange={(v) => patchStyle("borderRadius", v)} min={0} max={100} />

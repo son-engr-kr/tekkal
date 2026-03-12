@@ -46,7 +46,7 @@ export function ShapeElementRenderer({ element }: Props) {
           ry={ry}
           fill={style.fill ?? "transparent"}
           fillOpacity={fOp}
-          stroke={style.stroke ?? "#ffffff"}
+          stroke={style.stroke ?? "#888888"}
           strokeOpacity={sOp}
           strokeWidth={sw}
         />
@@ -56,7 +56,7 @@ export function ShapeElementRenderer({ element }: Props) {
 
   if (element.shape === "line" || element.shape === "arrow") {
     const { startMarker, endMarker } = resolveMarkers(element, style);
-    const strokeColor = style.stroke ?? "#ffffff";
+    const strokeColor = style.stroke ?? "#888888";
     const sw = style.strokeWidth ?? 2;
     const pathD = style.path;
     const waypoints = style.waypoints;
@@ -214,7 +214,7 @@ export function ShapeElementRenderer({ element }: Props) {
         backgroundColor: withAlpha(style.fill ?? "transparent", fOp),
         border:
           style.stroke || style.strokeWidth
-            ? `${style.strokeWidth ?? 1}px solid ${withAlpha(style.stroke ?? "#ffffff", sOp)}`
+            ? `${style.strokeWidth ?? 1}px solid ${withAlpha(style.stroke ?? "#888888", sOp)}`
             : undefined,
         borderRadius: style.borderRadius ?? 0,
         opacity: style.opacity ?? 1,

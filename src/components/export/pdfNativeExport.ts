@@ -675,7 +675,7 @@ async function drawCode(
 function drawShape(doc: jsPDF, el: ShapeElement, deck: Deck): void {
   const s = resolveStyle<ShapeStyle>(deck.theme?.shape, el.style);
   const fill = s.fill ?? "transparent";
-  const stroke = s.stroke ?? "#ffffff";
+  const stroke = s.stroke ?? "#888888";
   // Browser defaults: rectangle=1, line/arrow=2 (see ShapeElement.tsx)
   const isLineOrArrow = el.shape === "line" || el.shape === "arrow";
   const strokeWidth = s.strokeWidth ?? (isLineOrArrow ? 2 : 1);

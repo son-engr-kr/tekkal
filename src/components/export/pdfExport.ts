@@ -458,7 +458,7 @@ function withAlpha(color: string, alpha: number): string {
 function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
   const s = resolveStyle<ShapeStyle>(deck.theme?.shape, el.style);
   const fill = s.fill ?? "transparent";
-  const stroke = s.stroke ?? "#ffffff";
+  const stroke = s.stroke ?? "#888888";
   const op = s.opacity ?? 1;
   const fOp = s.fillOpacity ?? 1;
   const sOp = s.strokeOpacity ?? 1;

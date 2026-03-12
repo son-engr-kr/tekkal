@@ -13,7 +13,7 @@ const ELEMENT_PRESETS: { label: string; create: () => SlideElement }[] = [
       content: "New text",
       position: { x: 60, y: 200 },
       size: { w: 400, h: 100 },
-      style: { fontSize: 24, color: "#ffffff" },
+      style: { fontSize: 24 },
     }),
   },
   {
@@ -36,7 +36,7 @@ const ELEMENT_PRESETS: { label: string; create: () => SlideElement }[] = [
       shape: "rectangle" as const,
       position: { x: 200, y: 200 },
       size: { w: 200, h: 120 },
-      style: { fill: "#3b82f6", borderRadius: 8 },
+      style: { fill: "#6366f1", borderRadius: 8 },
     }),
   },
   {
@@ -47,7 +47,7 @@ const ELEMENT_PRESETS: { label: string; create: () => SlideElement }[] = [
       shape: "ellipse" as const,
       position: { x: 200, y: 200 },
       size: { w: 180, h: 120 },
-      style: { stroke: "#8b5cf6", strokeWidth: 2 },
+      style: { strokeWidth: 2 },
     }),
   },
   {
@@ -58,7 +58,7 @@ const ELEMENT_PRESETS: { label: string; create: () => SlideElement }[] = [
       shape: "line" as const,
       position: { x: 100, y: 270 },
       size: { w: 300, h: 4 },
-      style: { stroke: "#ffffff", strokeWidth: 2 },
+      style: { strokeWidth: 2 },
     }),
   },
   {
@@ -69,7 +69,7 @@ const ELEMENT_PRESETS: { label: string; create: () => SlideElement }[] = [
       shape: "arrow" as const,
       position: { x: 100, y: 270 },
       size: { w: 300, h: 4 },
-      style: { stroke: "#ffffff", strokeWidth: 2 },
+      style: { strokeWidth: 2 },
     }),
   },
   {

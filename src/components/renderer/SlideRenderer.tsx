@@ -121,8 +121,5 @@ export const SlideRenderer = memo(function SlideRenderer({ slide, scale, animate
     </div>
   );
 
-  if (theme) {
-    return <ThemeProvider theme={theme}>{content}</ThemeProvider>;
-  }
-  return content;
+  return <ThemeProvider theme={theme ?? {}}>{content}</ThemeProvider>;
 });
