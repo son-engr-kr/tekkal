@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useRef, useCallback, useEffect } from "react";
 import type { ImageElement as ImageElementType, ImageStyle } from "@/types/deck";
 import { useElementStyle } from "@/contexts/ThemeContext";
 import { useAssetUrl } from "@/contexts/AdapterContext";
@@ -13,12 +13,36 @@ function isPdfSrc(src: string): boolean {
 
 interface Props {
   element: ImageElementType;
+  editorMode?: boolean;
 }
 
-export function ImageElementRenderer({ element }: Props) {
+export function ImageElementRenderer({ element, editorMode }: Props) {
   const style = useElementStyle<ImageStyle>("image", element.style);
   const resolvedSrc = useAssetUrl(element.src);
   const isCropping = useDeckStore((s) => s.cropElementId === element.id);
+  const updateElement = useDeckStore((s) => s.updateElement);
+  const slideId = useDeckStore((s) => s.deck?.slides[s.currentSlideIndex]?.id);
+
+  // Auto-correct element size to match natural image ratio (editor only)
+  const correctedRef = useRef(false);
+  useEffect(() => { correctedRef.current = false; }, [element.src]);
+
+  const handleLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (!editorMode || !slideId || correctedRef.current) return;
+    correctedRef.current = true;
+    const img = e.currentTarget;
+    if (!img.naturalWidth || !img.naturalHeight) return;
+    const naturalRatio = img.naturalWidth / img.naturalHeight;
+    const elementRatio = element.size.w / element.size.h;
+    if (Math.abs(naturalRatio - elementRatio) / naturalRatio > 0.02) {
+      const newH = Math.round(element.size.w / naturalRatio);
+      const dy = Math.round((element.size.h - newH) / 2);
+      updateElement(slideId, element.id, {
+        position: { x: element.position.x, y: element.position.y + dy },
+        size: { w: element.size.w, h: newH },
+      });
+    }
+  }, [editorMode, slideId, element.id, element.size.w, element.size.h, element.position.x, element.position.y, updateElement]);
 
   if (!resolvedSrc) return null;
 
@@ -66,6 +90,7 @@ export function ImageElementRenderer({ element }: Props) {
       src={resolvedSrc}
       alt={element.alt ?? ""}
       draggable={false}
+      onLoad={handleLoad}
       style={{
         width: element.size.w,
         height: element.size.h,

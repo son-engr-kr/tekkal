@@ -170,7 +170,7 @@ function renderByType(
     case "text":
       return <TextElementRenderer element={element} />;
     case "image":
-      return <ImageElementRenderer element={element} />;
+      return <ImageElementRenderer element={element} editorMode={editorMode} />;
     case "code":
       return <CodeElementRenderer element={element} />;
     case "shape":

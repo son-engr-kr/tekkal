@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import type { VideoElement as VideoElementType, VideoStyle } from "@/types/deck";
 import { useElementStyle } from "@/contexts/ThemeContext";
 import { useAssetUrl } from "@/contexts/AdapterContext";
@@ -71,6 +71,9 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
   const resolvedSrc = useAssetUrl(element.src);
 
   const isCropping = useDeckStore((s) => s.cropElementId === element.id);
+  const updateElement = useDeckStore((s) => s.updateElement);
+  const slideId = useDeckStore((s) => s.deck?.slides[s.currentSlideIndex]?.id);
+
   const { w, h } = element.size;
   const crop = style.crop;
   const hasCrop = !isCropping && crop && (crop.top || crop.right || crop.bottom || crop.left);
@@ -86,6 +89,27 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
     borderRadius: style.borderRadius ?? 0,
     clipPath,
   };
+
+  // Auto-correct element size to match natural video ratio (editor only)
+  const correctedRef = useRef(false);
+  useEffect(() => { correctedRef.current = false; }, [element.src]);
+
+  const handleLoadedMetadata = useCallback(() => {
+    const video = videoRef.current;
+    if (!editorMode || !slideId || correctedRef.current || !video) return;
+    correctedRef.current = true;
+    if (!video.videoWidth || !video.videoHeight) return;
+    const naturalRatio = video.videoWidth / video.videoHeight;
+    const elementRatio = element.size.w / element.size.h;
+    if (Math.abs(naturalRatio - elementRatio) / naturalRatio > 0.02) {
+      const newH = Math.round(element.size.w / naturalRatio);
+      const dy = Math.round((element.size.h - newH) / 2);
+      updateElement(slideId, element.id, {
+        position: { x: element.position.x, y: element.position.y + dy },
+        size: { w: element.size.w, h: newH },
+      });
+    }
+  }, [editorMode, slideId, element.id, element.size.w, element.size.h, element.position.x, element.position.y, updateElement]);
 
   // Thumbnail mode: static placeholder, no video loading
   if (thumbnail) {
@@ -159,6 +183,7 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
         muted={element.muted ?? true}
         preload="metadata"
         style={commonStyle}
+        onLoadedMetadata={handleLoadedMetadata}
       />
     );
   }
@@ -174,6 +199,7 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
       preload={editorMode ? "metadata" : undefined}
       style={{ ...commonStyle, cursor: "pointer" }}
       onClick={handleClick}
+      onLoadedMetadata={handleLoadedMetadata}
     />
   );
 }
