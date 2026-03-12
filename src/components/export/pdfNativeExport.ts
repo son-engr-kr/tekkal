@@ -715,20 +715,46 @@ function drawShape(doc: jsPDF, el: ShapeElement, deck: Deck): void {
     const waypoints = s.waypoints;
     const hasWaypoints = waypoints && waypoints.length >= 2;
 
+    // Scale marker size with sqrt(sw) for gentle growth
+    const ms = Math.sqrt(strokeWidth);
+    const headSize = 10 * ms;
+    const circleR = 3 * ms;
+
+    // Shorten line at arrow ends so stroke doesn't poke through
+    const shortenStart = startMarker === "arrow" ? strokeWidth * 1.5 : 0;
+    const shortenEnd = endMarker === "arrow" ? strokeWidth * 1.5 : 0;
+
     if (hasWaypoints) {
-      // Draw line segments between consecutive waypoints
-      for (let i = 0; i < waypoints.length - 1; i++) {
-        const p1 = waypoints[i]!;
-        const p2 = waypoints[i + 1]!;
+      // Build shortened waypoints for drawing
+      const pts = waypoints.map((p) => ({ ...p }));
+      if (shortenStart > 0 && pts.length >= 2) {
+        const [p0, p1] = [pts[0]!, pts[1]!];
+        const dx = p1.x - p0.x, dy = p1.y - p0.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > shortenStart) {
+          pts[0] = { x: p0.x + (dx / len) * shortenStart, y: p0.y + (dy / len) * shortenStart };
+        }
+      }
+      if (shortenEnd > 0 && pts.length >= 2) {
+        const li = pts.length - 1;
+        const [pLast, pPrev] = [pts[li]!, pts[li - 1]!];
+        const dx = pPrev.x - pLast.x, dy = pPrev.y - pLast.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > shortenEnd) {
+          pts[li] = { x: pLast.x + (dx / len) * shortenEnd, y: pLast.y + (dy / len) * shortenEnd };
+        }
+      }
+      // Draw line segments between shortened waypoints
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p1 = pts[i]!;
+        const p2 = pts[i + 1]!;
         doc.line(x + p1.x, y + p1.y, x + p2.x, y + p2.y);
       }
-      // Markers at first/last waypoint
+      // Markers at original first/last waypoint
       const first = waypoints[0]!;
       const last = waypoints[waypoints.length - 1]!;
-      const headSize = 10;
       if (endMarker === "arrow") {
         setFillColor(doc, stroke);
-        // Compute direction from second-to-last to last
         const prev = waypoints[waypoints.length - 2]!;
         const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
         const tipX = x + last.x;
@@ -745,7 +771,7 @@ function drawShape(doc: jsPDF, el: ShapeElement, deck: Deck): void {
         );
       } else if (endMarker === "circle") {
         setFillColor(doc, stroke);
-        doc.circle(x + last.x, y + last.y, 4, "F");
+        doc.circle(x + last.x, y + last.y, circleR, "F");
       }
       if (startMarker === "arrow") {
         setFillColor(doc, stroke);
@@ -765,11 +791,10 @@ function drawShape(doc: jsPDF, el: ShapeElement, deck: Deck): void {
         );
       } else if (startMarker === "circle") {
         setFillColor(doc, stroke);
-        doc.circle(x + first.x, y + first.y, 4, "F");
+        doc.circle(x + first.x, y + first.y, circleR, "F");
       }
     } else {
-      doc.line(x, y + h / 2, x + w, y + h / 2);
-      const headSize = 10;
+      doc.line(x + shortenStart, y + h / 2, x + w - shortenEnd, y + h / 2);
       // End marker
       if (endMarker === "arrow") {
         const tipX = x + w;
@@ -778,7 +803,7 @@ function drawShape(doc: jsPDF, el: ShapeElement, deck: Deck): void {
         doc.triangle(tipX, tipY, tipX - headSize, tipY - headSize / 2, tipX - headSize, tipY + headSize / 2, "F");
       } else if (endMarker === "circle") {
         setFillColor(doc, stroke);
-        doc.circle(x + w, y + h / 2, 4, "F");
+        doc.circle(x + w, y + h / 2, circleR, "F");
       }
       // Start marker
       if (startMarker === "arrow") {
@@ -788,7 +813,7 @@ function drawShape(doc: jsPDF, el: ShapeElement, deck: Deck): void {
         doc.triangle(tipX, tipY, tipX + headSize, tipY - headSize / 2, tipX + headSize, tipY + headSize / 2, "F");
       } else if (startMarker === "circle") {
         setFillColor(doc, stroke);
-        doc.circle(x, y + h / 2, 4, "F");
+        doc.circle(x, y + h / 2, circleR, "F");
       }
     }
   }

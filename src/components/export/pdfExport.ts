@@ -481,16 +481,26 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
     const defs = document.createElementNS(ns, "defs");
     let hasDefs = false;
 
+    const ms = Math.sqrt(sw);
+    const arrowW = 10 * ms;
+    const arrowH = 7 * ms;
+    const circleSize = 8 * ms;
+
+    const shortenStart = startMarker === "arrow" ? sw * 1.5 : 0;
+    const shortenEnd = endMarker === "arrow" ? sw * 1.5 : 0;
+
     const addArrowMarkerDom = (id: string, position: "start" | "end") => {
+      const shorten = position === "start" ? shortenStart : shortenEnd;
       const marker = document.createElementNS(ns, "marker");
       marker.setAttribute("id", id);
-      marker.setAttribute("markerWidth", "10");
-      marker.setAttribute("markerHeight", "7");
-      marker.setAttribute("refX", position === "start" ? "1" : "9");
-      marker.setAttribute("refY", "3.5");
+      marker.setAttribute("markerUnits", "userSpaceOnUse");
+      marker.setAttribute("markerWidth", String(arrowW));
+      marker.setAttribute("markerHeight", String(arrowH));
+      marker.setAttribute("refX", String(arrowW - shorten));
+      marker.setAttribute("refY", String(arrowH / 2));
       marker.setAttribute("orient", position === "start" ? "auto-start-reverse" : "auto");
       const poly = document.createElementNS(ns, "polygon");
-      poly.setAttribute("points", "0 0, 10 3.5, 0 7");
+      poly.setAttribute("points", `0 0, ${arrowW} ${arrowH / 2}, 0 ${arrowH}`);
       poly.setAttribute("fill", stroke);
       poly.setAttribute("fill-opacity", String(sOp));
       marker.appendChild(poly);
@@ -499,17 +509,19 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
     };
 
     const addCircleMarkerDom = (id: string, position: "start" | "end") => {
+      const r = circleSize * 0.375;
       const marker = document.createElementNS(ns, "marker");
       marker.setAttribute("id", id);
-      marker.setAttribute("markerWidth", "8");
-      marker.setAttribute("markerHeight", "8");
-      marker.setAttribute("refX", position === "start" ? "2" : "6");
-      marker.setAttribute("refY", "4");
+      marker.setAttribute("markerUnits", "userSpaceOnUse");
+      marker.setAttribute("markerWidth", String(circleSize));
+      marker.setAttribute("markerHeight", String(circleSize));
+      marker.setAttribute("refX", String(position === "start" ? circleSize * 0.25 : circleSize * 0.75));
+      marker.setAttribute("refY", String(circleSize / 2));
       marker.setAttribute("orient", "auto");
       const circle = document.createElementNS(ns, "circle");
-      circle.setAttribute("cx", "4");
-      circle.setAttribute("cy", "4");
-      circle.setAttribute("r", "3");
+      circle.setAttribute("cx", String(circleSize / 2));
+      circle.setAttribute("cy", String(circleSize / 2));
+      circle.setAttribute("r", String(r));
       circle.setAttribute("fill", stroke);
       circle.setAttribute("fill-opacity", String(sOp));
       marker.appendChild(circle);
@@ -541,8 +553,26 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
 
     if (hasWaypoints) {
       svg.setAttribute("style", `opacity:${op};overflow:visible`);
+      const pts = waypoints.map((p) => ({ ...p }));
+      if (shortenStart > 0 && pts.length >= 2) {
+        const [p0, p1] = [pts[0]!, pts[1]!];
+        const dx = p1.x - p0.x, dy = p1.y - p0.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > shortenStart) {
+          pts[0] = { x: p0.x + (dx / len) * shortenStart, y: p0.y + (dy / len) * shortenStart };
+        }
+      }
+      if (shortenEnd > 0 && pts.length >= 2) {
+        const li = pts.length - 1;
+        const [pLast, pPrev] = [pts[li]!, pts[li - 1]!];
+        const dx = pPrev.x - pLast.x, dy = pPrev.y - pLast.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > shortenEnd) {
+          pts[li] = { x: pLast.x + (dx / len) * shortenEnd, y: pLast.y + (dy / len) * shortenEnd };
+        }
+      }
       const polyline = document.createElementNS(ns, "polyline");
-      polyline.setAttribute("points", waypoints.map((p) => `${p.x},${p.y}`).join(" "));
+      polyline.setAttribute("points", pts.map((p) => `${p.x},${p.y}`).join(" "));
       polyline.setAttribute("fill", "none");
       polyline.setAttribute("stroke", stroke);
       polyline.setAttribute("stroke-opacity", String(sOp));
@@ -562,9 +592,9 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
       svg.appendChild(path);
     } else {
       const line = document.createElementNS(ns, "line");
-      line.setAttribute("x1", "0");
+      line.setAttribute("x1", String(shortenStart));
       line.setAttribute("y1", String(h / 2));
-      line.setAttribute("x2", String(w));
+      line.setAttribute("x2", String(w - shortenEnd));
       line.setAttribute("y2", String(h / 2));
       line.setAttribute("stroke", stroke);
       line.setAttribute("stroke-opacity", String(sOp));

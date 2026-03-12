@@ -63,20 +63,32 @@ export function ShapeElementRenderer({ element }: Props) {
     const hasWaypoints = waypoints && waypoints.length >= 2;
 
     const markerDefs: React.ReactNode[] = [];
+    // Scale markers with sqrt(sw) so they grow gently instead of linearly
+    const ms = Math.sqrt(sw);
+    const arrowW = 10 * ms;
+    const arrowH = 7 * ms;
+    const circleSize = 8 * ms;
+
+    // Shorten line at ends with arrow markers so stroke doesn't poke through the tip
+    const shortenStart = startMarker === "arrow" ? sw * 1.5 : 0;
+    const shortenEnd = endMarker === "arrow" ? sw * 1.5 : 0;
 
     const addArrowMarker = (id: string, position: "start" | "end") => {
+      // refX compensates for shortened line so the arrow tip reaches the original endpoint
+      const shorten = position === "start" ? shortenStart : shortenEnd;
       markerDefs.push(
         <marker
           key={id}
           id={id}
-          markerWidth="10"
-          markerHeight="7"
-          refX={position === "start" ? 1 : 9}
-          refY="3.5"
+          markerUnits="userSpaceOnUse"
+          markerWidth={arrowW}
+          markerHeight={arrowH}
+          refX={arrowW - shorten}
+          refY={arrowH / 2}
           orient={position === "start" ? "auto-start-reverse" : "auto"}
         >
           <polygon
-            points="0 0, 10 3.5, 0 7"
+            points={`0 0, ${arrowW} ${arrowH / 2}, 0 ${arrowH}`}
             fill={strokeColor}
             fillOpacity={sOp}
           />
@@ -85,20 +97,22 @@ export function ShapeElementRenderer({ element }: Props) {
     };
 
     const addCircleMarker = (id: string, position: "start" | "end") => {
+      const r = circleSize * 0.375;
       markerDefs.push(
         <marker
           key={id}
           id={id}
-          markerWidth="8"
-          markerHeight="8"
-          refX={position === "start" ? 2 : 6}
-          refY="4"
+          markerUnits="userSpaceOnUse"
+          markerWidth={circleSize}
+          markerHeight={circleSize}
+          refX={position === "start" ? circleSize * 0.25 : circleSize * 0.75}
+          refY={circleSize / 2}
           orient="auto"
         >
           <circle
-            cx="4"
-            cy="4"
-            r="3"
+            cx={circleSize / 2}
+            cy={circleSize / 2}
+            r={r}
             fill={strokeColor}
             fillOpacity={sOp}
           />
@@ -122,6 +136,30 @@ export function ShapeElementRenderer({ element }: Props) {
       markerEndAttr = `url(#${id})`;
     }
 
+    // Shorten polyline/line endpoints so the stroke ends at the arrow base
+    let drawnWaypoints: string | undefined;
+    if (hasWaypoints && (shortenStart > 0 || shortenEnd > 0)) {
+      const pts = waypoints.map((p) => ({ ...p }));
+      if (shortenStart > 0 && pts.length >= 2) {
+        const [p0, p1] = [pts[0]!, pts[1]!];
+        const dx = p1.x - p0.x, dy = p1.y - p0.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > shortenStart) {
+          pts[0] = { x: p0.x + (dx / len) * shortenStart, y: p0.y + (dy / len) * shortenStart };
+        }
+      }
+      if (shortenEnd > 0 && pts.length >= 2) {
+        const li = pts.length - 1;
+        const [pLast, pPrev] = [pts[li]!, pts[li - 1]!];
+        const dx = pPrev.x - pLast.x, dy = pPrev.y - pLast.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > shortenEnd) {
+          pts[li] = { x: pLast.x + (dx / len) * shortenEnd, y: pLast.y + (dy / len) * shortenEnd };
+        }
+      }
+      drawnWaypoints = pts.map((p) => `${p.x},${p.y}`).join(" ");
+    }
+
     return (
       <svg
         width={w}
@@ -132,7 +170,7 @@ export function ShapeElementRenderer({ element }: Props) {
         {markerDefs.length > 0 && <defs>{markerDefs}</defs>}
         {hasWaypoints ? (
           <polyline
-            points={waypoints.map((p) => `${p.x},${p.y}`).join(" ")}
+            points={drawnWaypoints ?? waypoints.map((p) => `${p.x},${p.y}`).join(" ")}
             fill="none"
             stroke={strokeColor}
             strokeOpacity={sOp}
@@ -152,9 +190,9 @@ export function ShapeElementRenderer({ element }: Props) {
           />
         ) : (
           <line
-            x1={0}
+            x1={shortenStart}
             y1={h / 2}
-            x2={w}
+            x2={w - shortenEnd}
             y2={h / 2}
             stroke={strokeColor}
             strokeOpacity={sOp}
