@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useDeckStore } from "@/stores/deckStore";
-import type { SlideElement } from "@/types/deck";
-import { nextElementId } from "@/utils/id";
+import type { Slide, SlideElement } from "@/types/deck";
+import { nextElementId, cloneSlide } from "@/utils/id";
 import { findUndoChanges } from "@/utils/deckDiff";
 import { skipNextRestore } from "@/utils/handleStore";
 import { SlideList } from "./SlideList";
@@ -20,8 +20,9 @@ import { exportToPptx } from "@/components/export/pptxExport";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { useTikzAutoRender } from "@/hooks/useTikzAutoRender";
 
-// Module-level element clipboard (not in store — not undoable)
+// Module-level clipboards (not in store — not undoable)
 let elementClipboard: SlideElement[] | null = null;
+let slideClipboard: Slide | null = null;
 
 function performUndoRedo(direction: "undo" | "redo") {
   const temporal = useDeckStore.temporal.getState();
@@ -175,16 +176,23 @@ export function EditorLayout() {
       // Copy: Ctrl+C
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === "KeyC") {
         const { deck, currentSlideIndex, selectedElementIds } = useDeckStore.getState();
-        if (deck && selectedElementIds.length > 0) {
+        if (deck) {
           const slide = deck.slides[currentSlideIndex];
-          if (slide) {
+          if (slide && selectedElementIds.length > 0) {
+            // Copy selected elements
             const elements = selectedElementIds
               .map(id => slide.elements.find(el => el.id === id))
               .filter((el): el is SlideElement => el !== undefined);
             if (elements.length > 0) {
               elementClipboard = JSON.parse(JSON.stringify(elements));
+              slideClipboard = null;
               e.preventDefault();
             }
+          } else if (slide) {
+            // No elements selected → copy current slide
+            slideClipboard = JSON.parse(JSON.stringify(slide));
+            elementClipboard = null;
+            e.preventDefault();
           }
         }
         return;
@@ -209,7 +217,7 @@ export function EditorLayout() {
         }
         return;
       }
-      // Paste: Ctrl+V (elements from internal clipboard)
+      // Paste: Ctrl+V (elements or slide from internal clipboard)
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === "KeyV") {
         if (elementClipboard && elementClipboard.length > 0) {
           const { deck, currentSlideIndex, addElement, selectElement } = useDeckStore.getState();
@@ -236,8 +244,15 @@ export function EditorLayout() {
               e.preventDefault();
             }
           }
+        } else if (slideClipboard) {
+          // Paste copied slide after current slide
+          const { currentSlideIndex, addSlide, setCurrentSlide } = useDeckStore.getState();
+          const clone = cloneSlide(slideClipboard);
+          addSlide(clone, currentSlideIndex);
+          setCurrentSlide(currentSlideIndex + 1);
+          e.preventDefault();
         }
-        // No element clipboard → don't preventDefault, let paste event handle file paste
+        // No clipboard at all → don't preventDefault, let paste event handle file paste
         return;
       }
 

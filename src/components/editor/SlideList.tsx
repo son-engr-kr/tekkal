@@ -16,7 +16,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useDeckStore } from "@/stores/deckStore";
 import { SlideRenderer } from "@/components/renderer/SlideRenderer";
-import { nextSlideId } from "@/utils/id";
+import { nextSlideId, cloneSlide } from "@/utils/id";
 import { useAdapter } from "@/contexts/AdapterContext";
 import type { Slide, DeckTheme } from "@/types/deck";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
@@ -203,6 +203,15 @@ export function SlideList() {
             setCurrentSlide(contextMenu.slideIndex + 1);
             closeContextMenu();
           }}
+          onDuplicate={() => {
+            const source = slides[contextMenu.slideIndex];
+            if (source) {
+              const clone = cloneSlide(source);
+              addSlide(clone, contextMenu.slideIndex);
+              setCurrentSlide(contextMenu.slideIndex + 1);
+            }
+            closeContextMenu();
+          }}
           onToggleHidden={() => { toggleSlideHidden(contextMenu.slideId); closeContextMenu(); }}
           onDelete={() => { handleDeleteSlide(contextMenu.slideId, contextMenu.slideIndex); closeContextMenu(); }}
           onClose={closeContextMenu}
@@ -334,6 +343,7 @@ function SlideContextMenu({
   isHidden,
   canDelete,
   onNewSlide,
+  onDuplicate,
   onToggleHidden,
   onDelete,
   onClose,
@@ -345,6 +355,7 @@ function SlideContextMenu({
   isHidden: boolean;
   canDelete: boolean;
   onNewSlide: () => void;
+  onDuplicate: () => void;
   onToggleHidden: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -362,6 +373,7 @@ function SlideContextMenu({
         style={{ left: x, top: y, pointerEvents: "auto", zIndex: 50 }}
       >
         <ContextMenuItem label="New Slide" onClick={onNewSlide} />
+        <ContextMenuItem label="Duplicate Slide" onClick={onDuplicate} />
         <div className="h-px bg-zinc-700 my-1" />
         <ContextMenuItem
           label={isHidden ? "Show Slide" : "Hide Slide"}

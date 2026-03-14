@@ -1,4 +1,4 @@
-import type { Deck } from "@/types/deck";
+import type { Deck, Slide } from "@/types/deck";
 
 let slideCounter = 100;
 let elementCounter = 100;
@@ -46,4 +46,36 @@ export function nextSlideId(): string {
 
 export function nextElementId(): string {
   return `e${elementCounter++}`;
+}
+
+/** Deep-clone a slide with fresh IDs for the slide, all elements, and remapped animation targets. */
+export function cloneSlide(source: Slide): Slide {
+  const clone: Slide = JSON.parse(JSON.stringify(source));
+  clone.id = nextSlideId();
+  delete clone._ref;
+
+  // Build old→new element ID map
+  const idMap = new Map<string, string>();
+  for (const el of clone.elements) {
+    const newId = nextElementId();
+    idMap.set(el.id, newId);
+    el.id = newId;
+  }
+
+  // Remap animation targets
+  if (clone.animations) {
+    for (const anim of clone.animations) {
+      anim.target = idMap.get(anim.target) ?? anim.target;
+    }
+  }
+
+  // Remap comment elementId references
+  if (clone.comments) {
+    for (const c of clone.comments) {
+      if (c.elementId) c.elementId = idMap.get(c.elementId) ?? c.elementId;
+      c.id = crypto.randomUUID();
+    }
+  }
+
+  return clone;
 }
