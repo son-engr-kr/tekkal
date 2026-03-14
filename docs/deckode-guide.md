@@ -109,6 +109,14 @@ A Deckode presentation is a single `deck.json` file (with optional `$ref` splits
     "tikz": { "backgroundColor": "#1e1e2e" },
     "table": { "headerBackground": "#1e293b", "borderColor": "#334155" }
   },
+  "components": {
+    "comp-a1b2c3d4": {
+      "id": "comp-a1b2c3d4",
+      "name": "My Component",
+      "elements": [ ... ],
+      "size": { "w": 200, "h": 100 }
+    }
+  },
   "slides": [ ... ]
 }
 ```
@@ -120,6 +128,7 @@ A Deckode presentation is a single `deck.json` file (with optional `$ref` splits
 | `meta.author` | string | no | Author name |
 | `meta.aspectRatio` | `"16:9"` \| `"4:3"` | yes | Slide aspect ratio |
 | `theme` | object | no | Deck-level default styles (see Theme section below) |
+| `components` | object | no | Shared components referenced by `"reference"` elements (see Shared Components below) |
 
 ### Slide Object
 
@@ -226,6 +235,42 @@ Similarly, box + label pairs in diagrams should be grouped:
   "groupId": "group-input"
 }
 ```
+
+### Shared Components
+
+A group can be promoted to a **shared component** — a reusable set of elements that lives in `deck.components`. Slides reference components via `"reference"` elements. Editing a component updates all references.
+
+#### Component Object
+
+```json
+{
+  "id": "comp-a1b2c3d4",
+  "name": "Header Block",
+  "elements": [
+    { "id": "e10", "type": "shape", "shape": "rectangle", "position": { "x": 0, "y": 0 }, "size": { "w": 200, "h": 60 }, "style": { "fill": "#3b82f6" } },
+    { "id": "e11", "type": "text", "content": "Title", "position": { "x": 10, "y": 15 }, "size": { "w": 180, "h": 30 }, "style": { "color": "#ffffff" } }
+  ],
+  "size": { "w": 200, "h": 60 }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | yes | Unique component ID (`"comp-"` prefix) |
+| `name` | string | yes | Human-readable name |
+| `elements` | array | yes | Child elements with positions relative to (0,0) |
+| `size` | object | yes | Bounding box `{ "w", "h" }` of the component |
+
+#### Referencing a Component
+
+Place a `"reference"` element on any slide (see `"reference"` element type below). Multiple references can point to the same component. The reference's `size` can differ from the component's `size` — children are scaled proportionally.
+
+#### Lifecycle
+
+- **Create:** group elements → right-click → "Create Component". The group is replaced by a reference element.
+- **Edit:** double-click a reference → edit mode. Changes apply to all references.
+- **Detach:** right-click a reference → "Detach (Inline)". Converts back to individual elements; other references are unaffected.
+- **Garbage collection:** components with no remaining references are removed on save.
 
 ---
 
@@ -1178,6 +1223,29 @@ Pair with these animations on the slide:
   ]
 }
 ```
+
+### `"reference"`
+
+A reference to a shared component defined in `deck.components`. Renders the component's child elements, scaled to fit the reference's size. A small badge shows the component name in the editor.
+
+```json
+{
+  "id": "e50",
+  "type": "reference",
+  "componentId": "comp-a1b2c3d4",
+  "position": { "x": 100, "y": 200 },
+  "size": { "w": 300, "h": 90 }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `componentId` | string | yes | ID of the shared component in `deck.components` |
+
+**Notes:**
+- Duplicating a reference creates another pointer to the same component (new element ID, same `componentId`).
+- Animations treat a reference as an atomic unit — individual child animations are not supported.
+- References do not have a `style` property or `groupId`.
 
 ---
 
