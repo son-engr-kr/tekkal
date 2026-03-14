@@ -101,6 +101,13 @@ export function setDeckDragging(active: boolean) {
   isDragging = active;
 }
 
+function assertNoLineRotation(el: { type?: string; rotation?: number }) {
+  assert(
+    !((el.type === "line" || el.type === "arrow") && el.rotation),
+    "line/arrow must use waypoints, not rotation",
+  );
+}
+
 function getSlide<T extends { id: string }>(slides: T[], slideId: string): T {
   const slide = slides.find((s) => s.id === slideId);
   assert(slide !== undefined, `Slide ${slideId} not found`);
@@ -314,6 +321,7 @@ export const useDeckStore = create<DeckState>()(
             const element = slide.elements.find((e) => e.id === elementId);
             assert(element !== undefined, `Element ${elementId} not found in slide ${slideId}`);
             Object.assign(element, patch);
+            assertNoLineRotation(element);
             state.isDirty = true;
           }),
 
@@ -324,6 +332,7 @@ export const useDeckStore = create<DeckState>()(
               const element = slide.elements.find((e) => e.id === elementId);
               if (element) {
                 Object.assign(element, patch);
+                assertNoLineRotation(element);
                 state.isDirty = true;
                 return;
               }
@@ -384,6 +393,7 @@ export const useDeckStore = create<DeckState>()(
         addElement: (slideId, element) =>
           set((state) => {
             assert(state.deck !== null, "No deck loaded");
+            assertNoLineRotation(element);
             const slide = getSlide(state.deck.slides, slideId);
             slide.elements.push(element);
             state.isDirty = true;

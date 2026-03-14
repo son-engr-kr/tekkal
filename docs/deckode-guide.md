@@ -61,7 +61,7 @@ The external file is a plain Slide JSON object (same schema as inline):
 - On load, `$ref` entries are resolved by reading the referenced file. The resolved slide receives a `_ref` field tracking its origin path.
 - On save, slides with `_ref` are written back to their external file and replaced with `{ "$ref": "..." }` in deck.json.
 - The editor, store, and renderers are unaware of the split — they see a flat array of resolved slides.
-- New slides added via the editor stay inline in deck.json (no `_ref`).
+- New slides added via the editor are automatically externalized (saved to `./slides/{slideId}.json`).
 
 **AI tools:**
 
@@ -384,7 +384,7 @@ Renders a geometric shape.
 | `path` | string | — | SVG path `d` attribute for custom line routing (line/arrow only). When absent, line is straight horizontal. |
 | `waypoints` | `{x,y}[]` | — | Polyline waypoints in element-local coords (line/arrow only). 2+ points renders a polyline. Takes priority over `path`. |
 
-For `"line"` and `"arrow"`: `position` is the start point. The line extends horizontally by `size.w` pixels. `size.h` is ignored (set to a small value like `4` for the click target). The `"arrow"` shape is shorthand for `"line"` with `markerEnd: "arrow"`. Use `markerStart`/`markerEnd` for fine-grained control.
+For `"line"` and `"arrow"`: `position` is the start point. The line extends horizontally by `size.w` pixels. `size.h` is ignored for straight horizontal lines (set to a small value like `1`). The `"arrow"` shape is shorthand for `"line"` with `markerEnd: "arrow"`. Use `markerStart`/`markerEnd` for fine-grained control. **Never use `rotation` on line/arrow elements** — the code asserts against this. Use `waypoints` to control line direction instead.
 
 **Line example** (horizontal divider):
 ```json
@@ -609,30 +609,32 @@ For **flow diagrams, pipeline diagrams, and block-and-arrow layouts**, prefer **
 }
 ```
 
-**Step 3: Connect boxes with native arrow elements.** Use `"shape": "arrow"` with `rotation` for direction:
+**Step 3: Connect boxes with native arrow elements.** Use `"shape": "arrow"` with `waypoints` for direction:
+
+> **IMPORTANT: Never use `rotation` on line/arrow elements.** The code will assert-fail. Use `waypoints` to control direction instead.
 
 ```json
 {
   "id": "arrow-a-b",
   "type": "shape", "shape": "arrow",
   "position": { "x": 340, "y": 155 },
-  "size": { "w": 60, "h": 20 },
+  "size": { "w": 60, "h": 1 },
   "style": { "stroke": "#7c3aed", "strokeWidth": 2 }
 }
 ```
 
-**Arrow directions via `rotation`:**
-- Right (default): `rotation` omitted or `0`
-- Down: `"rotation": 90`
-- Left: `"rotation": 180`
-- Up: `"rotation": 270`
+**Arrow directions via `waypoints`:**
+- Right (default): `waypoints` omitted (straight horizontal line from `position`)
+- Down: `"size": { "w": 1, "h": 60 }` with `"waypoints": [{ "x": 0, "y": 0 }, { "x": 0, "y": 60 }]`
+- Left: `"waypoints": [{ "x": 60, "y": 0 }, { "x": 0, "y": 0 }]` (reverses marker direction)
+- Up: `"size": { "w": 1, "h": 60 }` with `"waypoints": [{ "x": 0, "y": 60 }, { "x": 0, "y": 0 }]`
 
 If the arrow has a label, group them together:
 
 ```json
 {
   "id": "arrow-yes", "type": "shape", "shape": "arrow",
-  "position": { "x": 510, "y": 340 }, "size": { "w": 80, "h": 20 },
+  "position": { "x": 510, "y": 340 }, "size": { "w": 80, "h": 1 },
   "style": { "stroke": "#22c55e", "strokeWidth": 2 },
   "groupId": "group-arrow-yes"
 },
@@ -644,18 +646,18 @@ If the arrow has a label, group them together:
 }
 ```
 
-**Step 4: Build feedback loops.** Use 3 thin `"line"` shapes (right vertical → horizontal → left vertical) to form an L-shaped or U-shaped path:
+**Step 4: Build feedback loops.** Use `waypoints` for vertical segments:
 
 ```json
 { "id": "fb-right", "type": "shape", "shape": "line",
-  "position": { "x": 804, "y": 100 }, "size": { "w": 40, "h": 4 },
-  "rotation": 90, "style": { "stroke": "#7c3aed", "strokeWidth": 2 } },
+  "position": { "x": 804, "y": 100 }, "size": { "w": 1, "h": 40 },
+  "style": { "stroke": "#7c3aed", "strokeWidth": 2, "waypoints": [{ "x": 0, "y": 0 }, { "x": 0, "y": 40 }] } },
 { "id": "fb-horiz", "type": "shape", "shape": "line",
-  "position": { "x": 270, "y": 100 }, "size": { "w": 536, "h": 4 },
+  "position": { "x": 270, "y": 100 }, "size": { "w": 536, "h": 1 },
   "style": { "stroke": "#7c3aed", "strokeWidth": 2 } },
 { "id": "fb-left", "type": "shape", "shape": "line",
-  "position": { "x": 269, "y": 100 }, "size": { "w": 40, "h": 4 },
-  "rotation": 90, "style": { "stroke": "#7c3aed", "strokeWidth": 2 } }
+  "position": { "x": 269, "y": 100 }, "size": { "w": 1, "h": 40 },
+  "style": { "stroke": "#7c3aed", "strokeWidth": 2, "waypoints": [{ "x": 0, "y": 0 }, { "x": 0, "y": 40 }] } }
 ```
 
 **Step 5: Add step-by-step animation.** Each click reveals one logical group:
@@ -1379,7 +1381,7 @@ Use `[step:N]...[/step]` markers to highlight sections of your notes as animatio
 
 ## Rotation
 
-Any element can be rotated by setting the `rotation` field (degrees, clockwise).
+Any element can be rotated by setting the `rotation` field (degrees, clockwise). **Exception: `line` and `arrow` shapes must NOT use `rotation`** — the code will assert-fail. Use `waypoints` for line/arrow direction instead.
 
 ```json
 {
