@@ -15,10 +15,10 @@ export function NotesEditor({ expanded, onToggle }: Props) {
   if (!slide) return null;
 
   return (
-    <div className="shrink-0">
+    <div className={expanded ? "flex flex-col h-full min-h-0" : ""}>
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors shrink-0"
       >
         <svg
           className={`w-2.5 h-2.5 transition-transform ${expanded ? "rotate-90" : ""}`}
@@ -30,9 +30,9 @@ export function NotesEditor({ expanded, onToggle }: Props) {
         Notes
       </button>
       {expanded && (
-        <div className="px-3 pb-2 flex-1 flex flex-col min-h-0">
+        <div className="flex-1 min-h-0 px-3 pb-2">
           <textarea
-            className="w-full flex-1 bg-zinc-800 text-zinc-200 rounded px-2 py-1.5 text-xs border border-zinc-700 focus:border-blue-500 focus:outline-none resize-none"
+            className="w-full h-full bg-zinc-800 text-zinc-200 rounded px-2 py-1.5 text-xs border border-zinc-700 focus:border-blue-500 focus:outline-none resize-none"
             value={slide.notes ?? ""}
             placeholder="Presenter notes..."
             onChange={(e) => updateSlide(slide.id, { notes: e.target.value })}
