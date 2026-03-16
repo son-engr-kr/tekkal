@@ -749,7 +749,25 @@ export const useDeckStore = create<DeckState>()(
               el.position.x -= bounds.x;
               el.position.y -= bounds.y;
             }
+
+            // Scale all reference elements proportionally to the size change
+            const oldW = comp.size.w;
+            const oldH = comp.size.h;
             comp.size = { w: bounds.w, h: bounds.h };
+            if (oldW > 0 && oldH > 0 && (bounds.w !== oldW || bounds.h !== oldH)) {
+              const ratioW = bounds.w / oldW;
+              const ratioH = bounds.h / oldH;
+              for (const slide of state.deck.slides) {
+                for (const el of slide.elements) {
+                  if (el.type === "reference" && (el as ReferenceElement).componentId === compId) {
+                    el.size = {
+                      w: Math.round(el.size.w * ratioW),
+                      h: Math.round(el.size.h * ratioH),
+                    };
+                  }
+                }
+              }
+            }
 
             state.editingComponentId = null;
             state.selectedElementIds = [];
