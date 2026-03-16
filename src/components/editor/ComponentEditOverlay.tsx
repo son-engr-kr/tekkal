@@ -85,6 +85,8 @@ export function ComponentEditOverlay({ componentId, slide, scale }: Props) {
       <div
         className="absolute"
         style={{
+          left: 0,
+          top: 0,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
           width: CANVAS_WIDTH,
@@ -246,7 +248,7 @@ const ComponentElementBox = memo(function ComponentElementBox({
       onMouseDown={handleMouseDown}
     >
       <div style={{ width: element.size.w, height: element.size.h, transform: `scale(${scaleX}, ${scaleY})`, transformOrigin: "top left" }}>
-        <ElementRenderer element={element} editorMode />
+        <ElementRenderer element={element} editorMode noPosition />
       </div>
     </div>
   );
