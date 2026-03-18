@@ -32,7 +32,11 @@ export async function deleteProject(name: string): Promise<void> {
 
 export async function loadDeckFromDisk(project: string): Promise<Deck | null> {
   const res = await fetch(`/api/load-deck?project=${encodeURIComponent(project)}`);
-  if (!res.ok) return null;
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(body.error ?? `Failed to load deck: ${res.status}`);
+  }
   return res.json() as Promise<Deck>;
 }
 

@@ -123,7 +123,13 @@ export class FsAccessAdapter implements FileSystemAdapter {
     const fileHandle = await this.dirHandle.getFileHandle("deck.json");
     const file = await fileHandle.getFile();
     const text = await file.text();
-    const deck = JSON.parse(text) as Deck;
+    let deck: Deck;
+    try {
+      deck = JSON.parse(text) as Deck;
+    } catch (e) {
+      const msg = e instanceof SyntaxError ? e.message : String(e);
+      throw new Error(`Invalid JSON in deck.json: ${msg}`);
+    }
     await this.resolveSlideRefs(deck);
     return deck;
   }

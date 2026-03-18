@@ -467,7 +467,15 @@ export function deckApiPlugin(): Plugin {
         }
         // Migrate legacy absolute asset paths → relative ./assets/... on first load
         rewriteAssetUrls(filePath, project);
-        const deck = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        const raw = fs.readFileSync(filePath, "utf-8");
+        let deck: any;
+        try {
+          deck = JSON.parse(raw);
+        } catch (e) {
+          const msg = e instanceof SyntaxError ? e.message : String(e);
+          jsonResponse(res, 422, { error: `Invalid JSON in deck.json: ${msg}` });
+          return;
+        }
         resolveSlideRefs(deck, path.dirname(filePath));
         watchProject(project);
         jsonResponse(res, 200, deck);
@@ -495,9 +503,9 @@ export function deckApiPlugin(): Plugin {
 
       server.middlewares.use("/api/ai/read-deck", (req, res) => {
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
-        jsonResponse(res, 200, deck);
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        jsonResponse(res, 200, result.deck);
       });
 
       // -- AI tool: list tools --
@@ -528,8 +536,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/add-slide", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slide, afterSlideId } = JSON.parse(await readBody(req));
         assert(slide && typeof slide === "object" && slide.id, "Missing slide object with id");
         assert(Array.isArray(slide.elements), "slide.elements must be an array");
@@ -551,8 +560,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/update-slide", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slideId, patch } = JSON.parse(await readBody(req));
         assert(typeof slideId === "string", "Missing slideId");
         assert(patch && typeof patch === "object", "Missing patch object");
@@ -569,8 +579,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/delete-slide", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slideId } = JSON.parse(await readBody(req));
         assert(typeof slideId === "string", "Missing slideId");
         const idx = deck.slides.findIndex((s: any) => s.id === slideId);
@@ -586,8 +597,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/add-element", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slideId, element } = JSON.parse(await readBody(req));
         assert(typeof slideId === "string", "Missing slideId");
         assert(element && typeof element === "object" && element.id, "Missing element object with id");
@@ -604,8 +616,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/update-element", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slideId, elementId, patch } = JSON.parse(await readBody(req));
         assert(typeof slideId === "string", "Missing slideId");
         assert(typeof elementId === "string", "Missing elementId");
@@ -625,8 +638,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/delete-element", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slideId, elementId } = JSON.parse(await readBody(req));
         assert(typeof slideId === "string", "Missing slideId");
         assert(typeof elementId === "string", "Missing elementId");
@@ -645,8 +659,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/extract-slide", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slideId } = JSON.parse(await readBody(req));
         assert(typeof slideId === "string", "Missing slideId");
         const slide = deck.slides.find((s: any) => s.id === slideId);
@@ -665,8 +680,9 @@ export function deckApiPlugin(): Plugin {
       server.middlewares.use("/api/ai/inline-slide", async (req, res) => {
         if (req.method !== "POST") { jsonResponse(res, 405, { error: "POST only" }); return; }
         const project = getProjectParam(req);
-        const deck = loadDeck(deckPath(project));
-        if (!deck) { jsonResponse(res, 404, { error: "No deck.json found" }); return; }
+        const result = loadDeck(deckPath(project));
+        if (!result.ok) { jsonResponse(res, result.status, { error: result.error }); return; }
+        const deck = result.deck;
         const { slideId } = JSON.parse(await readBody(req));
         assert(typeof slideId === "string", "Missing slideId");
         const slide = deck.slides.find((s: any) => s.id === slideId);
@@ -687,11 +703,23 @@ export function deckApiPlugin(): Plugin {
 
 // -- Helpers --
 
-function loadDeck(filePath: string): any | null {
-  if (!fs.existsSync(filePath)) return null;
-  const deck = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+type LoadDeckResult =
+  | { ok: true; deck: any }
+  | { ok: false; error: string; status: number };
+
+function loadDeck(filePath: string): LoadDeckResult {
+  if (!fs.existsSync(filePath))
+    return { ok: false, error: "deck.json not found", status: 404 };
+  const raw = fs.readFileSync(filePath, "utf-8");
+  let deck: any;
+  try {
+    deck = JSON.parse(raw);
+  } catch (e) {
+    const msg = e instanceof SyntaxError ? e.message : String(e);
+    return { ok: false, error: `Invalid JSON in deck.json: ${msg}`, status: 422 };
+  }
   resolveSlideRefs(deck, path.dirname(filePath));
-  return deck;
+  return { ok: true, deck };
 }
 
 function saveDeck(filePath: string, deck: any) {
