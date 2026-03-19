@@ -821,11 +821,11 @@ function PresenterConsole({
           })}
         </div>
 
-        {steps.length > 0 && (
-          <div className="text-zinc-500 text-xs shrink-0 tabular-nums">
-            Step <span className="text-zinc-300">{activeStep}</span>/{steps.length}
-          </div>
-        )}
+        <div className="text-zinc-500 text-xs shrink-0 tabular-nums w-20 text-center">
+          {steps.length > 0 && (
+            <>Step <span className="text-zinc-300">{activeStep}</span>/{steps.length}</>
+          )}
+        </div>
 
         <span className="text-zinc-800 shrink-0">|</span>
 
