@@ -199,8 +199,13 @@ export function EditorLayout() {
       // Skip remaining shortcuts if typing in an input
       if (isInput) return;
 
-      // Copy: Ctrl+C
+      // If user has selected text (e.g. in comments, labels), let browser handle copy/cut natively
+      const textSelection = window.getSelection();
+      const hasTextSelection = textSelection !== null && textSelection.toString().length > 0;
+
+      // Copy: Ctrl+C — let browser handle if user has text selected
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === "KeyC") {
+        if (hasTextSelection) return;
         const { deck, currentSlideIndex, selectedElementIds } = useDeckStore.getState();
         if (deck) {
           const slide = deck.slides[currentSlideIndex];
@@ -238,8 +243,9 @@ export function EditorLayout() {
         }
         return;
       }
-      // Cut: Ctrl+X
+      // Cut: Ctrl+X — let browser handle if user has text selected
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.code === "KeyX") {
+        if (hasTextSelection) return;
         const { deck, currentSlideIndex, selectedElementIds, deleteElement } = useDeckStore.getState();
         if (deck && selectedElementIds.length > 0) {
           const slide = deck.slides[currentSlideIndex];
