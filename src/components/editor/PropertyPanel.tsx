@@ -332,7 +332,49 @@ function MultiElementPanel({
         )}
       </div>
 
-      {/* Rotation (common to all) */}
+      {/* Position */}
+      {(() => {
+        const px = multiVal(selectedElements, (el) => el.position.x);
+        const py = multiVal(selectedElements, (el) => el.position.y);
+        return (
+          <div>
+            <FieldLabel>Position</FieldLabel>
+            <div className="grid grid-cols-2 gap-2">
+              <NumberInput label="X" value={px.value ?? 0} mixed={px.mixed} onChange={(v) => {
+                const num = parseInt(v, 10);
+                if (!isNaN(num)) for (const el of selectedElements) updateElement(slide.id, el.id, { position: { ...el.position, x: num } } as Partial<SlideElement>);
+              }} />
+              <NumberInput label="Y" value={py.value ?? 0} mixed={py.mixed} onChange={(v) => {
+                const num = parseInt(v, 10);
+                if (!isNaN(num)) for (const el of selectedElements) updateElement(slide.id, el.id, { position: { ...el.position, y: num } } as Partial<SlideElement>);
+              }} />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Size */}
+      {(() => {
+        const sw = multiVal(selectedElements, (el) => el.size.w);
+        const sh = multiVal(selectedElements, (el) => el.size.h);
+        return (
+          <div>
+            <FieldLabel>Size</FieldLabel>
+            <div className="grid grid-cols-2 gap-2">
+              <NumberInput label="W" value={sw.value ?? 0} mixed={sw.mixed} onChange={(v) => {
+                const num = parseInt(v, 10);
+                if (!isNaN(num)) for (const el of selectedElements) updateElement(slide.id, el.id, { size: { ...el.size, w: num } } as Partial<SlideElement>);
+              }} />
+              <NumberInput label="H" value={sh.value ?? 0} mixed={sh.mixed} onChange={(v) => {
+                const num = parseInt(v, 10);
+                if (!isNaN(num)) for (const el of selectedElements) updateElement(slide.id, el.id, { size: { ...el.size, h: num } } as Partial<SlideElement>);
+              }} />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Rotation */}
       {(() => {
         const rot = multiVal(selectedElements, (el) => el.rotation ?? 0);
         return (
@@ -820,18 +862,23 @@ function NumberInput({
   label,
   value,
   onChange,
+  mixed,
 }: {
   label: string;
   value: number;
   onChange: (value: string) => void;
+  mixed?: boolean;
 }) {
   return (
     <label className="flex items-center gap-1.5">
       <span className="text-zinc-500 text-xs w-3">{label}</span>
       <input
         type="number"
-        className="flex-1 bg-zinc-800 text-zinc-200 rounded px-2 py-1 text-xs font-mono border border-zinc-700 focus:border-blue-500 focus:outline-none w-0"
-        value={value}
+        className={`flex-1 bg-zinc-800 text-zinc-200 rounded px-2 py-1 text-xs font-mono border focus:border-blue-500 focus:outline-none w-0 ${
+          mixed ? "border-dashed border-zinc-600" : "border-zinc-700"
+        }`}
+        value={mixed ? "" : value}
+        placeholder={mixed ? "\u2014" : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
     </label>
