@@ -43,13 +43,14 @@ export function CommentList({ slideId, elementId }: Props) {
   const slide = deck?.slides.find((s) => s.id === slideId);
   const allComments = slide?.comments ?? [];
 
+  const [showDone, setShowDone] = useState(false);
+
   // Filter: element view shows only that element's comments; slide view shows all
-  // "done" comments are hidden from the list
-  const comments = (elementId
+  const scopedComments = elementId
     ? allComments.filter((c) => c.elementId === elementId)
-    : [...allComments].sort((a, b) => a.createdAt - b.createdAt)
-  ).filter((c) => c.category !== "done");
-  const doneCount = allComments.filter((c) => c.category === "done" && (elementId ? c.elementId === elementId : true)).length;
+    : [...allComments].sort((a, b) => a.createdAt - b.createdAt);
+  const comments = showDone ? scopedComments : scopedComments.filter((c) => c.category !== "done");
+  const doneCount = scopedComments.filter((c) => c.category === "done").length;
 
   const [draft, setDraft] = useState("");
   const [authorName, setAuthorName] = useState("user");
@@ -122,7 +123,14 @@ export function CommentList({ slideId, elementId }: Props) {
     <div>
       <FieldLabel>
         Comments{comments.length > 0 ? ` (${comments.length})` : ""}
-        {doneCount > 0 && <span className="text-zinc-600 font-normal normal-case tracking-normal ml-1">+ {doneCount} done</span>}
+        {doneCount > 0 && (
+          <button
+            onClick={() => setShowDone(!showDone)}
+            className="text-zinc-600 hover:text-zinc-400 font-normal normal-case tracking-normal ml-1 transition-colors"
+          >
+            {showDone ? `- ${doneCount} done` : `+ ${doneCount} done`}
+          </button>
+        )}
       </FieldLabel>
 
       {comments.length > 0 && (
