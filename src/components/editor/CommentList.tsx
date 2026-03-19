@@ -190,7 +190,7 @@ export function CommentList({ slideId, elementId }: Props) {
                     <p className="text-xs text-zinc-200/90 whitespace-pre-wrap break-words">
                       {comment.text}
                     </p>
-                    <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity flex-wrap">
                       {/* Category switcher */}
                       {CATEGORIES.map((c) => (
                         <button
