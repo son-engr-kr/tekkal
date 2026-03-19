@@ -28,23 +28,67 @@ interface NoteSegment {
   step: number | null; // null = always visible, number = highlighted at that step
 }
 
+/** Strip lines starting with `// ` (presenter note comments) */
+function stripCommentedLines(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("// "))
+    .join("\n");
+}
+
 function parseNotes(notes: string): NoteSegment[] {
   const segments: NoteSegment[] = [];
   const regex = /\[step:(\d+)\]([\s\S]*?)\[\/step\]/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = regex.exec(notes)) !== null) {
+  // Strip commented lines before parsing
+  const cleaned = stripCommentedLines(notes);
+
+  while ((match = regex.exec(cleaned)) !== null) {
     if (match.index > lastIndex) {
-      segments.push({ text: notes.slice(lastIndex, match.index), step: null });
+      segments.push({ text: cleaned.slice(lastIndex, match.index), step: null });
     }
     segments.push({ text: match[2]!, step: parseInt(match[1]!, 10) });
     lastIndex = match.index + match[0].length;
   }
-  if (lastIndex < notes.length) {
-    segments.push({ text: notes.slice(lastIndex), step: null });
+  if (lastIndex < cleaned.length) {
+    segments.push({ text: cleaned.slice(lastIndex), step: null });
   }
   return segments;
+}
+
+/** Toggle `// ` comment prefix on selected lines in a textarea */
+function toggleNoteComment(textarea: HTMLTextAreaElement): string {
+  const { value, selectionStart, selectionEnd } = textarea;
+  const lines = value.split("\n");
+
+  // Find which lines are covered by the selection
+  let charCount = 0;
+  let startLine = 0;
+  let endLine = lines.length - 1;
+  for (let i = 0; i < lines.length; i++) {
+    const lineEnd = charCount + lines[i]!.length;
+    if (charCount <= selectionStart && selectionStart <= lineEnd + 1) startLine = i;
+    if (charCount <= selectionEnd && selectionEnd <= lineEnd + 1) endLine = i;
+    charCount = lineEnd + 1; // +1 for \n
+  }
+
+  // Check if all selected lines are already commented
+  const selectedLines = lines.slice(startLine, endLine + 1);
+  const allCommented = selectedLines.every((l) => l.trimStart().startsWith("// "));
+
+  for (let i = startLine; i <= endLine; i++) {
+    if (allCommented) {
+      // Uncomment: remove first `// `
+      lines[i] = lines[i]!.replace(/^(\s*)\/\/ /, "$1");
+    } else {
+      // Comment: add `// ` after leading whitespace
+      lines[i] = lines[i]!.replace(/^(\s*)/, "$1// ");
+    }
+  }
+
+  return lines.join("\n");
 }
 
 // ── Transition variants ───────────────────────────────────────────
@@ -719,12 +763,18 @@ function PresenterConsole({
             {editingNotes ? (
               <textarea
                 ref={noteTextareaRef}
-                className="flex-1 w-full bg-zinc-900 text-zinc-300 rounded px-3 py-2 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none"
+                className="flex-1 w-full bg-zinc-900 text-zinc-300 rounded px-3 py-2 resize-none border border-zinc-700 focus:border-blue-500 focus:outline-none font-mono"
                 style={{ fontSize: notesFontSize }}
                 value={noteDraft}
                 onChange={(e) => setNoteDraft(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Escape") handleSaveNotes();
+                  if ((e.ctrlKey || e.metaKey) && e.key === "/") {
+                    e.preventDefault();
+                    const ta = e.currentTarget;
+                    const newValue = toggleNoteComment(ta);
+                    setNoteDraft(newValue);
+                  }
                   e.stopPropagation();
                 }}
               />
