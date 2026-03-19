@@ -494,8 +494,12 @@ export function deckApiPlugin(): Plugin {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         splitSlideRefs(deck, path.dirname(dp));
         const serialized = JSON.stringify(deck, null, 2);
-        fs.writeFileSync(dp, serialized, "utf-8");
-        lastSaveHash.set(project, fnv1aHash(serialized));
+        const hash = fnv1aHash(serialized);
+        // Skip disk write if content is identical
+        if (hash !== lastSaveHash.get(project) || !fs.existsSync(dp) || fs.readFileSync(dp, "utf-8") !== serialized) {
+          fs.writeFileSync(dp, serialized, "utf-8");
+        }
+        lastSaveHash.set(project, hash);
         jsonResponse(res, 200, { ok: true });
       });
 
@@ -729,7 +733,13 @@ function saveDeck(filePath: string, deck: any) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  fs.writeFileSync(filePath, JSON.stringify(deck, null, 2), "utf-8");
+  const serialized = JSON.stringify(deck, null, 2);
+  // Skip write if deck.json content is identical
+  if (fs.existsSync(filePath)) {
+    const existing = fs.readFileSync(filePath, "utf-8");
+    if (existing === serialized) return;
+  }
+  fs.writeFileSync(filePath, serialized, "utf-8");
 }
 
 /**
@@ -753,6 +763,7 @@ function resolveSlideRefs(deck: any, projectRoot: string): void {
 /**
  * For each slide with `_ref`, write it to its external file and replace
  * the slide in-array with `{ "$ref": "..." }`. Mutates the deck object.
+ * Only writes slide files whose content actually changed.
  */
 function splitSlideRefs(deck: any, projectRoot: string): void {
   if (!Array.isArray(deck.slides)) return;
@@ -764,7 +775,16 @@ function splitSlideRefs(deck: any, projectRoot: string): void {
       if (!fs.existsSync(refDir)) fs.mkdirSync(refDir, { recursive: true });
       // Write the slide without _ref to the external file
       const { _ref, ...slideData } = slide;
-      fs.writeFileSync(refPath, JSON.stringify(slideData, null, 2), "utf-8");
+      const serialized = JSON.stringify(slideData, null, 2);
+      // Skip write if file content is identical
+      if (fs.existsSync(refPath)) {
+        const existing = fs.readFileSync(refPath, "utf-8");
+        if (existing === serialized) {
+          deck.slides[i] = { $ref: _ref };
+          continue;
+        }
+      }
+      fs.writeFileSync(refPath, serialized, "utf-8");
       // Replace in-array with a $ref pointer
       deck.slides[i] = { $ref: _ref };
     }
