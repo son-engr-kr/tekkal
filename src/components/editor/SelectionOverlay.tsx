@@ -126,11 +126,14 @@ export function SelectionOverlay({ slide, scale }: Props) {
           element={element}
           slideId={slide.id}
           isSelected={selectedElementIds.includes(element.id) || moveTargetIds.has(element.id)}
-          showResizeHandles={element.id === singleSelectedId && !element.groupId && !isCropping}
+          showResizeHandles={element.id === singleSelectedId && !isCropping}
           onSelect={(e: React.MouseEvent) => handleSelect(element, e)}
           onDoubleClick={() => {
             if (element.type === "reference") {
               useDeckStore.getState().enterComponentEditMode((element as ReferenceElementType).componentId);
+            } else if (element.groupId) {
+              // Double-click a grouped element → isolate-select just that element
+              selectElement(element.id);
             } else if ((element.type === "image" || element.type === "video") && !isCropping) {
               setCropElement(element.id);
             }
