@@ -489,6 +489,16 @@ export function EditorLayout() {
                 onClick={() => {
                   setPdfMenuOpen(false);
                   const deck = useDeckStore.getState().deck;
+                  if (deck) exportToPdf(deck, adapter, { scale: 1, format: "jpeg", quality: 0.7 });
+                }}
+                className="w-full text-left text-xs px-3 py-2 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+              >
+                PDF (Image Light)
+              </button>
+              <button
+                onClick={() => {
+                  setPdfMenuOpen(false);
+                  const deck = useDeckStore.getState().deck;
                   if (deck) exportToNativePdf(deck, adapter);
                 }}
                 className="w-full text-left text-xs px-3 py-2 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"

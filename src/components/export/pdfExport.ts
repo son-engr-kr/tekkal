@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { toPng } from "html-to-image";
+import { toPng, toJpeg } from "html-to-image";
 import { codeToHtml } from "shiki";
 import katex from "katex";
 import "katex/dist/katex.min.css";
@@ -49,6 +49,15 @@ import { resolveMarkers } from "@/utils/lineMarkers";
 
 const MIN_FONT_SIZE = 6;
 const CAPTURE_SCALE = 2;
+
+export interface PdfImageOptions {
+  /** Pixel ratio for capture (default: 2) */
+  scale?: number;
+  /** Image format — "png" for lossless, "jpeg" for smaller files (default: "png") */
+  format?: "png" | "jpeg";
+  /** JPEG quality 0-1 (default: 0.75) */
+  quality?: number;
+}
 
 // ---- HTML escape ----
 
@@ -171,7 +180,11 @@ function inlineHtml(text: string): string {
 export async function exportToPdf(
   deck: Deck,
   adapter: FileSystemAdapter,
+  opts?: PdfImageOptions,
 ): Promise<void> {
+  const captureScale = opts?.scale ?? CAPTURE_SCALE;
+  const imgFormat = opts?.format ?? "png";
+  const jpegQuality = opts?.quality ?? 0.75;
   const doc = new jsPDF({
     orientation: "landscape",
     unit: "px",
@@ -184,7 +197,7 @@ export async function exportToPdf(
 
   for (let i = 0; i < slides.length; i++) {
     if (i > 0) doc.addPage([CANVAS_WIDTH, CANVAS_HEIGHT], "landscape");
-    await renderSlide(doc, slides[i]!, deck, adapter, i + 1, totalPages);
+    await renderSlide(doc, slides[i]!, deck, adapter, i + 1, totalPages, captureScale, imgFormat, jpegQuality);
   }
 
   const name = (deck.meta.title || "presentation").replace(
@@ -211,6 +224,9 @@ async function renderSlide(
   adapter: FileSystemAdapter,
   pageNumber: number,
   totalPages: number,
+  captureScale: number = CAPTURE_SCALE,
+  imgFormat: "png" | "jpeg" = "png",
+  jpegQuality: number = 0.75,
 ): Promise<void> {
   // Wrapper: positioned at (0,0) behind everything (lowest z-index).
   // This is NOT the captured node — its styles don't get cloned.
@@ -295,24 +311,24 @@ async function renderSlide(
     ),
   );
 
-  // Capture the slide container (one toPng call per slide)
+  // Capture the slide container
+  const capture = imgFormat === "jpeg" ? toJpeg : toPng;
+  const captureOpts = {
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
+    pixelRatio: captureScale,
+    ...(imgFormat === "jpeg" ? { quality: jpegQuality } : {}),
+  };
+  const pdfFormat = imgFormat === "jpeg" ? "JPEG" : "PNG";
+
   try {
-    const png = await toPng(ctr, {
-      width: CANVAS_WIDTH,
-      height: CANVAS_HEIGHT,
-      pixelRatio: CAPTURE_SCALE,
-    });
-    doc.addImage(png, "PNG", 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    const img = await capture(ctr, captureOpts);
+    doc.addImage(img, pdfFormat, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   } catch {
     // Retry without font embedding (CORS/Vite font-fetch failures)
     try {
-      const png = await toPng(ctr, {
-        width: CANVAS_WIDTH,
-        height: CANVAS_HEIGHT,
-        pixelRatio: CAPTURE_SCALE,
-        skipFonts: true,
-      });
-      doc.addImage(png, "PNG", 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      const img = await capture(ctr, { ...captureOpts, skipFonts: true });
+      doc.addImage(img, pdfFormat, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     } catch (err) {
       console.error("[PDF] slide capture failed:", err);
     }
