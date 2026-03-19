@@ -5,6 +5,80 @@ import { useAssetUrl } from "@/contexts/AdapterContext";
 import { useDeckStore } from "@/stores/deckStore";
 import { parseVideoUrl } from "@/utils/videoParser";
 
+// ── First-frame cache ──
+// Captures the first frame of local videos as blob URLs for thumbnails.
+const frameCache = new Map<string, string>();
+const framePending = new Set<string>();
+
+function captureFirstFrame(src: string): Promise<string> {
+  const cached = frameCache.get(src);
+  if (cached) return Promise.resolve(cached);
+  if (framePending.has(src)) return Promise.resolve("");
+
+  framePending.add(src);
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.preload = "metadata";
+    video.src = src;
+
+    const cleanup = () => {
+      video.removeAttribute("src");
+      video.load();
+      framePending.delete(src);
+    };
+
+    video.addEventListener("loadeddata", () => {
+      // Seek to a tiny offset to ensure a frame is available
+      video.currentTime = 0.1;
+    }, { once: true });
+
+    video.addEventListener("seeked", () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 180;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const url = URL.createObjectURL(blob);
+              frameCache.set(src, url);
+              resolve(url);
+            } else {
+              resolve("");
+            }
+            cleanup();
+          }, "image/jpeg", 0.7);
+          return;
+        }
+      } catch { /* CORS or tainted canvas */ }
+      resolve("");
+      cleanup();
+    }, { once: true });
+
+    video.addEventListener("error", () => {
+      resolve("");
+      cleanup();
+    }, { once: true });
+  });
+}
+
+function useFirstFrame(src: string | undefined): string | undefined {
+  const [frame, setFrame] = useState<string | undefined>(() => src ? frameCache.get(src) : undefined);
+
+  useEffect(() => {
+    if (!src) return;
+    const cached = frameCache.get(src);
+    if (cached) { setFrame(cached); return; }
+    captureFirstFrame(src).then((url) => { if (url) setFrame(url); });
+  }, [src]);
+
+  return frame;
+}
+
 interface Props {
   element: VideoElementType;
   thumbnail?: boolean;
@@ -101,8 +175,21 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
     willChange: "transform",
   };
 
-  // Thumbnail mode: static placeholder, no video loading
+  const { type, embedUrl } = parseVideoUrl(resolvedSrc ?? element.src);
+  const isLocal = type === "native";
+  const firstFrame = useFirstFrame(thumbnail && isLocal ? embedUrl : undefined);
+
+  // Thumbnail mode: show cached first frame or play icon placeholder
   if (thumbnail) {
+    if (firstFrame) {
+      return (
+        <img
+          src={firstFrame}
+          alt=""
+          style={{ ...commonStyle, objectFit: commonStyle.objectFit ?? "cover", backgroundColor: "#18181b" }}
+        />
+      );
+    }
     return (
       <div
         style={{ ...commonStyle, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b" }}
@@ -113,8 +200,6 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
       </div>
     );
   }
-
-  const { type, embedUrl } = parseVideoUrl(resolvedSrc ?? element.src);
 
   if (type === "youtube" || type === "vimeo") {
     // Editor mode: show static placeholder instead of loading iframe
