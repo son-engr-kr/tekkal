@@ -302,7 +302,12 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
       }
       e.preventDefault();
       e.stopPropagation();
-      onSelect(e);
+      // Read fresh from store to avoid stale closure issues.
+      // Skip re-selection on plain click if already selected — preserves multi-select for drag.
+      const alreadySelected = useDeckStore.getState().selectedElementIds.includes(element.id);
+      if (!alreadySelected || e.shiftKey || e.ctrlKey || e.metaKey) {
+        onSelect(e);
+      }
       setDeckDragging(true);
       dragStart.current = {
         x: e.clientX,
