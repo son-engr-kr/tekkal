@@ -85,6 +85,11 @@ export function PresenterView() {
         setPopoutAdapter(
           ReadOnlyAdapter.fromAssetMap(project, syncDeck, assetMap),
         );
+      } else {
+        // ViteApiAdapter mode: create adapter with Vite-style asset URL rewriting
+        setPopoutAdapter(
+          new ReadOnlyAdapter(project, syncDeck, `/assets/${project}`),
+        );
       }
       setCurrentSlide(slideIndex);
       setActiveStep(step);
