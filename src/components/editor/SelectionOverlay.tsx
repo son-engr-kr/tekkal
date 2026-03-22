@@ -366,8 +366,48 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
       let dragStarted = false;
       let rafId = 0;
 
+      // Collect all element IDs that will move together
+      const state = useDeckStore.getState();
+      const latestSelected = state.selectedElementIds;
+      const currentSlide = state.deck?.slides[state.currentSlideIndex];
+      const allMoveIds = new Set(latestSelected);
+      if (currentSlide && latestSelected.length > 1) {
+        for (const id of latestSelected) {
+          const el = currentSlide.elements.find((e) => e.id === id);
+          if (el?.groupId) {
+            for (const m of currentSlide.elements) {
+              if (m.groupId === el.groupId) allMoveIds.add(m.id);
+            }
+          }
+        }
+      }
+      const moveIds = allMoveIds.has(element.id) ? [...allMoveIds] : [element.id];
+
+      // Cache DOM nodes for direct manipulation during drag
+      const dragNodes: HTMLElement[] = [];
+      for (const id of moveIds) {
+        document.querySelectorAll<HTMLElement>(`[data-element-id="${id}"]`).forEach((n) => dragNodes.push(n));
+      }
+
+      let lastDx = 0, lastDy = 0;
+
+      // Cache original transforms to preserve rotation during drag
+      const originalTransforms = new Map<HTMLElement, string>();
+      for (const node of dragNodes) {
+        originalTransforms.set(node, node.style.transform || "");
+      }
+
       const handleMouseUp = () => {
         cancelAnimationFrame(rafId);
+        // Clear CSS transforms
+        for (const node of dragNodes) node.style.transform = originalTransforms.get(node) || "";
+        // Commit final position to store (single update)
+        if (dragStarted && dragStart.current) {
+          onMove(element.id,
+            Math.round(dragStart.current.ex + lastDx),
+            Math.round(dragStart.current.ey + lastDy),
+          );
+        }
         setDeckDragging(false);
         dragStart.current = null;
         document.removeEventListener("selectstart", prevent);
@@ -378,9 +418,7 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
 
       const handleMouseMove = (me: MouseEvent) => {
         if (!dragStart.current) return;
-        // Safety: button already released but mouseup was swallowed (e.g. by <video> controls)
         if (me.buttons === 0) { handleMouseUp(); return; }
-        // Threshold: ignore movement until exceeding minimum distance
         if (!dragStarted) {
           const rawDx = me.clientX - dragStart.current.x;
           const rawDy = me.clientY - dragStart.current.y;
@@ -390,12 +428,12 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
         cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(() => {
           if (!dragStart.current) return;
-          const dx = (me.clientX - dragStart.current.x) / scale;
-          const dy = (me.clientY - dragStart.current.y) / scale;
-          onMove(element.id,
-            Math.round(dragStart.current.ex + dx),
-            Math.round(dragStart.current.ey + dy),
-          );
+          lastDx = (me.clientX - dragStart.current.x) / scale;
+          lastDy = (me.clientY - dragStart.current.y) / scale;
+          for (const node of dragNodes) {
+            const orig = originalTransforms.get(node) || "";
+            node.style.transform = `translate(${lastDx}px, ${lastDy}px) ${orig}`.trim();
+          }
         });
       };
 
