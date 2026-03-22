@@ -129,10 +129,17 @@ export function SelectionOverlay({ slide, scale }: Props) {
   );
 
   const handleElementMove = useCallback(
-    (elementId: string, dx: number, dy: number) => {
+    (elementId: string, targetX: number, targetY: number) => {
       const state = useDeckStore.getState();
       const currentSlide = state.deck?.slides[state.currentSlideIndex];
       if (!currentSlide) return;
+      const draggedEl = currentSlide.elements.find((e) => e.id === elementId);
+      if (!draggedEl) return;
+      // Compute delta from current position to absolute target
+      const dx = targetX - draggedEl.position.x;
+      const dy = targetY - draggedEl.position.y;
+      if (dx === 0 && dy === 0) return;
+
       const latestSelected = state.selectedElementIds;
       const allIds = new Set(latestSelected);
       if (latestSelected.length > 1) {
@@ -159,15 +166,15 @@ export function SelectionOverlay({ slide, scale }: Props) {
   );
 
   const handleElementResize = useCallback(
-    (elementId: string, dx: number, dy: number, dw: number, dh: number) => {
+    (elementId: string, targetX: number, targetY: number, targetW: number, targetH: number) => {
       const state = useDeckStore.getState();
       const currentSlide = state.deck?.slides[state.currentSlideIndex];
       if (!currentSlide) return;
       const el = currentSlide.elements.find((e) => e.id === elementId);
       if (!el) return;
       updateElement(currentSlide.id, elementId, {
-        position: { x: el.position.x + dx, y: el.position.y + dy },
-        size: { w: Math.max(20, el.size.w + dw), h: Math.max(20, el.size.h + dh) },
+        position: { x: targetX, y: targetY },
+        size: { w: targetW, h: targetH },
       } as Partial<SlideElement>);
     },
     [updateElement],
@@ -266,8 +273,8 @@ interface InteractiveProps {
   hasComment: boolean;
   onSelect: (elementId: string, e: React.MouseEvent) => void;
   onDoubleClick: (elementId: string) => void;
-  onMove: (elementId: string, dx: number, dy: number) => void;
-  onResize: (elementId: string, dx: number, dy: number, dw: number, dh: number) => void;
+  onMove: (elementId: string, targetX: number, targetY: number) => void;
+  onResize: (elementId: string, targetX: number, targetY: number, targetW: number, targetH: number) => void;
   onContextMenu: (elementId: string, x: number, y: number) => void;
   scale: number;
 }
@@ -386,8 +393,8 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
           const dx = (me.clientX - dragStart.current.x) / scale;
           const dy = (me.clientY - dragStart.current.y) / scale;
           onMove(element.id,
-            Math.round(dragStart.current.ex + dx - element.position.x),
-            Math.round(dragStart.current.ey + dy - element.position.y),
+            Math.round(dragStart.current.ex + dx),
+            Math.round(dragStart.current.ey + dy),
           );
         });
       };
@@ -499,10 +506,10 @@ const InteractiveElement = memo(function InteractiveElement({ element, isSelecte
           }
 
           onResize(element.id,
-            (origX + dx) - element.position.x,
-            (origY + dy) - element.position.y,
-            (origW + dw) - element.size.w,
-            (origH + dh) - element.size.h,
+            origX + dx,
+            origY + dy,
+            Math.max(20, origW + dw),
+            Math.max(20, origH + dh),
           );
         });
       };
