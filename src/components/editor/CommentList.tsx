@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useDeckStore } from "@/stores/deckStore";
 import type { Comment, CommentCategory } from "@/types/deck";
 import { FieldLabel } from "./fields";
+import { useGitDiff } from "@/hooks/useGitDiff";
 
 const CATEGORIES: { value: CommentCategory; label: string; color: string }[] = [
   { value: "content", label: "Content", color: "#f59e0b" },
@@ -39,9 +40,23 @@ export function CommentList({ slideId, elementId }: Props) {
   const updateComment = useDeckStore((s) => s.updateComment);
   const deleteComment = useDeckStore((s) => s.deleteComment);
   const selectElement = useDeckStore((s) => s.selectElement);
+  const gitDiff = useGitDiff();
 
   const slide = deck?.slides.find((s) => s.id === slideId);
   const allComments = slide?.comments ?? [];
+
+  // Build comment diff map: commentId -> "added" | "modified" | "removed"
+  const commentDiffMap = new Map<string, string>();
+  if (gitDiff.available && gitDiff.baseComments) {
+    const baseMap = new Map((gitDiff.baseComments as Comment[]).map((c) => [c.id, c]));
+    for (const c of allComments) {
+      if (!baseMap.has(c.id)) {
+        commentDiffMap.set(c.id, "added");
+      } else if (JSON.stringify(baseMap.get(c.id)) !== JSON.stringify(c)) {
+        commentDiffMap.set(c.id, "modified");
+      }
+    }
+  }
 
   const [showDone, setShowDone] = useState(false);
 
@@ -138,14 +153,15 @@ export function CommentList({ slideId, elementId }: Props) {
           {comments.map((comment) => {
             const aColor = comment.author ? authorColor(comment.author) : "#94a3b8";
             const cat = comment.category ? CATEGORY_MAP.get(comment.category) : null;
+            const diffStatus = commentDiffMap.get(comment.id);
 
             return (
               <div
                 key={comment.id}
                 className="group rounded border px-2 py-1.5"
                 style={{
-                  backgroundColor: `${aColor}10`,
-                  borderColor: `${aColor}30`,
+                  backgroundColor: diffStatus ? `${diffStatus === "added" ? "#22c55e" : "#22c55e"}08` : `${aColor}10`,
+                  borderColor: diffStatus ? "#22c55e50" : `${aColor}30`,
                 }}
               >
                 {/* Author + category header */}
@@ -156,6 +172,11 @@ export function CommentList({ slideId, elementId }: Props) {
                       style={{ color: aColor }}
                     >
                       {comment.author}
+                    </span>
+                  )}
+                  {diffStatus && (
+                    <span className="text-[8px] px-1 py-px rounded font-semibold bg-green-900/30 text-green-500">
+                      {diffStatus === "added" ? "new" : "edited"}
                     </span>
                   )}
                   {cat && (

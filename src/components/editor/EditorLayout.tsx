@@ -12,12 +12,13 @@ import { NotesEditor } from "./NotesEditor";
 import { ElementPalette } from "./ElementPalette";
 import { SlideAnimationList } from "./SlideAnimationList";
 import { ThemePanel } from "./ThemePanel";
-import { DiffView } from "./DiffView";
 import { PresentationMode } from "@/components/presenter/PresentationMode";
 import { exportToPdf } from "@/components/export/pdfExport";
 import { exportToNativePdf } from "@/components/export/pdfNativeExport";
 import { exportToPptx } from "@/components/export/pptxExport";
 import { useAdapter } from "@/contexts/AdapterContext";
+import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
+import { useGitDiff } from "@/hooks/useGitDiff";
 import { useTikzAutoRender } from "@/hooks/useTikzAutoRender";
 
 import {
@@ -51,6 +52,7 @@ type RightPanel = "properties" | "theme";
 export function EditorLayout() {
   useTikzAutoRender();
   const adapter = useAdapter();
+  const gitDiff = useGitDiff();
   const isReadOnly = adapter.mode === "readonly";
   const [bottomPanel, setBottomPanel] = useState<BottomPanel>(null);
   const [rightPanel, setRightPanel] = useState<RightPanel>("properties");
@@ -58,6 +60,7 @@ export function EditorLayout() {
   const [showDiff, setShowDiff] = useState(false);
   const [pdfMenuOpen, setPdfMenuOpen] = useState(false);
   const [shareToast, setShareToast] = useState(false);
+  const [showProjectSettings, setShowProjectSettings] = useState(false);
   const pdfMenuRef = useRef<HTMLDivElement>(null);
   const isDirty = useDeckStore((s) => s.isDirty);
   const isSaving = useDeckStore((s) => s.isSaving);
@@ -401,9 +404,13 @@ export function EditorLayout() {
         >
           {isReadOnly ? "Back" : "Projects"}
         </button>
-        <span className="text-sm font-semibold text-zinc-300">
+        <button
+          onClick={() => setShowProjectSettings(true)}
+          className="text-sm font-semibold text-zinc-300 hover:text-zinc-100 transition-colors"
+          title="Project settings"
+        >
           {useDeckStore.getState().currentProject}
-        </span>
+        </button>
 
         {/* Save status / Read-only badge */}
         {isReadOnly ? (
@@ -518,13 +525,25 @@ export function EditorLayout() {
           PPTX
         </button>
         <button
-          onClick={() => setShowDiff(!showDiff)}
+          onClick={() => {
+            if (!showDiff && !gitDiff.available) {
+              if (gitDiff.unavailableReason === "no-path") {
+                setShowProjectSettings(true);
+              }
+              return;
+            }
+            setShowDiff(!showDiff);
+          }}
           className={`text-xs px-2 py-1 rounded transition-colors ${
             showDiff
-              ? "bg-blue-600 text-white"
+              ? "bg-green-600 text-white"
               : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
           }`}
-          title="Visual Diff (Ctrl+Shift+D)"
+          title={!gitDiff.available && gitDiff.unavailableReason === "no-path"
+            ? "Set project path to enable git diff"
+            : !gitDiff.available
+              ? "Git history not available"
+              : "Git Diff (Ctrl+Shift+D)"}
         >
           Diff
         </button>
@@ -551,16 +570,13 @@ export function EditorLayout() {
       </div>
 
       {/* Main area */}
-      {showDiff ? (
-        <DiffView onClose={() => setShowDiff(false)} />
-      ) : (
       <div className="flex-1 flex overflow-hidden">
         {/* Slide list sidebar */}
         <div
           style={{ width: leftWidth, scrollbarGutter: "stable" }}
           className="overflow-y-auto shrink-0 border-r border-zinc-800"
         >
-          <SlideList />
+          <SlideList showDiff={showDiff} />
         </div>
 
         {/* Left resize handle */}
@@ -571,7 +587,7 @@ export function EditorLayout() {
 
         {/* Center: canvas + optional bottom panels */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <EditorCanvas />
+          <EditorCanvas showDiff={showDiff} />
 
           {/* Notes drag handle */}
           {notesExpanded && (
@@ -589,6 +605,7 @@ export function EditorLayout() {
             <NotesEditor
               expanded={notesExpanded}
               onToggle={() => setNotesExpanded((v) => !v)}
+              showDiff={showDiff}
             />
           </div>
 
@@ -641,6 +658,15 @@ export function EditorLayout() {
           )}
         </div>
       </div>
+      {showProjectSettings && (
+        <ProjectSettingsDialog
+          projectName={useDeckStore.getState().currentProject ?? ""}
+          onClose={() => setShowProjectSettings(false)}
+          onPathSaved={() => {
+            gitDiff.refetch();
+            setShowDiff(true);
+          }}
+        />
       )}
     </div>
   );

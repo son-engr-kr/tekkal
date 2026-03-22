@@ -21,6 +21,7 @@ import { useAdapter } from "@/contexts/AdapterContext";
 import type { Slide, DeckTheme } from "@/types/deck";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import type { LayoutInfo } from "@/adapters/types";
+import { useGitDiff } from "@/hooks/useGitDiff";
 
 interface SlideContextMenuState {
   x: number;
@@ -111,7 +112,7 @@ function createBlankSlide(): Slide {
   };
 }
 
-export function SlideList() {
+export function SlideList({ showDiff = false }: { showDiff?: boolean }) {
   const slides = useDeckStore((s) => s.deck?.slides);
   const theme = useDeckStore((s) => s.deck?.theme);
   const currentSlideIndex = useDeckStore((s) => s.currentSlideIndex);
@@ -212,6 +213,8 @@ export function SlideList() {
 
   const slideIds = slides.map((s) => s.id);
   const { visibleIds, observe } = useVisibleThumbnails(slideIds, currentSlideIndex);
+  const gitDiff = useGitDiff();
+  const effectiveGitChangedIds = showDiff && gitDiff.available ? gitDiff.changedSlideIds : null;
 
   return (
     <div ref={listRef} className="flex flex-col gap-1.5 p-2 overflow-y-auto">
@@ -233,6 +236,7 @@ export function SlideList() {
               isVisible={index === currentSlideIndex || visibleIds.has(slide.id)}
               observeRef={observe}
               hasComments={!!slide.comments?.some((c) => c.category !== "done")}
+              gitChanged={!!effectiveGitChangedIds?.has(slide.id)}
               onSelect={(e: React.MouseEvent) => {
                 if (e.ctrlKey || e.metaKey) {
                   // Toggle in/out of selection
@@ -348,6 +352,7 @@ const SortableSlideItem = memo(function SortableSlideItem({
   isVisible,
   observeRef,
   hasComments,
+  gitChanged,
   onSelect,
   onContextMenu,
   theme,
@@ -360,6 +365,7 @@ const SortableSlideItem = memo(function SortableSlideItem({
   isVisible: boolean;
   observeRef: (id: string, el: Element | null) => void;
   hasComments: boolean;
+  gitChanged: boolean;
   onSelect: (e: React.MouseEvent) => void;
   onContextMenu: (x: number, y: number) => void;
   theme?: DeckTheme;
@@ -437,6 +443,10 @@ const SortableSlideItem = memo(function SortableSlideItem({
         >
           <path d="M1 0h8v14l-4-3-4 3z" fill="#3b82f6" />
         </svg>
+      )}
+      {/* Git change indicator — green left bar */}
+      {gitChanged && (
+        <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-green-500" />
       )}
     </div>
   );

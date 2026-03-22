@@ -535,6 +535,106 @@ export function deckApiPlugin(): Plugin {
         jsonResponse(res, 200, { ok: true });
       });
 
+      // -- Git HEAD hash (for diff cache invalidation) --
+
+      server.middlewares.use("/api/git-head-hash", (req, res) => {
+        const url = new URL(req.url ?? "/", "http://localhost");
+        const absPath = url.searchParams.get("absPath");
+        const dir = absPath ? path.resolve(absPath) : projectDir(getProjectParam(req));
+        try {
+          const hash = execFileSync("git", ["rev-parse", "HEAD"], {
+            cwd: dir,
+            encoding: "utf-8",
+            stdio: ["pipe", "pipe", "pipe"],
+          }).trim();
+          jsonResponse(res, 200, { hash });
+        } catch {
+          jsonResponse(res, 404, { error: "Not a git repository" });
+        }
+      });
+
+      // -- Git base deck (for diff visualization) --
+
+      server.middlewares.use("/api/git-base-deck", (req, res) => {
+        const url = new URL(req.url ?? "/", "http://localhost");
+        const absPath = url.searchParams.get("absPath");
+
+        // If absPath is provided (fsAccess mode), use it directly
+        // Otherwise fall back to project-based path
+        const projDir = absPath ? path.resolve(absPath) : projectDir(getProjectParam(req));
+        const dp = absPath ? path.resolve(absPath, DECK_FILENAME) : deckPath(getProjectParam(req));
+
+        // Find git repo that actually tracks this project's files.
+        // 1. Check if the project dir itself is a git repo root
+        // 2. Otherwise find ancestor repo and verify the file is tracked (not gitignored)
+        let gitRoot: string;
+        try {
+          const found = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+            cwd: projDir,
+            encoding: "utf-8",
+            stdio: ["pipe", "pipe", "pipe"],
+          }).trim();
+
+          // If the git root IS the project dir, use it directly
+          if (path.resolve(found) === path.resolve(projDir)) {
+            gitRoot = found;
+          } else {
+            // Ancestor repo — verify the file is actually tracked (not gitignored)
+            const relCheck = path.relative(found, dp).replace(/\\/g, "/");
+            try {
+              execFileSync("git", ["ls-files", "--error-unmatch", relCheck], {
+                cwd: found,
+                encoding: "utf-8",
+                stdio: ["pipe", "pipe", "pipe"],
+              });
+              gitRoot = found;
+            } catch {
+              // File is gitignored or untracked in ancestor repo
+              jsonResponse(res, 404, { error: "File not tracked by git" });
+              return;
+            }
+          }
+        } catch {
+          jsonResponse(res, 404, { error: "Not a git repository" });
+          return;
+        }
+
+        const relPath = path.relative(gitRoot, dp).replace(/\\/g, "/");
+        try {
+          const raw = execFileSync("git", ["show", `HEAD:${relPath}`], {
+            cwd: gitRoot,
+            encoding: "utf-8",
+            stdio: ["pipe", "pipe", "pipe"],
+          });
+          let deck: any;
+          try { deck = JSON.parse(raw); } catch { jsonResponse(res, 422, { error: "Invalid JSON in git HEAD" }); return; }
+          // Resolve $ref slides from git HEAD
+          if (Array.isArray(deck.slides)) {
+            for (let i = 0; i < deck.slides.length; i++) {
+              const entry = deck.slides[i];
+              if (entry.$ref && typeof entry.$ref === "string") {
+                const refRelPath = path.relative(gitRoot, path.resolve(path.dirname(dp), entry.$ref)).replace(/\\/g, "/");
+                try {
+                  const refRaw = execFileSync("git", ["show", `HEAD:${refRelPath}`], {
+                    cwd: gitRoot,
+                    encoding: "utf-8",
+                    stdio: ["pipe", "pipe", "pipe"],
+                  });
+                  const slide = JSON.parse(refRaw);
+                  slide._ref = entry.$ref;
+                  deck.slides[i] = slide;
+                } catch {
+                  // Ref file not in git — skip
+                }
+              }
+            }
+          }
+          jsonResponse(res, 200, deck);
+        } catch {
+          jsonResponse(res, 404, { error: "No git history for this file" });
+        }
+      });
+
       // -- AI tool: read-deck --
 
       server.middlewares.use("/api/ai/read-deck", (req, res) => {

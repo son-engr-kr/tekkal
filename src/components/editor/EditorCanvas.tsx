@@ -9,6 +9,7 @@ import { SelectionOverlay, TrimOverlay } from "./SelectionOverlay";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { assert } from "@/utils/assert";
 import { ComponentEditOverlay } from "./ComponentEditOverlay";
+import { useGitDiff } from "@/hooks/useGitDiff";
 
 interface MarqueeRect {
   startX: number;
@@ -20,7 +21,7 @@ interface MarqueeRect {
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 5;
 
-export function EditorCanvas() {
+export function EditorCanvas({ showDiff = false }: { showDiff?: boolean }) {
   const deck = useDeckStore((s) => s.deck);
   const currentSlideIndex = useDeckStore((s) => s.currentSlideIndex);
   const slide = deck?.slides[currentSlideIndex];
@@ -31,6 +32,7 @@ export function EditorCanvas() {
   const trimElementId = useDeckStore((s) => s.trimElementId);
   const editingComponentId = useDeckStore((s) => s.editingComponentId);
   const adapter = useAdapter();
+  const gitDiff = useGitDiff();
 
   const [marquee, setMarquee] = useState<MarqueeRect | null>(null);
   const marqueeRef = useRef<MarqueeRect | null>(null);
@@ -660,6 +662,95 @@ export function EditorCanvas() {
             slide={slide}
             scale={scale}
           />
+        )}
+        {/* Git diff overlay */}
+        {showDiff && gitDiff.available && slide && !editingComponentId && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}
+          >
+            {(() => {
+              const { elementChanges } = gitDiff;
+              // If all elements are added → entire slide is new
+              const allAdded = slide.elements.length > 0 &&
+                slide.elements.every((el) => elementChanges.get(el.id) === "added");
+              if (allAdded) {
+                return (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 0, top: 0,
+                      width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
+                      border: "3px dashed #22c55e",
+                      borderRadius: 4,
+                    }}
+                  />
+                );
+              }
+
+              // Group changed elements by groupId
+              const ungrouped: { el: typeof slide.elements[0]; change: string }[] = [];
+              const groupedChanges = new Map<string, typeof slide.elements>();
+
+              for (const el of slide.elements) {
+                const change = elementChanges.get(el.id);
+                if (!change) continue;
+                if (el.groupId) {
+                  let group = groupedChanges.get(el.groupId);
+                  if (!group) { group = []; groupedChanges.set(el.groupId, group); }
+                  group.push(el);
+                } else {
+                  ungrouped.push({ el, change });
+                }
+              }
+
+              const rects: React.ReactNode[] = [];
+
+              // Render group bounding boxes
+              for (const [groupId, elements] of groupedChanges) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const el of elements) {
+                  minX = Math.min(minX, el.position.x);
+                  minY = Math.min(minY, el.position.y);
+                  maxX = Math.max(maxX, el.position.x + el.size.w);
+                  maxY = Math.max(maxY, el.position.y + el.size.h);
+                }
+                rects.push(
+                  <div
+                    key={`diff-group-${groupId}`}
+                    style={{
+                      position: "absolute",
+                      left: minX - 4, top: minY - 4,
+                      width: maxX - minX + 8, height: maxY - minY + 8,
+                      border: "2px dashed #22c55e",
+                      borderRadius: 4,
+                    }}
+                  />
+                );
+              }
+
+              // Render individual element borders
+              for (const { el, change } of ungrouped) {
+                const color = change === "removed" ? "#ef4444" : "#22c55e";
+                rects.push(
+                  <div
+                    key={`diff-${el.id}`}
+                    style={{
+                      position: "absolute",
+                      left: el.position.x,
+                      top: el.position.y,
+                      width: el.size.w,
+                      height: el.size.h,
+                      border: `2px dashed ${color}`,
+                      borderRadius: 2,
+                    }}
+                  />
+                );
+              }
+
+              return rects;
+            })()}
+          </div>
         )}
         {!editingComponentId && <SelectionOverlay slide={slide} scale={scale} />}
         {marquee && !editingComponentId && (

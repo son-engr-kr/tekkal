@@ -87,6 +87,31 @@ export async function renderTikz(
   return res.json();
 }
 
+export async function fetchGitHeadHash(project: string, absPath?: string): Promise<string | null> {
+  const params = new URLSearchParams();
+  if (absPath) {
+    params.set("absPath", absPath);
+  } else {
+    params.set("project", project);
+  }
+  const res = await fetch(`/api/git-head-hash?${params.toString()}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.hash ?? null;
+}
+
+export async function loadGitBaseDeck(project: string, absPath?: string): Promise<Deck | null> {
+  const params = new URLSearchParams();
+  if (absPath) {
+    params.set("absPath", absPath);
+  } else {
+    params.set("project", project);
+  }
+  const res = await fetch(`/api/git-base-deck?${params.toString()}`);
+  if (!res.ok) return null;
+  return res.json() as Promise<Deck>;
+}
+
 export async function listComponents(project: string): Promise<string[]> {
   const res = await fetch(`/api/list-components?project=${encodeURIComponent(project)}`);
   assert(res.ok, `Failed to list components: ${res.status}`);
