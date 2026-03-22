@@ -37,6 +37,7 @@ export class FsAccessAdapter implements FileSystemAdapter {
   }
   readonly projectName: string;
   private _lastSaveHash: number | null = null;
+  private _slideRefCache = new Map<string, string>();
 
   get lastSaveHash(): number | null {
     return this._lastSaveHash;
@@ -131,6 +132,14 @@ export class FsAccessAdapter implements FileSystemAdapter {
       throw new Error(`Invalid JSON in deck.json: ${msg}`);
     }
     await this.resolveSlideRefs(deck);
+    // Initialize slide ref cache for external modification detection
+    this._slideRefCache.clear();
+    for (const slide of deck.slides) {
+      if (slide._ref) {
+        const { _ref, ...slideData } = slide as any;
+        this._slideRefCache.set(slideData.id ?? _ref, JSON.stringify(slideData, null, 2));
+      }
+    }
     return deck;
   }
 
@@ -154,7 +163,7 @@ export class FsAccessAdapter implements FileSystemAdapter {
   }
 
   async saveDeck(deck: Deck): Promise<Deck | null> {
-    // Detect external modification before writing
+    // Detect external modification of deck.json
     if (this._lastSaveHash !== null) {
       try {
         const fileHandle = await this.dirHandle.getFileHandle("deck.json");
@@ -162,13 +171,20 @@ export class FsAccessAdapter implements FileSystemAdapter {
         const currentContent = await file.text();
         const currentHash = fnv1aHash(currentContent);
         if (currentHash !== this._lastSaveHash) {
-          // File was modified externally — return current disk version for merge
           const diskDeck = JSON.parse(currentContent) as Deck;
           return diskDeck;
         }
       } catch {
         // File doesn't exist yet — proceed with save
       }
+    }
+
+    // Detect external modification of individual $ref slide files
+    const externallyModified = await this.checkSlideRefChanges(deck);
+    if (externallyModified) {
+      // Re-load the full deck from disk and return it for client-side merge
+      const diskDeck = await this.loadDeck();
+      return diskDeck;
     }
 
     // Shallow-copy to avoid mutating frozen state (Immer/Zustand)
@@ -183,6 +199,32 @@ export class FsAccessAdapter implements FileSystemAdapter {
     return null;
   }
 
+  /** Check if any $ref slide files were modified externally since last save/load. */
+  private async checkSlideRefChanges(deck: Deck): Promise<boolean> {
+    for (const slide of deck.slides) {
+      if (!slide._ref) continue;
+      const { _ref, ...slideData } = slide as any;
+      const slideId = slideData.id ?? _ref;
+      const cached = this._slideRefCache.get(slideId);
+      if (!cached) continue;
+
+      try {
+        const refParts = _ref.replace(/^\.\//, "").split("/");
+        let dir: FileSystemDirectoryHandle = this.dirHandle;
+        for (let j = 0; j < refParts.length - 1; j++) {
+          dir = await dir.getDirectoryHandle(refParts[j]!);
+        }
+        const fh = await dir.getFileHandle(refParts[refParts.length - 1]!);
+        const file = await fh.getFile();
+        const diskContent = await file.text();
+        if (diskContent !== cached) return true;
+      } catch {
+        // File doesn't exist — no external change
+      }
+    }
+    return false;
+  }
+
   /** Write slides with `_ref` to their external files and replace them with `{ "$ref": "..." }`. */
   private async splitSlideRefs(deck: Deck): Promise<void> {
     for (let i = 0; i < deck.slides.length; i++) {
@@ -194,11 +236,13 @@ export class FsAccessAdapter implements FileSystemAdapter {
           dir = await dir.getDirectoryHandle(refParts[j]!, { create: true });
         }
         const { _ref, ...slideData } = slide;
+        const serialized = JSON.stringify(slideData, null, 2);
+        const slideId = (slideData as any).id ?? _ref;
         const fh = await dir.getFileHandle(refParts[refParts.length - 1]!, { create: true });
         const writable = await fh.createWritable();
-        await writable.write(JSON.stringify(slideData, null, 2));
+        await writable.write(serialized);
         await writable.close();
-        // Replace in-array with $ref pointer
+        this._slideRefCache.set(slideId, serialized);
         deck.slides[i] = { $ref: _ref } as any;
       }
     }

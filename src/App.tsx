@@ -183,8 +183,8 @@ export function App() {
 
     const result = mergeDeck(base, local, remoteDeck);
     if (result.merged) {
-      // No conflicts → apply merged deck silently
-      useDeckStore.getState().loadDeck(result.merged);
+      // No conflicts → apply merged deck and trigger auto-save
+      useDeckStore.getState().replaceDeck(result.merged);
     } else {
       // Conflicts exist → show dialog
       useDeckStore.getState().setSavePaused(true);
@@ -209,33 +209,68 @@ export function App() {
     };
   }, [adapter, tryMerge]);
 
-  // Polling: detect external deck.json changes in fs-access mode
+  // Polling: detect external changes to deck.json and $ref slide files in fs-access mode
   const lastModifiedRef = useRef(0);
+  const slideModifiedRef = useRef(new Map<string, number>());
   useEffect(() => {
     if (!adapter || adapter.mode !== "fs-access") return;
     const fsAdapter = adapter as FsAccessAdapter;
 
     const poll = async () => {
+      // Check deck.json
+      let deckChanged = false;
       const fileHandle = await fsAdapter.dirHandle.getFileHandle("deck.json");
       const file = await fileHandle.getFile();
       const modified = file.lastModified;
 
       if (lastModifiedRef.current === 0) {
         lastModifiedRef.current = modified;
-        return;
+      } else if (modified !== lastModifiedRef.current) {
+        lastModifiedRef.current = modified;
+        const text = await file.text();
+        const fileHash = fnv1aHash(text);
+        if (fileHash !== fsAdapter.lastSaveHash) {
+          deckChanged = true;
+        }
       }
 
-      if (modified === lastModifiedRef.current) return;
-      lastModifiedRef.current = modified;
+      // Check $ref slide files
+      if (!deckChanged) {
+        const deck = useDeckStore.getState().deck;
+        if (deck) {
+          for (const slide of deck.slides) {
+            if (!slide._ref) continue;
+            try {
+              const refParts = slide._ref.replace(/^\.\//, "").split("/");
+              let dir: FileSystemDirectoryHandle = fsAdapter.dirHandle;
+              for (let j = 0; j < refParts.length - 1; j++) {
+                dir = await dir.getDirectoryHandle(refParts[j]!);
+              }
+              const fh = await dir.getFileHandle(refParts[refParts.length - 1]!);
+              const f = await fh.getFile();
+              const prev = slideModifiedRef.current.get(slide._ref);
+              if (prev === undefined) {
+                slideModifiedRef.current.set(slide._ref, f.lastModified);
+              } else if (f.lastModified !== prev) {
+                slideModifiedRef.current.set(slide._ref, f.lastModified);
+                deckChanged = true;
+                break;
+              }
+            } catch {
+              // File doesn't exist — skip
+            }
+          }
+        }
+      }
 
-      // Hash-based self-save detection: read file text and compare hash
-      const text = await file.text();
-      const fileHash = fnv1aHash(text);
-      if (fileHash === fsAdapter.lastSaveHash) return; // our own save
-
-      fsAdapter.loadDeck().then((remoteDeck) => {
-        tryMerge(remoteDeck);
-      });
+      if (deckChanged) {
+        // Skip polling merge while a save is in progress to avoid race conditions
+        if (useDeckStore.getState().isSaving) return;
+        fsAdapter.loadDeck().then((remoteDeck) => {
+          slideModifiedRef.current.clear();
+          tryMerge(remoteDeck);
+        });
+      }
     };
 
     const id = setInterval(poll, 2000);

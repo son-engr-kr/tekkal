@@ -136,7 +136,7 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
     // Slide exists in local but deleted in remote (and unchanged locally)
     if (baseSlide && localSlide && !remoteSlide) {
       if (JSON.stringify(baseSlide) === JSON.stringify(localSlide)) continue; // accept deletion
-      hasSlideConflicts = true;
+      // Local modified, remote deleted → keep local
       mergedSlides.push(structuredClone(localSlide));
       continue;
     }
@@ -157,8 +157,7 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
         // Remote changed, local didn't → accept remote
         (mergedSlide as unknown as Record<string, unknown>)[field] = structuredClone((remoteSlide as unknown as Record<string, unknown>)[field]);
       } else if (remoteVal !== baseVal && localVal !== baseVal && remoteVal !== localVal) {
-        // Both changed differently → keep local, flag conflict
-        hasSlideConflicts = true;
+        // Both changed differently → keep local
       }
       // else: only local changed, or both same → keep local (already in mergedSlide)
     }
@@ -197,14 +196,11 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
       if (!localEl && remoteEl) {
         // Deleted locally, exists remotely
         if (baseStr === remoteStr) continue; // local deletion, remote unchanged → accept deletion
-        // Remote modified, local deleted → conflict
-        conflicts.push({ slideId, elementId: elId });
-        mergedElements.push(structuredClone(remoteEl));
+        // Remote modified, local deleted → keep local decision (deletion)
       } else if (localEl && !remoteEl) {
         // Exists locally, deleted remotely
         if (baseStr === localStr) continue; // remote deletion, local unchanged → accept deletion
         // Local modified, remote deleted → keep local
-        conflicts.push({ slideId, elementId: elId });
         mergedElements.push(structuredClone(localEl));
       } else if (localEl && remoteEl) {
         if (localStr === remoteStr) {
@@ -217,8 +213,7 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
           // Only local changed → keep local
           mergedElements.push(structuredClone(localEl));
         } else {
-          // Both changed → conflict, keep local
-          conflicts.push({ slideId, elementId: elId });
+          // Both changed → keep local (deckode user is actively editing)
           mergedElements.push(structuredClone(localEl));
         }
       }

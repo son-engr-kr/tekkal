@@ -6,6 +6,7 @@ import os from "os";
 import { execFile, execFileSync } from "child_process";
 import Ajv2020 from "ajv/dist/2020";
 import { generateWizardDeck } from "../utils/projectTemplates";
+import { mergeSlideFields } from "../utils/slideMerge";
 
 const DECK_FILENAME = "deck.json";
 const PROJECT_DIR = "projects";
@@ -910,17 +911,36 @@ function splitSlideRefs(deck: any, projectRoot: string, cache?: Map<string, stri
       const { _ref, ...slideData } = slide;
       const serialized = JSON.stringify(slideData, null, 2);
       const slideId = slideData.id ?? _ref;
-      // Compare against cache (fast) or fall back to disk read
       const cached = cache?.get(slideId);
+
       if (cached !== serialized) {
+        // Check if the file was modified externally before writing
+        if (cached && fs.existsSync(refPath)) {
+          const diskContent = fs.readFileSync(refPath, "utf-8");
+          if (diskContent !== cached) {
+            // External modification detected — merge element by element
+            try {
+              const diskSlide = JSON.parse(diskContent);
+              const baseSlide = JSON.parse(cached);
+              const merged = mergeSlideFields(baseSlide, slideData, diskSlide);
+              const mergedSerialized = JSON.stringify(merged, null, 2);
+              fs.writeFileSync(refPath, mergedSerialized, "utf-8");
+              cache?.set(slideId, mergedSerialized);
+              deck.slides[i] = { $ref: _ref };
+              continue;
+            } catch {
+              // Merge failed — fall through to overwrite
+            }
+          }
+        }
         fs.writeFileSync(refPath, serialized, "utf-8");
       }
-      // Update cache
       cache?.set(slideId, serialized);
       deck.slides[i] = { $ref: _ref };
     }
   }
 }
+
 
 function assert(condition: any, message: string): asserts condition {
   if (!condition) throw new Error(message);
