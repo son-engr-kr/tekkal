@@ -147,6 +147,21 @@ function normalizeSizes(deck: Deck): void {
   }
 }
 
+/** Remove animations/comments referencing elements that no longer exist on the slide. */
+function cleanOrphanRefs(deck: Deck): void {
+  for (const slide of deck.slides) {
+    const elementIds = new Set(slide.elements.map((e) => e.id));
+    if (slide.animations) {
+      slide.animations = slide.animations.filter((a) => elementIds.has(a.target));
+      if (slide.animations.length === 0) delete slide.animations;
+    }
+    if (slide.comments) {
+      slide.comments = slide.comments.filter((c) => !c.elementId || elementIds.has(c.elementId));
+      if (slide.comments.length === 0) delete slide.comments;
+    }
+  }
+}
+
 function assertNoLineRotation(el: { type?: string; rotation?: number }) {
   assert(
     !((el.type === "line" || el.type === "arrow") && el.rotation),
@@ -182,6 +197,7 @@ export const useDeckStore = create<DeckState>()(
 
         openProject: (project, deck) => {
           normalizeSizes(deck);
+          cleanOrphanRefs(deck);
           syncCounters(deck);
           setTabProject(project);
           _lastSavedDeck = structuredClone(deck);
@@ -216,6 +232,7 @@ export const useDeckStore = create<DeckState>()(
 
         loadDeck: (deck) => {
           normalizeSizes(deck);
+          cleanOrphanRefs(deck);
           syncCounters(deck);
           _lastSavedDeck = structuredClone(deck);
           set((state) => {
@@ -294,8 +311,7 @@ export const useDeckStore = create<DeckState>()(
               // Use the snapshot that was actually written, not current store
               // (user may have typed more during the async save)
               _lastSavedDeck = structuredClone(deckToSave);
-              const hasNewChanges = get().deck !== deckToSave;
-              set((state) => { state.isSaving = false; state.isDirty = hasNewChanges; });
+              set((state) => { state.isSaving = false; state.isDirty = false; });
             } else {
               set((state) => { state.isSaving = false; });
             }
@@ -312,6 +328,7 @@ export const useDeckStore = create<DeckState>()(
               if (result.merged) {
                 // Auto-merge succeeded — apply merged deck and retry save
                 normalizeSizes(result.merged);
+                cleanOrphanRefs(result.merged);
                 syncCounters(result.merged);
                 set((state) => { state.deck = result.merged!; });
                 return get().saveToDisk();
