@@ -137,19 +137,13 @@ export class FsAccessAdapter implements FileSystemAdapter {
       throw new Error(`Invalid JSON in deck.json: ${msg}`);
     }
     await this.resolveSlideRefs(deck);
-    // Initialize slide ref cache for external modification detection
-    this._slideRefCache.clear();
-    for (const slide of deck.slides) {
-      if (slide._ref) {
-        const { _ref, ...slideData } = slide as any;
-        this._slideRefCache.set(slideData.id ?? _ref, JSON.stringify(slideData, null, 2));
-      }
-    }
     return deck;
   }
 
-  /** Resolve `{ "$ref": "./slides/foo.json" }` entries by reading from the directory handle. */
+  /** Resolve `{ "$ref": "./slides/foo.json" }` entries by reading from the directory handle.
+   *  Also populates _slideRefCache with raw disk content for external change detection. */
   private async resolveSlideRefs(deck: Deck): Promise<void> {
+    this._slideRefCache.clear();
     for (let i = 0; i < deck.slides.length; i++) {
       const entry = deck.slides[i] as any;
       if (entry.$ref && typeof entry.$ref === "string") {
@@ -160,9 +154,13 @@ export class FsAccessAdapter implements FileSystemAdapter {
         }
         const fh = await dir.getFileHandle(refParts[refParts.length - 1]!);
         const f = await fh.getFile();
-        const slide = JSON.parse(await f.text());
+        const rawText = await f.text();
+        const slide = JSON.parse(rawText);
         slide._ref = entry.$ref;
         deck.slides[i] = slide;
+        // Cache raw disk content (not re-serialized) for exact comparison
+        const slideId = slide.id ?? entry.$ref;
+        this._slideRefCache.set(slideId, rawText);
       }
     }
   }

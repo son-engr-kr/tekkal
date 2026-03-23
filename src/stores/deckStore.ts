@@ -126,6 +126,11 @@ export function getDeckDragging(): boolean {
   return isDragging;
 }
 
+let _lastSaveTime = 0;
+export function getLastSaveTime(): number {
+  return _lastSaveTime;
+}
+
 // computeBounds is imported from @/utils/bounds
 
 /** Resolve aspectRatio → h for all elements at load time so runtime always has h. */
@@ -308,13 +313,12 @@ export const useDeckStore = create<DeckState>()(
           try {
             conflictDeck = await _activeSave;
           } catch (err) {
-            console.error("[deckStore] saveToDisk failed:", err);
+            console.error("[save] failed:", err);
           } finally {
             _activeSave = null;
             if (!conflictDeck) {
-              // Use the snapshot that was actually written, not current store
-              // (user may have typed more during the async save)
               _lastSavedDeck = structuredClone(deckToSave);
+              _lastSaveTime = Date.now();
               set((state) => { state.isSaving = false; state.isDirty = false; });
             } else {
               set((state) => { state.isSaving = false; });
