@@ -604,17 +604,35 @@ When you create or modify a TikZ element, only set `content` and optionally `pre
 
 **TikZJax Engine Limitations**:
 
-The TikZ renderer uses TikZJax (a WASM-based TeX engine), NOT full pdflatex. Key constraints:
+The TikZ renderer uses TikZJax (`@drgrice1/tikzjax` v1.0.0-beta24), a WASM-based TeX engine running entirely in the browser. It is **NOT** full pdflatex — it compiles TeX → DVI → SVG via a WebAssembly port of e-TeX + a custom PGF SVG driver.
 
-| Category | Supported (verified) | NOT Supported (verified) |
-|----------|---------------------|------------------------|
-| Math | `\mathbf`, `\mathrm`, `\hat`, `\vec`, `\in`, `\tau` | `\mathbb` (requires amssymb — silently fails) |
-| Packages | `tikz` core, `pgfplots` | `amssymb`, `amsfonts` |
-| Features | `\definecolor{...}{RGB}{r,g,b}`, `\footnotesize`, `\scriptsize`, `\bfseries` | Untested: `\colorlet`, complex TikZ libraries |
+**Pre-loaded in the core** (always available, no preamble needed):
+- `xcolor` (with `svgnames` option — all SVG named colors like `red`, `blue`, `green`, `gray`, `orange`, etc.)
+- `tikz` core
 
-Workarounds for common issues:
-- `\mathbb{R}` → use `\mathbf{R}` instead
-- If compilation fails silently (error: "Could not find file input.dvi"), the TikZ source has an unsupported command — simplify
+**Loaded by Deckode's standard preamble** (always available):
+- `pgfplots` + `\pgfplotsset{compat=1.18}`
+
+**CRITICAL — Package/Library loading limitation**: Deckode currently only passes `addToPreamble` to the TikZJax worker. It does NOT pass `texPackages` or `tikzLibraries` dataset attributes. This means:
+- `\usepackage{...}` in the preamble field **may fail** for packages that need their tex_files loaded separately
+- `\usetikzlibrary{...}` in the preamble field **may fail** for the same reason
+- However, many libraries work via preamble because their `.code.tex` files are bundled. Test case-by-case.
+
+**Available packages** (bundled in `tex_files/`):
+`amsbsy`, `amsfonts`, `amsgen`, `amsmath`, `amsopn`, `amssymb`, `amstext`, `array`, `etoolbox`, `hf-tikz`, `ifthen`, `pgfplots`, `tikz-3dplot`, `tikz-cd`, `xparse`
+
+**Available TikZ libraries** (bundled in `tex_files/`):
+`3d`, `angles`, `animations`, `arrows`, `arrows.meta`, `automata`, `babel`, `backgrounds`, `bending`, `calc`, `calendar`, `cd`, `chains`, `circuits.*`, `datavisualization.*`, `decorations.*` (markings, pathmorphing, pathreplacing, shapes, text, footprints, fractals), `er`, `fadings`, `fit`, `fixedpointarithmetic`, `folding`, `fpu`, `graphs`, `graphs.standard`, `intersections`, `lindenmayersystems`, `math`, `matrix`, `mindmap`, `patterns`, `patterns.meta`, `perspective`, `petri`, `plothandlers`, `plotmarks`, `positioning`, `quotes`, `rdf`, `scopes`, `shadings`, `shadows`, `shapes.*` (arrows, callouts, geometric, misc, multipart, symbols, gates.logic.*), `snakes`, `spy`, `svg.path`, `through`, `trees`, `turtle`, `views`
+
+#### Known limitations
+
+| Issue | Workaround |
+|-------|------------|
+| `\mathbb{R}` | Needs `amssymb` — use `\mathbf{R}` if loading fails |
+| `\usepackage{...}` / `\usetikzlibrary{...}` in preamble | May fail for some packages — Deckode passes `addToPreamble` but not `texPackages`/`tikzLibraries` dataset attrs. Many work anyway since `.code.tex` files are bundled. Test case-by-case |
+| `input.dvi` not found | TeX compilation failed — source has an unsupported command, simplify progressively |
+| `Error: -3` (Z_DATA_ERROR) | WASM engine failed to load `.gz` assets (likely `Content-Encoding: gzip` double-decompression). Fixed by `tikzjaxGzFixPlugin` in `vite.config.ts` |
+| Very large diagrams | Worker timeout (10s) — reduce complexity or split into multiple TikZ elements |
 
 **SVG Fitting & Container Sizing**:
 
