@@ -201,10 +201,16 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
   // Synchronous reset during render to prevent stale activeStep flash.
   // skipStepReset: BroadcastChannel explicitly sets both slide + step.
   const [prevSlideIdx, setPrevSlideIdx] = useState(currentSlideIndex);
-  const skipStepResetRef = useRef(false);
+  // When set to a number, the render-time reset uses this exact value.
+  // When null, it falls back to the default (forward→0, backward→steps.length).
+  const pendingStepRef = useRef<number | null>(null);
+  const [skipAnim, setSkipAnim] = useState(false);
+  const skipAnimRef = useRef(false);
+  skipAnimRef.current = skipAnim;
   if (currentSlideIndex !== prevSlideIdx) {
-    if (skipStepResetRef.current) {
-      skipStepResetRef.current = false;
+    if (pendingStepRef.current !== null) {
+      setActiveStep(pendingStepRef.current);
+      pendingStepRef.current = null;
     } else {
       const goingBack = currentSlideIndex < prevSlideIdx;
       setActiveStep(goingBack ? steps.length : 0);
@@ -255,8 +261,25 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
     }
   }, [setCurrentSlide]);
 
+  /** Jump to next/prev slide, skipping all animations when skipAnim is on. */
+  const jumpSlide = useCallback((direction: 1 | -1) => {
+    const vs = visibleSlidesRef.current;
+    const pos = visiblePositionRef.current;
+    const target = pos + direction;
+    if (target < 0 || target >= vs.length) return;
+    if (skipAnimRef.current) {
+      const targetSteps = computeSteps(vs[target]!.slide.animations ?? []);
+      pendingStepRef.current = targetSteps.length;
+    } else {
+      pendingStepRef.current = 0;
+    }
+    setCurrentSlide(vs[target]!.originalIndex);
+  }, [setCurrentSlide]);
+
   const advanceRef = useRef(advance);
   advanceRef.current = advance;
+  const jumpSlideRef = useRef(jumpSlide);
+  jumpSlideRef.current = jumpSlide;
 
   // ── BroadcastChannel ──
 
@@ -266,9 +289,8 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
     usePresentationChannel({
       onNavigate: (slideIndex, step) => {
         skipNextBroadcast.current = true;
-        skipStepResetRef.current = true;
+        pendingStepRef.current = step;
         setCurrentSlide(slideIndex);
-        setActiveStep(step);
       },
       onExit: () => {
         audienceWindowRef.current = null;
@@ -429,6 +451,14 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         goBack();
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        e.stopPropagation();
+        jumpSlideRef.current(1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        jumpSlideRef.current(-1);
       } else if (e.code === "KeyP") {
         setViewMode((m) => (m === "presenter" ? "audience" : "presenter"));
       } else if (e.code === "KeyW") {
@@ -449,8 +479,8 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
         }
       }
     };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
+    window.addEventListener("keydown", handleKey, true);
+    return () => window.removeEventListener("keydown", handleKey, true);
   }, [handleExit, goBack, openAudienceWindow]);
 
   if (!deck || !slide) return null;
@@ -471,15 +501,14 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
   const jumpToVisibleSlide = useCallback((visibleIdx: number, skipAnim?: boolean) => {
     const vs = visibleSlidesRef.current;
     if (visibleIdx >= 0 && visibleIdx < vs.length) {
-      skipStepResetRef.current = true;
-      setCurrentSlide(vs[visibleIdx]!.originalIndex);
       if (skipAnim) {
         const targetSlide = vs[visibleIdx]!.slide;
         const targetSteps = computeSteps(targetSlide.animations ?? []);
-        setActiveStep(targetSteps.length);
+        pendingStepRef.current = targetSteps.length;
       } else {
-        setActiveStep(0);
+        pendingStepRef.current = 0;
       }
+      setCurrentSlide(vs[visibleIdx]!.originalIndex);
     }
   }, [setCurrentSlide]);
 
@@ -508,6 +537,8 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
       onToggleViewMode={() =>
         setViewMode((m) => (m === "presenter" ? "audience" : "presenter"))
       }
+      skipAnim={skipAnim}
+      onToggleSkipAnim={() => setSkipAnim((s) => !s)}
     />
   );
 }
@@ -536,6 +567,8 @@ function PresenterConsole({
   onPointerLeave,
   onOpenAudienceWindow,
   onToggleViewMode,
+  skipAnim,
+  onToggleSkipAnim,
 }: {
   slide: Slide;
   nextSlide: Slide | null;
@@ -558,6 +591,8 @@ function PresenterConsole({
   onPointerLeave: () => void;
   onOpenAudienceWindow: () => void;
   onToggleViewMode: () => void;
+  skipAnim: boolean;
+  onToggleSkipAnim: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const slideAreaRef = useRef<HTMLDivElement>(null);
@@ -569,8 +604,6 @@ function PresenterConsole({
   const [editingNotes, setEditingNotes] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const [skipAnim, setSkipAnim] = useState(false);
 
 
   // Bookmarked visible slides
@@ -858,7 +891,10 @@ function PresenterConsole({
                     const newValue = toggleNoteComment(ta);
                     setNoteDraft(newValue);
                   }
-                  e.stopPropagation();
+                  // Let ArrowUp/Down propagate to window handler for slide navigation
+                  if (e.key !== "ArrowUp" && e.key !== "ArrowDown") {
+                    e.stopPropagation();
+                  }
                 }}
               />
             ) : (
@@ -965,7 +1001,7 @@ function PresenterConsole({
         {/* Controls */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
-            onClick={() => setSkipAnim((s) => !s)}
+            onClick={onToggleSkipAnim}
             className={`text-xs px-2 py-0.5 rounded transition-colors ${
               skipAnim
                 ? "bg-blue-600 text-white"
