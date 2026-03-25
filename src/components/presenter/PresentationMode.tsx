@@ -1040,16 +1040,12 @@ function PresenterConsole({
           })}
         </div>
 
-        <div className="text-zinc-500 text-xs shrink-0 tabular-nums w-20 text-center">
-          {steps.length > 0 && (
-            <>Step <span className="text-zinc-300">{activeStep}</span>/{steps.length}</>
-          )}
-        </div>
-
-        <span className="text-zinc-800 shrink-0">|</span>
-
-        {/* Controls */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <div className="text-zinc-500 text-xs tabular-nums">
+            {steps.length > 0 && (
+              <>Step <span className="text-zinc-300">{activeStep}</span>/{steps.length}</>
+            )}
+          </div>
           <button
             onClick={onToggleSkipAnim}
             className={`text-xs px-2 py-0.5 rounded transition-colors ${
@@ -1057,10 +1053,16 @@ function PresenterConsole({
                 ? "bg-blue-600 text-white"
                 : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
             }`}
-            title="Skip animations when jumping via slider or bookmark"
+            title="Skip animations when jumping via Up/Down arrow, slider, or bookmark"
           >
             Skip Anim
           </button>
+        </div>
+
+        <span className="text-zinc-800 shrink-0">|</span>
+
+        {/* Playback */}
+        <div className="flex items-center gap-1 shrink-0 bg-zinc-900/50 rounded px-1.5 py-0.5">
           <button
             onClick={onToggleTts}
             className={`text-xs px-2 py-0.5 rounded transition-colors ${
@@ -1085,6 +1087,12 @@ function PresenterConsole({
             <option value={1.5}>1.5x</option>
             <option value={2}>2x</option>
           </select>
+        </div>
+
+        <span className="text-zinc-800 shrink-0">|</span>
+
+        {/* Tools */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={onPointerToggle}
             className={`text-xs px-2 py-0.5 rounded transition-colors ${
