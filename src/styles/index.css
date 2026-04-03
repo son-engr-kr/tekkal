@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Prevent white flash on overscroll and disable bounce */
+html, body {
+  background-color: #09090b; /* zinc-950 */
+  overscroll-behavior: none;
+}
+
+/* Hide scrollbar on project selector */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes flash-fade {
   0% { opacity: 1; }
   100% { opacity: 0; }
