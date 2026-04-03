@@ -18,6 +18,7 @@ import { exportToNativePdf } from "@/components/export/pdfNativeExport";
 import { exportToPptx } from "@/components/export/pptxExport";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
+import { AiChatPanel } from "./AiChatPanel";
 import { useGitDiff } from "@/contexts/GitDiffContext";
 import { useTikzAutoRender } from "@/hooks/useTikzAutoRender";
 
@@ -47,7 +48,7 @@ function performUndoRedo(direction: "undo" | "redo") {
 }
 
 type BottomPanel = "code" | null;
-type RightPanel = "properties" | "theme";
+type RightPanel = "properties" | "theme" | "ai";
 
 export function EditorLayout() {
   useTikzAutoRender();
@@ -583,6 +584,16 @@ export function EditorLayout() {
         >
           JSON
         </button>
+        <button
+          onClick={() => setRightPanel(rightPanel === "ai" ? "properties" : "ai")}
+          className={`text-xs px-2 py-1 rounded transition-colors ${
+            rightPanel === "ai"
+              ? "bg-purple-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+          }`}
+        >
+          AI
+        </button>
       </div>
 
       {/* Main area */}
@@ -652,7 +663,11 @@ export function EditorLayout() {
           style={{ width: rightWidth }}
           className="flex flex-col shrink-0 border-l border-zinc-800"
         >
-          {rightPanel === "theme" ? (
+          {rightPanel === "ai" ? (
+            <div className="flex-1 overflow-hidden">
+              <AiChatPanel />
+            </div>
+          ) : rightPanel === "theme" ? (
             <div className="flex-1 overflow-y-auto">
               <ThemePanel />
             </div>
