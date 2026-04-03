@@ -18,7 +18,10 @@ export async function createProject(name: string, config: NewProjectConfig): Pro
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, ...config }),
   });
-  assert(res.ok, `Failed to create project: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? `Failed to create project: ${res.status}`);
+  }
 }
 
 export async function deleteProject(name: string): Promise<void> {
@@ -108,7 +111,7 @@ export async function loadGitBaseDeck(project: string, absPath?: string): Promis
     params.set("project", project);
   }
   const res = await fetch(`/api/git-base-deck?${params.toString()}`);
-  if (!res.ok) return null;
+  if (!res.ok || res.status === 204) return null;
   return res.json() as Promise<Deck>;
 }
 

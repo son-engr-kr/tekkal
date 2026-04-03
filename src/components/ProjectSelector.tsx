@@ -71,7 +71,13 @@ function ViteProjectSelector({ onAdapterReady }: { onAdapterReady: (adapter: Fil
     assert(config.name !== undefined && config.name.length > 0, "Project name is required");
     setCreating(true);
     setWizardOpen(false);
-    await createProject(config.name, config);
+    try {
+      await createProject(config.name, config);
+    } catch (err) {
+      setCreating(false);
+      alert(err instanceof Error ? err.message : String(err));
+      return;
+    }
     setCreating(false);
     await handleOpen(config.name);
   };

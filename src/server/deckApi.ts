@@ -114,6 +114,9 @@ function jsonResponse(res: ServerResponse, status: number, data: unknown) {
  *   POST /api/ai/inline-slide    — Bring an external slide back inline
  *   GET  /api/ai/tools           — List available AI tools with schemas
  */
+/** Cached serialized slide content per project, keyed by slide id */
+const slideCache = new Map<string, Map<string, string>>();
+
 export function deckApiPlugin(): Plugin {
   let validate: ReturnType<typeof createValidator>;
   let viteServer: Parameters<NonNullable<Plugin["configureServer"]>>[0];
@@ -130,8 +133,7 @@ export function deckApiPlugin(): Plugin {
 
   /** Content hash of the most recent editor save per project */
   const lastSaveHash = new Map<string, number>();
-  /** Cached serialized slide content per project, keyed by slide id */
-  const slideCache = new Map<string, Map<string, string>>();
+  // slideCache is at module level (above) so saveDeck() can access it
   /** Active fs.watch handles per project */
   const watchers = new Map<string, fs.FSWatcher[]>();
 
@@ -392,7 +394,10 @@ export function deckApiPlugin(): Plugin {
         const name: string = body.name;
         assert(typeof name === "string" && isValidProjectName(name), `Invalid project name: ${name}`);
         const dir = projectDir(name);
-        assert(!fs.existsSync(dir), `Project "${name}" already exists`);
+        if (fs.existsSync(dir)) {
+          jsonResponse(res, 409, { error: `Project "${name}" already exists` });
+          return;
+        }
 
         fs.mkdirSync(dir, { recursive: true });
 
@@ -597,12 +602,12 @@ export function deckApiPlugin(): Plugin {
               gitRoot = found;
             } catch {
               // File is gitignored or untracked in ancestor repo
-              jsonResponse(res, 404, { error: "File not tracked by git" });
+              res.writeHead(204).end();
               return;
             }
           }
         } catch {
-          jsonResponse(res, 404, { error: "Not a git repository" });
+          res.writeHead(204).end();
           return;
         }
 
