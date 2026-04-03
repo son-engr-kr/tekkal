@@ -602,12 +602,12 @@ export function deckApiPlugin(): Plugin {
               gitRoot = found;
             } catch {
               // File is gitignored or untracked in ancestor repo
-              jsonResponse(res, 404, { error: "File not tracked by git" });
+              res.writeHead(204).end();
               return;
             }
           }
         } catch {
-          jsonResponse(res, 404, { error: "Not a git repository" });
+          res.writeHead(204).end();
           return;
         }
 

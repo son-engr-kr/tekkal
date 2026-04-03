@@ -111,7 +111,7 @@ export async function loadGitBaseDeck(project: string, absPath?: string): Promis
     params.set("project", project);
   }
   const res = await fetch(`/api/git-base-deck?${params.toString()}`);
-  if (!res.ok) return null;
+  if (!res.ok || res.status === 204) return null;
   return res.json() as Promise<Deck>;
 }
 
