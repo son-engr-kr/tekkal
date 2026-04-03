@@ -1,6 +1,6 @@
 # Deckode
 
-**Live Demo:** https://hyoungseo.com/deckode/?demo
+**Live Demo:** https://hyoungseo.com/deckode/ie5374/?demo
 
 Local-first, AI-agent-driven slide platform. Visual editor backed by a JSON scene graph, where every drag-and-drop action maps to structured code.
 
