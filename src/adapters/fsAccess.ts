@@ -24,7 +24,8 @@ import guide04h from "../../docs/guide/04h-elem-scene3d-examples.md?raw";
 import guide05 from "../../docs/guide/05-animations.md?raw";
 import guide06 from "../../docs/guide/06-theme.md?raw";
 import guide07 from "../../docs/guide/07-slide-features.md?raw";
-import guide08 from "../../docs/guide/08-guidelines.md?raw";
+import guide08a from "../../docs/guide/08a-guidelines.md?raw";
+import guide08b from "../../docs/guide/08b-style-preferences.md?raw";
 import guide09 from "../../docs/guide/09-example.md?raw";
 
 const BUNDLED_GUIDE_FILES: Record<string, string> = {
@@ -43,7 +44,8 @@ const BUNDLED_GUIDE_FILES: Record<string, string> = {
   "05-animations.md": guide05,
   "06-theme.md": guide06,
   "07-slide-features.md": guide07,
-  "08-guidelines.md": guide08,
+  "08a-guidelines.md": guide08a,
+  "08b-style-preferences.md": guide08b,
   "09-example.md": guide09,
 };
 import layoutBlank from "../../templates/default/layouts/blank.json";

@@ -2,7 +2,9 @@
 
 You are creating slides for Deckode, a local-first, JSON-based slide platform. This is the navigation index for the complete specification. Read the relevant section files below as needed.
 
-> **Read order for new decks**: Overview → Schema → Element types you need → Animations → Guidelines
+> **IMPORTANT**: Before creating a new deck, you **must** ask the user about their style preferences (theme, animations, notes tone, highlight boxes). See [Style Preferences](./guide/08b-style-preferences.md) for the checklist. Do not assume defaults.
+
+> **Read order for new decks**: Style Preferences (ask user first) → Overview → Schema → Element types you need → Animations → Guidelines
 >
 > **Read order for modifications**: Schema (to understand structure) → the specific section you need
 
@@ -25,7 +27,8 @@ You are creating slides for Deckode, a local-first, JSON-based slide platform. T
 | 5 | [Animations](./guide/05-animations.md) | Animation triggers, effects, and sequencing examples |
 | 6 | [Theme](./guide/06-theme.md) | Deck-level theme defaults and page number overlay |
 | 7 | [Slide Features](./guide/07-slide-features.md) | Bookmarks, presenter notes (step markers), layout templates, rotation |
-| 8 | [Guidelines](./guide/08-guidelines.md) | Common pitfalls (must-read) and AI best practices |
+| 8a | [Guidelines](./guide/08a-guidelines.md) | Common pitfalls (must-read) and AI best practices |
+| 8b | [Style Preferences](./guide/08b-style-preferences.md) | Ask user about theme, animations, notes tone, highlight boxes |
 | 9 | [Complete Example](./guide/09-example.md) | A full 3-slide deck.json example |
 
 ## Quick Reference
