@@ -1,6 +1,8 @@
 # Style Preferences Checklist
 
-**MANDATORY**: Before generating any new deck, you **must ask the user** about each preference below. Present the options and wait for their choices. Do not assume defaults or skip this step — these are personal preferences that vary per presentation.
+**MANDATORY**: When a new deck is first created or its initial content is confirmed, you **must ask the user** about each preference below. Present the options and wait for their choices. Do not assume defaults or skip this step.
+
+Once the user has chosen, apply those choices consistently to all subsequent slides in the same deck without asking again. If adding slides to an **existing deck**, infer the style from existing slides instead of asking.
 
 ## 1. Theme
 

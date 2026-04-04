@@ -2,7 +2,7 @@
 
 You are creating slides for Deckode, a local-first, JSON-based slide platform. This is the navigation index for the complete specification. Read the relevant section files below as needed.
 
-> **IMPORTANT**: Before creating a new deck, you **must** ask the user about their style preferences (theme, animations, notes tone, highlight boxes). See [Style Preferences](./guide/08b-style-preferences.md) for the checklist. Do not assume defaults.
+> **IMPORTANT**: When a new deck is first created or confirmed, you **must** ask the user about their style preferences (theme, animations, notes tone, highlight boxes). See [Style Preferences](./guide/08b-style-preferences.md). For existing decks, infer from existing slides.
 
 > **Read order for new decks**: Style Preferences (ask user first) → Overview → Schema → Element types you need → Animations → Guidelines
 >
