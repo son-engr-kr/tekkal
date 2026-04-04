@@ -11,16 +11,16 @@ import exampleDeck from "../../templates/default/deck.json";
 import aiGuideText from "../../docs/deckode-guide.md?raw";
 import guide01 from "../../docs/guide/01-overview.md?raw";
 import guide02 from "../../docs/guide/02-slide-splitting.md?raw";
-import guide03a from "../../docs/guide/03-schema-deck.md?raw";
-import guide03b from "../../docs/guide/03-schema-elements.md?raw";
-import guide04a from "../../docs/guide/04-elem-text-code.md?raw";
-import guide04b from "../../docs/guide/04-elem-media.md?raw";
-import guide04c from "../../docs/guide/04-elem-shape.md?raw";
-import guide04d from "../../docs/guide/04-elem-tikz.md?raw";
-import guide04e from "../../docs/guide/04-elem-diagrams.md?raw";
-import guide04f from "../../docs/guide/04-elem-table-mermaid.md?raw";
-import guide04g from "../../docs/guide/04-elem-scene3d.md?raw";
-import guide04h from "../../docs/guide/04-elem-scene3d-examples.md?raw";
+import guide03a from "../../docs/guide/03a-schema-deck.md?raw";
+import guide03b from "../../docs/guide/03b-schema-elements.md?raw";
+import guide04a from "../../docs/guide/04a-elem-text-code.md?raw";
+import guide04b from "../../docs/guide/04b-elem-media.md?raw";
+import guide04c from "../../docs/guide/04c-elem-shape.md?raw";
+import guide04d from "../../docs/guide/04d-elem-tikz.md?raw";
+import guide04e from "../../docs/guide/04e-elem-diagrams.md?raw";
+import guide04f from "../../docs/guide/04f-elem-table-mermaid.md?raw";
+import guide04g from "../../docs/guide/04g-elem-scene3d.md?raw";
+import guide04h from "../../docs/guide/04h-elem-scene3d-examples.md?raw";
 import guide05 from "../../docs/guide/05-animations.md?raw";
 import guide06 from "../../docs/guide/06-theme.md?raw";
 import guide07 from "../../docs/guide/07-slide-features.md?raw";
@@ -30,16 +30,16 @@ import guide09 from "../../docs/guide/09-example.md?raw";
 const BUNDLED_GUIDE_FILES: Record<string, string> = {
   "01-overview.md": guide01,
   "02-slide-splitting.md": guide02,
-  "03-schema-deck.md": guide03a,
-  "03-schema-elements.md": guide03b,
-  "04-elem-text-code.md": guide04a,
-  "04-elem-media.md": guide04b,
-  "04-elem-shape.md": guide04c,
-  "04-elem-tikz.md": guide04d,
-  "04-elem-diagrams.md": guide04e,
-  "04-elem-table-mermaid.md": guide04f,
-  "04-elem-scene3d.md": guide04g,
-  "04-elem-scene3d-examples.md": guide04h,
+  "03a-schema-deck.md": guide03a,
+  "03b-schema-elements.md": guide03b,
+  "04a-elem-text-code.md": guide04a,
+  "04b-elem-media.md": guide04b,
+  "04c-elem-shape.md": guide04c,
+  "04d-elem-tikz.md": guide04d,
+  "04e-elem-diagrams.md": guide04e,
+  "04f-elem-table-mermaid.md": guide04f,
+  "04g-elem-scene3d.md": guide04g,
+  "04h-elem-scene3d-examples.md": guide04h,
   "05-animations.md": guide05,
   "06-theme.md": guide06,
   "07-slide-features.md": guide07,

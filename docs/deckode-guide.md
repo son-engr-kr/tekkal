@@ -12,16 +12,16 @@ You are creating slides for Deckode, a local-first, JSON-based slide platform. T
 |---|------|-------------|
 | 1 | [Overview](./guide/01-overview.md) | Project structure, core concept, coordinate system (960x540) |
 | 2 | [Slide Splitting](./guide/02-slide-splitting.md) | `$ref` pointers for splitting large decks into external slide files |
-| 3a | [Schema: Deck & Slides](./guide/03-schema-deck.md) | `deck.json` top-level structure, slide object, comments |
-| 3b | [Schema: Elements & Components](./guide/03-schema-elements.md) | Element common fields, grouping, shared components |
-| 4a | [Text & Code](./guide/04-elem-text-code.md) | `text` (Markdown) and `code` (syntax-highlighted) elements |
-| 4b | [Image, Video & Custom](./guide/04-elem-media.md) | `image`, `video` (local/YouTube/Vimeo), `custom` (React) elements |
-| 4c | [Shape](./guide/04-elem-shape.md) | `shape` element: rectangle, ellipse, line, arrow, waypoints |
-| 4d | [TikZ](./guide/04-elem-tikz.md) | `tikz` element: TikZJax engine, PGFPlots, limitations |
-| 4e | [Flow Diagrams](./guide/04-elem-diagrams.md) | When to use native elements vs TikZ, step-by-step guide |
-| 4f | [Table & Mermaid](./guide/04-elem-table-mermaid.md) | `table` and `mermaid` elements |
-| 4g | [Scene3D](./guide/04-elem-scene3d.md) | `scene3d` element: Three.js scenes, objects, materials, keyframes |
-| 4h | [Scene3D Examples](./guide/04-elem-scene3d-examples.md) | Surface geometry, line geometry, complete interactive example |
+| 3a | [Schema: Deck & Slides](./guide/03a-schema-deck.md) | `deck.json` top-level structure, slide object, comments |
+| 3b | [Schema: Elements & Components](./guide/03b-schema-elements.md) | Element common fields, grouping, shared components |
+| 4a | [Text & Code](./guide/04a-elem-text-code.md) | `text` (Markdown) and `code` (syntax-highlighted) elements |
+| 4b | [Image, Video & Custom](./guide/04b-elem-media.md) | `image`, `video` (local/YouTube/Vimeo), `custom` (React) elements |
+| 4c | [Shape](./guide/04c-elem-shape.md) | `shape` element: rectangle, ellipse, line, arrow, waypoints |
+| 4d | [TikZ](./guide/04d-elem-tikz.md) | `tikz` element: TikZJax engine, PGFPlots, limitations |
+| 4e | [Flow Diagrams](./guide/04e-elem-diagrams.md) | When to use native elements vs TikZ, step-by-step guide |
+| 4f | [Table & Mermaid](./guide/04f-elem-table-mermaid.md) | `table` and `mermaid` elements |
+| 4g | [Scene3D](./guide/04g-elem-scene3d.md) | `scene3d` element: Three.js scenes, objects, materials, keyframes |
+| 4h | [Scene3D Examples](./guide/04h-elem-scene3d-examples.md) | Surface geometry, line geometry, complete interactive example |
 | 5 | [Animations](./guide/05-animations.md) | Animation triggers, effects, and sequencing examples |
 | 6 | [Theme](./guide/06-theme.md) | Deck-level theme defaults and page number overlay |
 | 7 | [Slide Features](./guide/07-slide-features.md) | Bookmarks, presenter notes (step markers), layout templates, rotation |
