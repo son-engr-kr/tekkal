@@ -58,6 +58,7 @@ Uses `@drgrice1/tikzjax` v1.0.0-beta24 (WASM e-TeX + PGF SVG driver). **NOT** fu
 | `input.dvi` not found | TeX compilation failed — simplify source progressively |
 | `Error: -3` (Z_DATA_ERROR) | WASM `.gz` double-decompression; fixed by `tikzjaxGzFixPlugin` in `vite.config.ts` |
 | Very large diagrams | Worker timeout (10s) — reduce complexity or split elements |
+| `\foreach` with dynamic node names | `\node (\i)` inside `\foreach \i in {1,...,5}` may fail when names contain math mode or `|` (conflicts with `\foreach` delimiter). Use simple alphanumeric names, avoid `$...$` in node names. |
 
 ## SVG Fitting & Sizing
 

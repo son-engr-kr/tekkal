@@ -1349,7 +1349,7 @@ function Scene3DEditor({
   slideId: string;
   updateElement: (slideId: string, elementId: string, patch: Partial<SlideElement>) => void;
 }) {
-  const [sceneDraft, setSceneDraft] = useState(() => JSON.stringify(element.scene, null, 2));
+  const [sceneDraft, setSceneDraft] = useState(() => JSON.stringify(element.scene ?? {}, null, 2));
   const [keyframesDraft, setKeyframesDraft] = useState(() =>
     JSON.stringify(element.keyframes ?? [], null, 2),
   );
@@ -1357,7 +1357,7 @@ function Scene3DEditor({
   const [keyframesError, setKeyframesError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSceneDraft(JSON.stringify(element.scene, null, 2));
+    setSceneDraft(JSON.stringify(element.scene ?? {}, null, 2));
     setSceneError(null);
   }, [element.id]);
 
@@ -1393,12 +1393,12 @@ function Scene3DEditor({
   };
 
   const toggleSceneProp = (prop: "orbitControls") => {
-    const scene = { ...element.scene, [prop]: !element.scene[prop] };
+    const scene = { ...element.scene, [prop]: !element.scene?.[prop] };
     updateElement(slideId, element.id, { scene } as Partial<SlideElement>);
   };
 
   const toggleHelper = (prop: "grid" | "axes") => {
-    const helpers = { ...element.scene.helpers, [prop]: !(element.scene.helpers?.[prop] ?? false) };
+    const helpers = { ...element.scene?.helpers, [prop]: !(element.scene?.helpers?.[prop] ?? false) };
     const scene = { ...element.scene, helpers };
     updateElement(slideId, element.id, { scene } as Partial<SlideElement>);
   };
@@ -1412,7 +1412,7 @@ function Scene3DEditor({
             <label key={prop} className="flex items-center gap-2 text-xs text-zinc-300">
               <input
                 type="checkbox"
-                checked={!!element.scene[prop]}
+                checked={!!element.scene?.[prop]}
                 onChange={() => toggleSceneProp(prop)}
                 className="rounded border-zinc-600"
               />
@@ -1422,7 +1422,7 @@ function Scene3DEditor({
           <label className="flex items-center gap-2 text-xs text-zinc-300">
             <input
               type="checkbox"
-              checked={element.scene.helpers?.grid ?? false}
+              checked={element.scene?.helpers?.grid ?? false}
               onChange={() => toggleHelper("grid")}
               className="rounded border-zinc-600"
             />
@@ -1431,7 +1431,7 @@ function Scene3DEditor({
           <label className="flex items-center gap-2 text-xs text-zinc-300">
             <input
               type="checkbox"
-              checked={element.scene.helpers?.axes ?? false}
+              checked={element.scene?.helpers?.axes ?? false}
               onChange={() => toggleHelper("axes")}
               className="rounded border-zinc-600"
             />

@@ -23,7 +23,7 @@ Speaker notes support the following features:
 
 ## Step-aware highlighting
 
-Wrap text in `[step:N]...[/step]` markers to highlight it when the presenter reaches that animation step.
+Wrap text in `[step:N]...[/step]` markers to highlight it when the presenter reaches that animation step. **Both the opening `[step:N]` and closing `[/step]` tags are required** — the parser uses a regex that matches `[step:N]...[/step]` pairs. Unclosed markers will not be parsed and will render as plain text.
 
 **Steps start at 1** (not 0). Step 1 = first `onClick` animation, step 2 = second `onClick`, etc. A `[step:N]` marker stays highlighted once reached (`activeStep >= N`), so step 1 text remains visible at step 2 and beyond.
 

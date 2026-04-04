@@ -95,8 +95,9 @@ export function TikZElementRenderer({ element, thumbnail }: Props) {
       style={{
         width: element.size.w,
         height: element.size.h,
-        backgroundColor: style.backgroundColor ?? "#f8fafc",
+        backgroundColor: "#1e1e2e",
         borderRadius: style.borderRadius ?? 4,
+        border: "1px dashed #334155",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -105,13 +106,13 @@ export function TikZElementRenderer({ element, thumbnail }: Props) {
         padding: 8,
       }}
     >
-      <div style={{ color: "#888", fontSize: thumbnail ? 8 : 12, marginBottom: 4 }}>
+      <div style={{ color: "#94a3b8", fontSize: thumbnail ? 8 : 12, marginBottom: 4 }}>
         TikZ (not rendered)
       </div>
       {!thumbnail && (
         <pre
           style={{
-            color: "#aaa",
+            color: "#cbd5e1",
             fontSize: 9,
             fontFamily: "monospace",
             whiteSpace: "pre-wrap",
