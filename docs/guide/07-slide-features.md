@@ -23,7 +23,9 @@ Speaker notes support the following features:
 
 ## Step-aware highlighting
 
-Wrap text in `[step:N]...[/step]` markers to highlight it when the presenter reaches that animation step:
+Wrap text in `[step:N]...[/step]` markers to highlight it when the presenter reaches that animation step.
+
+**Steps start at 1** (not 0). Step 1 = first `onClick` animation, step 2 = second `onClick`, etc. A `[step:N]` marker stays highlighted once reached (`activeStep >= N`), so step 1 text remains visible at step 2 and beyond.
 
 ```
 Introduction text always visible.
@@ -111,7 +113,8 @@ Use `[step:N]...[/step]` markers to highlight sections of your notes as animatio
 **Behavior**:
 - Text outside `[step:N]...[/step]` markers is always visible
 - Text inside markers is dimmed by default and highlighted (yellow) when the animation reaches that step
-- Steps correspond to the order of `onClick` animations: the first `onClick` is step 1, the second is step 2, etc.
+- **Steps start at 1** (not 0). Steps correspond to the order of `onClick` animations: the first `onClick` is step 1, the second is step 2, etc.
+- Once a step is reached, its text stays highlighted (cumulative: `activeStep >= N`)
 
 
 # Rotation
