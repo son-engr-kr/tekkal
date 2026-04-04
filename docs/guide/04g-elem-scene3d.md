@@ -92,10 +92,26 @@ Add `scene3dStep` animations to advance keyframes on click. Entry count must mat
 |-------|---------|-------------|
 | `borderRadius` | `0` | Corner radius in px |
 
+### Camera Positioning (CRITICAL)
+
+Bad camera position is the most common cause of empty or broken scene3d renders. Match camera distance to scene scale:
+
+| Scene contents | Camera position | Target | fov |
+|----------------|-----------------|--------|-----|
+| Small objects (±2 units) | `[4, 3, 4]` | `[0, 0, 0]` | 50 |
+| Medium scene (±3 units) | `[6, 5, 6]` | `[0, 0, 0]` | 50 |
+| Surface plot (xRange/zRange ±3..5) | `[9, 7, 9]` | `[0, 0.5, 0]` | 50 |
+| Wide surface (±5..8 units) | `[14, 10, 14]` | `[0, 1, 0]` | 55 |
+
+**Rule of thumb**: camera position magnitude ≈ 1.5–2× the scene's maximum coordinate extent. Camera height (Y) ≈ 0.7–1× the scene width. For surface plots, add 0.5 to the target Y to look at the surface mid-height.
+
+**NEVER use orbit controls in a slide presentation** (`"orbitControls": false` or omit it). Orbit controls fight with keyframe camera animations and grab mouse events away from slide navigation.
+
 ### Tips
 
 - **Transparent background**: Omit `scene.background` so the slide background shows through.
 - **Floor plane**: Use `"plane"` geometry with rotation `[-1.5708, 0, 0]` for a horizontal floor.
-- **Orbit controls**: Enable for interactive scenes; disable when keyframe camera animations should not be overridden.
+- **OrbitControls**: Set `orbitControls: false` (default). Only use `true` for fully interactive demos where slide navigation is not needed.
 - **Thumbnails**: Scene3D renders a static SVG placeholder in thumbnails to avoid WebGL overhead.
 - **Hidden objects**: Set `"visible": false` initially, reveal via keyframe `{ "target": "id", "visible": true }`.
+- **Surface camera**: For a surface with `xRange: [-4,4]`, `zRange: [-4,4]` → camera `[10, 8, 10]`, target `[0, 0.5, 0]`.

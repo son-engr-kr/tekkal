@@ -1049,13 +1049,15 @@ function rewriteAssetUrls(deckFilePath: string, project: string) {
 
 // -- TikZ compilation pipeline --
 
-function wrapTikzDocument(content: string, preamble?: string): string {
+export function wrapTikzDocument(content: string, preamble?: string): string {
   if (content.includes("\\documentclass")) return content;
   return [
     "\\documentclass[dvisvgm]{standalone}",
     "\\usepackage{tikz}",
     "\\usepackage{pgfplots}",
+    "\\usepackage{circuitikz}",
     "\\pgfplotsset{compat=1.18}",
+    "\\usetikzlibrary{arrows,arrows.meta,shapes,shapes.geometric,shapes.symbols,positioning,calc,patterns,decorations.pathmorphing,decorations.markings,matrix,fit,backgrounds,circuits.ee.IEC,circuits.logic.IEC,automata,trees,mindmap}",
     preamble ?? "",
     "\\begin{document}",
     content,

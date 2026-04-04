@@ -26,6 +26,7 @@ import guide06 from "../../docs/guide/06-theme.md?raw";
 import guide07 from "../../docs/guide/07-slide-features.md?raw";
 import guide08a from "../../docs/guide/08a-guidelines.md?raw";
 import guide08b from "../../docs/guide/08b-style-preferences.md?raw";
+import guide08c from "../../docs/guide/08c-visual-style.md?raw";
 import guide09 from "../../docs/guide/09-example.md?raw";
 
 const BUNDLED_GUIDE_FILES: Record<string, string> = {
@@ -46,6 +47,7 @@ const BUNDLED_GUIDE_FILES: Record<string, string> = {
   "07-slide-features.md": guide07,
   "08a-guidelines.md": guide08a,
   "08b-style-preferences.md": guide08b,
+  "08c-visual-style.md": guide08c,
   "09-example.md": guide09,
 };
 import layoutBlank from "../../templates/default/layouts/blank.json";

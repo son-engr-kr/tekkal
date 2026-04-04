@@ -40,6 +40,29 @@ Renders a TikZ/PGFPlots diagram via a WASM-based TeX engine (compiled entirely i
 }
 ```
 
+## JSON Escaping (CRITICAL)
+
+TikZ content is stored inside a JSON string. **Every backslash `\` in LaTeX MUST be written as `\\` in JSON.**
+
+| LaTeX | In JSON string |
+|-------|---------------|
+| `\node` | `\\node` |
+| `\draw` | `\\draw` |
+| `\path` | `\\path` |
+| `\foreach` | `\\foreach` |
+| `\begin` | `\\begin` |
+| `\end` | `\\end` |
+| newline | `\n` (single backslash-n) |
+
+**WRONG** (will render as `ode` instead of `\node`):
+```json
+"content": "\node[draw] (a) at (0,0) {A};"
+```
+**CORRECT**:
+```json
+"content": "\\node[draw] (a) at (0,0) {A};"
+```
+
 ## TikZJax Engine Limitations
 
 Uses `@drgrice1/tikzjax` v1.0.0-beta24 (WASM e-TeX + PGF SVG driver). **NOT** full pdflatex.

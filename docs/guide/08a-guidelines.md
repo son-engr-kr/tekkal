@@ -66,3 +66,56 @@ When asked to modify an existing deck:
 3. When moving elements, only change `position` — preserve all other fields
 4. When restyling, only change `style` fields — preserve content and position
 
+# AI Constraints
+
+These rules MUST be followed by all AI agents when generating or modifying decks.
+
+## Element Rules
+
+- Only use the provided tools to modify the deck. Never output raw JSON.
+- All element IDs must be unique across the entire deck.
+- All slide IDs must be unique.
+- Positions must be within bounds: 0 <= x <= 960, 0 <= y <= 540.
+- Element size + position must not exceed canvas: x + w <= 960, y + h <= 540.
+- Always include required fields: id, type, position, size for elements.
+
+## Text & Math
+
+- For text elements, content is Markdown-formatted (use `**` for bold, `*` for italic).
+- CRITICAL: Inside KaTeX math (`$...$`), NEVER use Markdown `**`. Use `\mathbf{}` or `\bm{}` for bold in math.
+- For math/formulas, use KaTeX syntax: inline `$x^2$` or display `$$\sum x_i$$`. Do NOT use raw LaTeX outside of `$` delimiters.
+- Use real newlines in text content, NOT literal `\n` sequences.
+
+## Media & Diagrams
+
+- DO NOT use external image URLs — they will not load.
+- DO NOT use Mermaid elements — build diagrams with shape + text + arrow elements instead.
+- NEVER use rotation on line or arrow elements — it will assert-fail. Use waypoints for direction.
+- Line/arrow elements MUST have waypoints (at least 2 points). Without waypoints, the element won't render.
+- Diagram decision: For flow/pipeline/block-and-arrow diagrams, use native shape+text+arrow elements. For complex technical diagrams (neural nets, math graphs, circuits), use TikZ.
+
+## TikZ
+
+- TikZ content: `"\begin{tikzpicture}...\end{tikzpicture}"` — no preamble needed.
+- TikZ MUST include a bounding box: `\path (xmin,ymin) rectangle (xmax,ymax);` — without it, the diagram WILL be clipped.
+- Set `style: { backgroundColor: "#ffffff" }` on TikZ elements to match the slide background.
+- Avoid using math mode (`$...$`) inside `\foreach` node labels — the `|` delimiter conflicts with LaTeX. Use explicit `\node` definitions instead of dynamic naming in complex cases.
+
+## Tables
+
+- Table elements MUST include both `columns` (string[]) and `rows` (string[][]). `rows` must NOT be empty. Each row array length must match `columns` length.
+
+## Scene3D
+
+- Scene3D elements MUST include `scene.objects` array with at least one geometry object. `scene.camera` is optional (defaults to position `[5,5,5]`) but `scene` itself is required.
+
+## Presenter Notes
+
+- ALWAYS generate presenter notes for every slide.
+- Step markers in notes MUST use opening AND closing tags: `[step:1]text here[/step]`. Without `[/step]`, highlighting will not work.
+- Step-animation coupling: every `[step:N]` in notes MUST match an `onClick` animation. Mismatched counts break highlighting.
+
+## General
+
+- Prefer clean, professional designs with generous white space.
+
