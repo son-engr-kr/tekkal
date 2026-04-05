@@ -96,6 +96,11 @@ function sanitizeToolArgs(obj: unknown): void {
       rec[key] = (rec[key] as string).replace(/\\n/g, "\n");
     }
   }
+  // Fix double-escaped LaTeX commands in text elements (agent writes \\bm → should be \bm)
+  // Only applies to text type — TikZ and code content must not be modified here
+  if (rec.type === "text" && typeof rec.content === "string") {
+    rec.content = (rec.content as string).replace(/\\\\([a-zA-Z]+)/g, "\\$1");
+  }
   // Auto-add waypoints to arrows that are missing them
   if (rec.shape === "arrow" && rec.style && rec.size) {
     const style = rec.style as Record<string, unknown>;
@@ -160,6 +165,10 @@ function executeTool(name: string, args: Record<string, unknown>): string {
     }
     case "add_slide": {
       const slide = args.slide as Slide;
+      // Reject duplicate slide IDs — reviewer/visual agents must use update_slide instead
+      if (deck?.slides.some((s) => s.id === slide.id)) {
+        return `ERROR: Slide "${slide.id}" already exists. Use update_slide or add_element to modify it. Do NOT call add_slide again.`;
+      }
       const afterSlideId = args.afterSlideId as string | undefined;
       let afterIndex: number | undefined;
       if (afterSlideId && deck) {
@@ -345,18 +354,16 @@ async function runGenerator(
     const slidePlan = slides[i]!;
     cb.onLog(`[${i + 1}/${slides.length}] Generating slide: "${slidePlan.title}"`);
 
-    let attempt = 0;
-    const maxAttempts = 2;
+    const idPrefix = `${slidePlan.id}`;
+    const slideContext = `Slide ${i + 1} of ${slides.length}. Style: ${plan.reasoning}. Element IDs must be scoped: "${idPrefix}-e1", "${idPrefix}-e2", etc.`;
 
-    while (attempt < maxAttempts) {
-      attempt++;
-      // Re-read deck each time so prompt reflects already-created slides
+    // Phase 1: Generation — retry only if slide was not created at all
+    const maxGenAttempts = 2;
+    for (let genAttempt = 1; genAttempt <= maxGenAttempts; genAttempt++) {
+      const existingDeck = useDeckStore.getState().deck;
+      if (existingDeck?.slides.some((s) => s.id === slidePlan.id)) break; // already created
+
       const currentDeck = useDeckStore.getState().deck;
-
-      const idPrefix = `${slidePlan.id}`;
-      const slideContext = `Slide ${i + 1} of ${slides.length}. Style: ${plan.reasoning}. Element IDs must be scoped: "${idPrefix}-e1", "${idPrefix}-e2", etc.`;
-
-      // --- Content Agent: creates the slide with text/code/table elements ---
       const contentPrompt = buildContentAgentPrompt(currentDeck);
       const contentMessage = `Create ONLY this one slide (do not create other slides):
 ${JSON.stringify(slidePlan, null, 2)}
@@ -364,31 +371,31 @@ ${JSON.stringify(slidePlan, null, 2)}
 ${slideContext}
 After calling add_slide, briefly confirm.`;
 
-      cb.onLog(`  [content] Creating text/code/table elements...`);
+      cb.onLog(`  [content] Creating text/code/table elements... (gen ${genAttempt}/${maxGenAttempts})`);
       await callAgentWithTools(getModelForAgent("generator"), contentPrompt, generatorTools, contentMessage, [], cb.onLog);
+    }
 
-      // --- Visual Agent: adds shapes/diagrams if the slide needs them ---
-      const needsVisuals = slidePlan.elementTypes?.some((t) =>
-        ["shape", "arrow", "tikz", "diagram", "scene3d"].includes(t),
-      );
-      if (needsVisuals) {
-        // Programmatically remove placeholder before Visual Agent runs
-        const deckAfterContent = useDeckStore.getState().deck;
-        const placeholderSlide = deckAfterContent?.slides.find((s) => s.id === slidePlan.id);
-        if (placeholderSlide) {
-          const placeholder = placeholderSlide.elements.find((e) => e.id.endsWith("-placeholder"));
-          if (placeholder) {
-            useDeckStore.getState().deleteElement(slidePlan.id, placeholder.id);
-            cb.onLog(`  [cleanup] Deleted placeholder ${placeholder.id}`);
-          }
+    // --- Visual Agent: runs once after generation ---
+    const needsVisuals = slidePlan.elementTypes?.some((t) =>
+      ["shape", "arrow", "tikz", "diagram", "scene3d"].includes(t),
+    );
+    const deckAfterGen = useDeckStore.getState().deck;
+    if (needsVisuals && deckAfterGen?.slides.some((s) => s.id === slidePlan.id)) {
+      const placeholderSlide = deckAfterGen.slides.find((s) => s.id === slidePlan.id);
+      if (placeholderSlide) {
+        const placeholder = placeholderSlide.elements.find((e) => e.id.endsWith("-placeholder"));
+        if (placeholder) {
+          useDeckStore.getState().deleteElement(slidePlan.id, placeholder.id);
+          cb.onLog(`  [cleanup] Deleted placeholder ${placeholder.id}`);
         }
-        const deckForVisual = useDeckStore.getState().deck;
-        const visualTypes = slidePlan.elementTypes?.filter((t) =>
-          ["shape", "arrow", "tikz", "diagram", "scene3d"].includes(t),
-        ) ?? [];
-        cb.onLog(`  [visual] Adding ${visualTypes.join("/")} to ${slidePlan.id}...`);
-        const visualPrompt = buildVisualAgentPrompt(deckForVisual);
-        const visualMessage = `REQUIRED: Add visual element(s) to slide ${slidePlan.id}. You MUST call add_element at least once. Do not finish without adding a visual element.
+      }
+      const deckForVisual = useDeckStore.getState().deck;
+      const visualTypes = slidePlan.elementTypes?.filter((t) =>
+        ["shape", "arrow", "tikz", "diagram", "scene3d"].includes(t),
+      ) ?? [];
+      cb.onLog(`  [visual] Adding ${visualTypes.join("/")} to ${slidePlan.id}...`);
+      const visualPrompt = buildVisualAgentPrompt(deckForVisual);
+      const visualMessage = `REQUIRED: Add visual element(s) to slide ${slidePlan.id}. You MUST call add_element at least once. Do not finish without adding a visual element.
 
 Required element types for this slide: ${visualTypes.join(", ")}
 Slide plan: ${JSON.stringify(slidePlan, null, 2)}
@@ -398,58 +405,54 @@ Steps:
 1. Call read_slide("${slidePlan.id}") to see existing elements
 2. Add the required visual element(s) in the RIGHT column: x:490, y:80, w:440, h:380
 3. Do NOT create duplicate IDs. Use unique IDs like "${slidePlan.id}-visual-1"`;
-        await callAgentWithTools(getModelForAgent("generator"), visualPrompt, generatorTools, visualMessage, [], cb.onLog);
+      await callAgentWithTools(getModelForAgent("generator"), visualPrompt, generatorTools, visualMessage, [], cb.onLog);
+    }
+
+    // Phase 2: Fix pass — reviewer only, generation does NOT re-run
+    const maxFixPasses = 2;
+    for (let fixPass = 1; fixPass <= maxFixPasses; fixPass++) {
+      const updatedDeck = useDeckStore.getState().deck;
+      if (!updatedDeck) break;
+      const slide = updatedDeck.slides.find((s) => s.id === slidePlan.id);
+      if (!slide) {
+        cb.onLog(`  ✗ Slide ${slidePlan.id} was not created`);
+        break;
       }
 
-      // Validate the newly created slide (with programmatic overflow fix first)
-      const updatedDeck = useDeckStore.getState().deck;
-      if (updatedDeck) {
-        const newSlide = updatedDeck.slides.find((s) => s.id === slidePlan.id);
-        if (newSlide) {
-          // Programmatic overflow clamp
-          const deckStore = useDeckStore.getState();
-          for (const el of newSlide.elements) {
-            if (!el.position || !el.size) continue;
-            const overflowX = el.position.x + el.size.w - 960;
-            const overflowY = el.position.y + el.size.h - 540;
-            if (overflowX > 0) {
-              deckStore.updateElement(slidePlan.id, el.id, { size: { w: Math.max(10, el.size.w - overflowX), h: el.size.h } });
-            }
-            if (overflowY > 0) {
-              deckStore.updateElement(slidePlan.id, el.id, { size: { w: el.size.w, h: Math.max(10, el.size.h - overflowY) } });
-            }
-          }
+      // Programmatic overflow clamp
+      const deckStore = useDeckStore.getState();
+      for (const el of slide.elements) {
+        if (!el.position || !el.size) continue;
+        const overflowX = el.position.x + el.size.w - 960;
+        const overflowY = el.position.y + el.size.h - 540;
+        if (overflowX > 0) deckStore.updateElement(slidePlan.id, el.id, { size: { w: Math.max(10, el.size.w - overflowX), h: el.size.h } });
+        if (overflowY > 0) deckStore.updateElement(slidePlan.id, el.id, { size: { w: el.size.w, h: Math.max(10, el.size.h - overflowY) } });
+      }
 
-          const refreshedDeck = useDeckStore.getState().deck;
-          const refreshedSlide = refreshedDeck?.slides.find((s) => s.id === slidePlan.id);
-          const slideResult = refreshedSlide
-            ? validateDeck({ ...updatedDeck, slides: [refreshedSlide] })
-            : validateDeck({ ...updatedDeck, slides: [newSlide] });
-          const criticals = slideResult.issues.filter((iss) => iss.severity === "error");
-          const overlapWarnings = slideResult.issues.filter(
-            (iss) => iss.severity === "warning" && iss.message.includes("overlap"),
-          );
-          if (criticals.length === 0 && overlapWarnings.length === 0) {
-            cb.onLog(`  ✓ Slide ${slidePlan.id} passed validation`);
-            break;
-          }
-          const issueCount = criticals.length + overlapWarnings.length;
-          cb.onLog(`  ✗ Slide ${slidePlan.id} has ${issueCount} issue(s) (${criticals.length} critical, ${overlapWarnings.length} overlap warnings) — attempt ${attempt}/${maxAttempts}`);
-          if (attempt < maxAttempts) {
-            const fixInstructions = buildFixInstructions(slideResult);
-            const fixPrompt = buildReviewerPrompt(updatedDeck);
-            await callAgentWithTools(
-              getModelForAgent("reviewer"),
-              fixPrompt,
-              reviewerTools,
-              `Fix issues in slide ${slidePlan.id} only:\n${fixInstructions}`,
-              [],
-              cb.onLog,
-            );
-          }
-        } else {
-          cb.onLog(`  ✗ Slide ${slidePlan.id} was not created — retrying (${attempt}/${maxAttempts})`);
-        }
+      const refreshedDeck = useDeckStore.getState().deck;
+      const refreshedSlide = refreshedDeck?.slides.find((s) => s.id === slidePlan.id) ?? slide;
+      const slideResult = validateDeck({ ...updatedDeck, slides: [refreshedSlide] });
+      const criticals = slideResult.issues.filter((iss) => iss.severity === "error");
+      const overlapWarnings = slideResult.issues.filter(
+        (iss) => iss.severity === "warning" && iss.message.includes("overlap"),
+      );
+      if (criticals.length === 0 && overlapWarnings.length === 0) {
+        cb.onLog(`  ✓ Slide ${slidePlan.id} passed validation`);
+        break;
+      }
+      const issueCount = criticals.length + overlapWarnings.length;
+      cb.onLog(`  ✗ ${issueCount} issue(s) (${criticals.length} critical, ${overlapWarnings.length} overlap warnings) — fix pass ${fixPass}/${maxFixPasses}`);
+      if (fixPass < maxFixPasses) {
+        const fixInstructions = buildFixInstructions(slideResult);
+        const fixPrompt = buildReviewerPrompt(updatedDeck);
+        await callAgentWithTools(
+          getModelForAgent("reviewer"),
+          fixPrompt,
+          reviewerTools,
+          `Fix issues in slide ${slidePlan.id} only. Use update_element to reposition, delete_element to remove forbidden types:\n${fixInstructions}`,
+          [],
+          cb.onLog,
+        );
       }
     }
   }

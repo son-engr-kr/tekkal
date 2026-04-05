@@ -439,6 +439,10 @@ function sanitizeToolArgs(obj) {
       obj[key] = obj[key].replace(/\\n/g, "\n");
     }
   }
+  // Fix double-escaped LaTeX commands in text elements (\\bm → \bm, \\pi → \pi)
+  if (obj.type === "text" && typeof obj.content === "string") {
+    obj.content = obj.content.replace(/\\\\([a-zA-Z]+)/g, "\\$1");
+  }
   // Auto-add waypoints to arrows missing them
   if (obj.shape === "arrow" && obj.style && obj.size) {
     if (!obj.style.waypoints) {
@@ -462,6 +466,10 @@ function executeTool(name, args) {
     case "add_slide": {
       const slide = args.slide;
       if (!slide.elements) slide.elements = [];
+      // Reject duplicate slide IDs — reviewer/visual agents must use update_slide instead
+      if (deck.slides.some((s) => s.id === slide.id)) {
+        return `ERROR: Slide "${slide.id}" already exists. Use update_slide or add_element to modify it. Do NOT call add_slide again.`;
+      }
       // Insert after specified slide, or append
       if (args.afterSlideId) {
         const idx = deck.slides.findIndex((s) => s.id === args.afterSlideId);
@@ -520,10 +528,21 @@ function executeTool(name, args) {
 // Gemini call wrappers
 // ---------------------------------------------------------------------------
 
+function loadApiKey() {
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+  // Fall back to .env file at D:\northeastern\NEU_courses\IE5374-Applied_Generative_AI\.env
+  const envPath = path.resolve(ROOT, "..", ".env");
+  if (existsSync(envPath)) {
+    for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+      const m = line.match(/^Gemini_api_key\s*=\s*(.+)/i);
+      if (m) return m[1].trim();
+    }
+  }
+  throw new Error("GEMINI_API_KEY not set and not found in ../.env (Gemini_api_key=...)");
+}
+
 function getGeminiClient() {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("GEMINI_API_KEY environment variable not set");
-  return new GoogleGenerativeAI(key);
+  return new GoogleGenerativeAI(loadApiKey());
 }
 
 async function withRetry(fn, maxRetries = 3) {
@@ -678,6 +697,23 @@ async function runPlanner(userMessage) {
 // Generator stage
 // ---------------------------------------------------------------------------
 
+/** Build a single fix instruction line for the reviewer agent */
+function buildFixLine(iss) {
+  const loc = `[${iss.ref}]`;
+  if (iss.message.includes("Forbidden element type")) {
+    // Extract element ID from ref (format: slideId/elementId)
+    const elementId = iss.ref.split("/")[1];
+    return `- CRITICAL ${loc} ${iss.message} — call delete_element(slideId, "${elementId}") to remove it immediately`;
+  }
+  if (iss.message.includes("overlap")) {
+    return `- ${iss.level} ${loc} ${iss.message} — call update_element with the suggested position`;
+  }
+  if (iss.message.includes("lines")) {
+    return `- ${iss.level} ${loc} ${iss.message} — trim to at most 25 lines`;
+  }
+  return `- ${iss.level} ${loc} ${iss.message}`;
+}
+
 /** Returns a compact deck state summary for agent prompts */
 function formatDeckState() {
   if (deck.slides.length === 0) return "No deck loaded.";
@@ -713,15 +749,14 @@ async function runGenerator(plan) {
     const VISUAL_TYPES = ["shape", "arrow", "tikz", "diagram", "scene3d"];
     const needsVisuals = (slidePlan.elementTypes ?? []).some((t) => VISUAL_TYPES.includes(t));
 
-    let attempt = 0;
-    const MAX_ATTEMPTS = 2;
+    // Phase 1: Generation (retry only if slide was not created at all)
+    const MAX_GEN_ATTEMPTS = 2;
+    for (let genAttempt = 1; genAttempt <= MAX_GEN_ATTEMPTS; genAttempt++) {
+      // Skip if slide already exists from a previous gen attempt
+      if (deck.slides.find((s) => s.id === slidePlan.id)) break;
 
-    while (attempt < MAX_ATTEMPTS) {
-      attempt++;
       const currentState = formatDeckState();
-
-      // --- Content Agent ---
-      console.log(`  [content] attempt ${attempt}/${MAX_ATTEMPTS}`);
+      console.log(`  [content] gen attempt ${genAttempt}/${MAX_GEN_ATTEMPTS}`);
       const contentPrompt = buildContentAgentPrompt(currentState);
       const contentMessage = `Create ONLY this one slide (do not create other slides):
 ${JSON.stringify(slidePlan, null, 2)}
@@ -731,25 +766,26 @@ Element IDs must be scoped to this slide: "${slidePlan.id}-e1", "${slidePlan.id}
 After calling add_slide, briefly confirm.`;
 
       await callGeminiWithTools(contentPrompt, contentMessage);
+    }
 
-      // --- Visual Agent (only if needed) ---
-      if (needsVisuals) {
-        // Programmatically remove placeholder element before Visual Agent runs
-        const slideBeforeVisual = deck.slides.find((s) => s.id === slidePlan.id);
-        if (slideBeforeVisual) {
-          const placeholder = slideBeforeVisual.elements.find((e) => e.id.endsWith("-placeholder"));
-          if (placeholder) {
-            const result = executeTool("delete_element", { slideId: slidePlan.id, elementId: placeholder.id });
-            console.log(`  [cleanup] Deleted placeholder: ${result}`);
-          }
+    // --- Visual Agent (only if slide was created and visual elements needed) ---
+    if (needsVisuals && deck.slides.find((s) => s.id === slidePlan.id)) {
+      // Programmatically remove placeholder element before Visual Agent runs
+      const slideBeforeVisual = deck.slides.find((s) => s.id === slidePlan.id);
+      if (slideBeforeVisual) {
+        const placeholder = slideBeforeVisual.elements.find((e) => e.id.endsWith("-placeholder"));
+        if (placeholder) {
+          const result = executeTool("delete_element", { slideId: slidePlan.id, elementId: placeholder.id });
+          console.log(`  [cleanup] Deleted placeholder: ${result}`);
         }
+      }
 
-        const visualTypes = (slidePlan.elementTypes ?? []).filter((t) =>
-          ["shape", "arrow", "tikz", "diagram", "scene3d"].includes(t)
-        );
-        console.log(`  [visual] Adding ${visualTypes.join("/")} to ${slidePlan.id}...`);
-        const visualPrompt = buildVisualAgentPrompt(formatDeckState());
-        const visualMessage = `REQUIRED: Add visual element(s) to slide ${slidePlan.id}. You MUST call add_element at least once. Do not finish without adding a visual element.
+      const visualTypes = (slidePlan.elementTypes ?? []).filter((t) =>
+        ["shape", "arrow", "tikz", "diagram", "scene3d"].includes(t)
+      );
+      console.log(`  [visual] Adding ${visualTypes.join("/")} to ${slidePlan.id}...`);
+      const visualPrompt = buildVisualAgentPrompt(formatDeckState());
+      const visualMessage = `REQUIRED: Add visual element(s) to slide ${slidePlan.id}. You MUST call add_element at least once. Do not finish without adding a visual element.
 
 Required element types for this slide: ${visualTypes.join(", ")}
 Slide plan: ${JSON.stringify(slidePlan, null, 2)}
@@ -758,44 +794,38 @@ Steps:
 1. Call read_slide("${slidePlan.id}") to see existing elements
 2. Add the required visual element(s) in the RIGHT column: x:490, y:80, w:440, h:380
 3. Do NOT create duplicate IDs. Use unique IDs like "${slidePlan.id}-visual-1"`;
-        await callGeminiWithTools(visualPrompt, visualMessage);
-      }
+      await callGeminiWithTools(visualPrompt, visualMessage);
+    }
 
-      // --- Per-slide validation ---
-      const newSlide = deck.slides.find((s) => s.id === slidePlan.id);
-      if (!newSlide) {
-        console.log(`  ! Slide ${slidePlan.id} not found after generation — retrying...`);
-        if (attempt < MAX_ATTEMPTS) continue;
-        break;
-      }
+    // Phase 2: Fix pass — validate and send issues to reviewer (generation does NOT re-run)
+    const createdSlide = deck.slides.find((s) => s.id === slidePlan.id);
+    if (!createdSlide) {
+      console.log(`  ✗ Slide ${slidePlan.id} was not created — skipping`);
+    } else {
+      const MAX_FIX_PASSES = 2;
+      for (let fixPass = 1; fixPass <= MAX_FIX_PASSES; fixPass++) {
+        const slide = deck.slides.find((s) => s.id === slidePlan.id);
+        applyOverflowFix(slide);
 
-      // Programmatic overflow fix before validation
-      applyOverflowFix(newSlide);
+        const slideIssues = validateDeck([slide]);
+        const criticals = slideIssues.filter((iss) => iss.level === "CRITICAL");
+        const overlapWarnings = slideIssues.filter(
+          (iss) => iss.level === "WARNING" && iss.message.includes("overlap"),
+        );
+        if (criticals.length === 0 && overlapWarnings.length === 0) {
+          console.log(`  ✓ Slide ${slidePlan.id} passed validation`);
+          break;
+        }
+        const issueList = [...criticals, ...overlapWarnings];
+        console.log(`  ✗ ${criticals.length} critical, ${overlapWarnings.length} overlap warnings (fix pass ${fixPass}/${MAX_FIX_PASSES})`);
+        for (const c of issueList) console.log(`    [${c.ref}] ${c.message}`);
 
-      const slideIssues = validateDeck([newSlide]);
-      const criticals = slideIssues.filter((iss) => iss.level === "CRITICAL");
-      const overlapWarnings = slideIssues.filter(
-        (iss) => iss.level === "WARNING" && iss.message.includes("overlap"),
-      );
-      if (criticals.length === 0 && overlapWarnings.length === 0) {
-        console.log(`  ✓ Slide ${slidePlan.id} passed validation`);
-        break;
-      }
-      const issueList = [...criticals, ...overlapWarnings];
-      console.log(`  ✗ ${criticals.length} critical, ${overlapWarnings.length} overlap warnings — attempt ${attempt}/${MAX_ATTEMPTS}`);
-      for (const c of issueList) console.log(`    [${c.ref}] ${c.message}`);
-
-      if (attempt < MAX_ATTEMPTS && issueList.length > 0) {
-        const fixLines = issueList.map((iss) => `- ${iss.level} [${iss.ref}] ${iss.message}`).join("\n");
-        const reviewMsg = `Fix layout issues in slide ${slidePlan.id} only. Call update_element with the exact suggested positions:\n${fixLines}`;
-        console.log(`  [reviewer] Sending ${issueList.length} issue(s) to agent for correction...`);
-        await callGeminiWithTools(buildGeneratorPrompt(), reviewMsg);
-        // Re-apply overflow fix after agent corrects positions
-        const fixedSlide = deck.slides.find((s) => s.id === slidePlan.id);
-        if (fixedSlide) applyOverflowFix(fixedSlide);
-      } else {
-        // Last attempt — accept remaining issues
-        break;
+        if (fixPass < MAX_FIX_PASSES) {
+          const fixLines = issueList.map((iss) => buildFixLine(iss)).join("\n");
+          const reviewMsg = `Fix issues in slide ${slidePlan.id}. Use update_element to move elements, or delete_element to remove forbidden types:\n${fixLines}`;
+          console.log(`  [reviewer] Sending ${issueList.length} issue(s) to agent...`);
+          await callGeminiWithTools(buildGeneratorPrompt(), reviewMsg);
+        }
       }
     }
   }

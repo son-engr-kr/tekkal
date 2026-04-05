@@ -226,17 +226,21 @@ export function validateDeck(deck: Deck): ValidationResult {
         }
       }
 
-      // Text: double backslash in non-TikZ text (LaTeX line-break error)
+      // Text: double backslash outside LaTeX environments (invalid in KaTeX — causes parse error)
       if (el.type === "text") {
         const txt = el as { content?: string };
-        if (txt.content && /\\\\/.test(txt.content)) {
-          issues.push({
-            severity: "warning",
-            slideId: slide.id,
-            elementId: el.id,
-            message: "Text element contains \\\\ (LaTeX line break outside TikZ — may break rendering)",
-            autoFixable: false,
-          });
+        if (txt.content) {
+          // Strip \begin{...}...\end{...} blocks where \\ is valid (aligned, array, etc.)
+          const contentWithoutEnvs = txt.content.replace(/\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}/g, "");
+          if (/\\\\/.test(contentWithoutEnvs)) {
+            issues.push({
+              severity: "warning",
+              slideId: slide.id,
+              elementId: el.id,
+              message: "Text element contains \\\\ outside a LaTeX environment (use \\\\begin{aligned} for multi-line math, or single \\\\ for commands like \\\\pi)",
+              autoFixable: false,
+            });
+          }
         }
         // Bold markers inside math delimiters
         if (txt.content && /\$[^$]*\*\*[^$]*\$/.test(txt.content)) {
@@ -371,8 +375,11 @@ export function buildFixInstructions(result: ValidationResult): string {
     } else if (i.severity === "error") {
       lines.push(`- CRITICAL ${loc} ${i.message}`);
     } else if (i.severity === "warning" && i.message.includes("overlap")) {
-      // Overlap warnings: include with specific fix instructions for the agent
       lines.push(`- FIX ${loc} ${i.message} — call update_element with the suggested position`);
+    } else if (i.severity === "warning" && i.message.includes("lines")) {
+      lines.push(`- FIX ${loc} ${i.message} — trim code to at most 25 lines showing only the essential concept`);
+    } else if (i.severity === "warning" && i.message.includes("\\\\")) {
+      lines.push(`- FIX ${loc} ${i.message} — replace \\\\\\\\cmd with \\\\cmd (single backslash), use \\\\mathbf{} for bold`);
     }
   }
 

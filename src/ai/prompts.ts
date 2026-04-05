@@ -142,7 +142,8 @@ ${state}
 - ALWAYS include presenter notes in every slide (notes field) — describe what the presenter should say
 - Use the style guide colors, fonts, and layout patterns consistently
 - For diagrams: build with shape (rectangle, arrow) + text elements, grouped with groupId
-- Code elements: show only the essential 5-8 lines that illustrate the concept — never paste entire files
+- Code elements: show only the essential 5-8 lines that illustrate the concept — never paste entire files (hard limit: 25 lines)
+- KaTeX math: use SINGLE backslash for ALL commands (\pi, \sum, \mathbf{x}, \alpha). NEVER double-backslash (\\pi is wrong). For bold math use \mathbf{} or \boldsymbol{} — NOT \bm{} (unsupported in KaTeX). Multi-line equations need \begin{aligned}...\end{aligned}
 - FORBIDDEN element types: "mermaid", "video", "iframe", "audio" — NEVER use these
 - Element positioning: ensure no two elements overlap (check x/y/w/h of all other elements before placing)
 - Element IDs MUST be globally unique across ALL slides. Use slide-scoped IDs: for slide s1 use "s1-e1", "s1-e2"...; for slide s2 use "s2-e1", "s2-e2"... Never reuse an ID that appears in any other slide.
@@ -294,7 +295,7 @@ ${state}
 - You have a read_guide tool to fetch detailed documentation. Use read_guide("08a-guidelines") to review common pitfalls before validating.
 - The current deck state is already provided above. Only call read_slide if you need full details for a specific slide.
 - Check each validation rule
-- For fixable issues, use update_element or update_slide to fix them
+- For fixable issues, use update_element or update_slide to fix them — NEVER call add_slide (slides already exist)
 - If slides are missing notes, add appropriate presenter notes
 - Report findings as a summary
 
