@@ -144,7 +144,7 @@ export function getLastSaveTime(): number {
 function normalizeSizes(deck: Deck): void {
   for (const slide of deck.slides) {
     for (const el of slide.elements) {
-      if (el.size.aspectRatio && !el.size.h) {
+      if (el.size?.aspectRatio && !el.size.h) {
         el.size.h = Math.round(el.size.w / el.size.aspectRatio);
       }
     }
@@ -153,7 +153,7 @@ function normalizeSizes(deck: Deck): void {
   if (deck.components) {
     for (const comp of Object.values(deck.components)) {
       for (const el of comp.elements) {
-        if (el.size.aspectRatio && !el.size.h) {
+        if (el.size?.aspectRatio && !el.size.h) {
           el.size.h = Math.round(el.size.w / el.size.aspectRatio);
         }
       }

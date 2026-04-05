@@ -490,6 +490,10 @@ function executeTool(name, args) {
     case "add_element": {
       const slide = deck.slides.find((s) => s.id === args.slideId);
       if (!slide) return `Slide "${args.slideId}" not found.`;
+      // Reject animation objects — they belong in slide.animations, not elements
+      if (args.element?.type === "animation") {
+        return `ERROR: Do not add animation objects via add_element. Use update_slide with an "animations" array on the slide instead.`;
+      }
       // Auto-fix TikZ backslash escaping: \node → \\node was JSON-unescaped to \n + ode
       if (args.element?.type === "tikz" && typeof args.element.content === "string") {
         args.element.content = fixTikzBackslashes(args.element.content);

@@ -31,7 +31,7 @@ export function validateDeck(deck: Deck): ValidationResult {
     slideIds.add(slide.id);
 
     // Forbidden element types (not supported / cause rendering issues)
-    const FORBIDDEN_TYPES = ["mermaid", "video", "iframe", "audio"];
+    const FORBIDDEN_TYPES = ["mermaid", "video", "iframe", "audio", "animation"];
     for (const el of slide.elements) {
       if (FORBIDDEN_TYPES.includes(el.type)) {
         issues.push({

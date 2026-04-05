@@ -192,6 +192,10 @@ function executeTool(name: string, args: Record<string, unknown>): string {
     case "add_element": {
       const slideId = args.slideId as string;
       const element = args.element as SlideElement & { type?: string; content?: string };
+      // Reject animation objects added as elements — they belong in slide.animations array
+      if ((element as { type?: string }).type === "animation") {
+        return `ERROR: Do not add animation objects via add_element. Use update_slide with an "animations" array on the slide instead.`;
+      }
       // Auto-fix TikZ backslash escaping lost during JSON parsing (\node → newline + "ode")
       if (element.type === "tikz" && typeof element.content === "string") {
         element.content = fixTikzBackslashes(element.content);
