@@ -110,8 +110,9 @@ export function renderMarkdown(source: string, mathFontSize?: number): ReactNode
 
 export function renderInline(text: string, mathFontSize?: number): ReactNode {
   const parts: ReactNode[] = [];
-  // Combined regex: bold(**), italic(*), inline code(`), inline math($)
-  const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)|(\$(.+?)\$)/g;
+  // Combined regex: display math($$), bold(**), italic(*), inline code(`), inline math($)
+  // $$...$$ must come before $...$ to avoid misparse as $+($inner$)+$
+  const regex = /(\$\$(.+?)\$\$)|(\*\*(.+?)\*\*)|(\*(.+?)\*)|(`(.+?)`)|([$](.+?)[$])/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let partKey = 0;
@@ -124,19 +125,30 @@ export function renderInline(text: string, mathFontSize?: number): ReactNode {
     }
 
     if (match[2] !== undefined) {
-      parts.push(createElement("strong", { key: partKey++, className: "font-bold" }, match[2]));
+      // $$...$$ display math inline (e.g. in list items or headings)
+      const html = katex.renderToString(match[2], { displayMode: true, throwOnError: false });
+      parts.push(
+        createElement("span", {
+          key: partKey++,
+          className: "inline-block align-middle my-1",
+          style: mathStyle,
+          dangerouslySetInnerHTML: { __html: html },
+        }),
+      );
     } else if (match[4] !== undefined) {
-      parts.push(createElement("em", { key: partKey++, className: "italic" }, match[4]));
+      parts.push(createElement("strong", { key: partKey++, className: "font-bold" }, match[4]));
     } else if (match[6] !== undefined) {
+      parts.push(createElement("em", { key: partKey++, className: "italic" }, match[6]));
+    } else if (match[8] !== undefined) {
       parts.push(
         createElement(
           "code",
           { key: partKey++, className: "bg-white/10 px-1.5 py-0.5 rounded text-[0.85em] font-mono" },
-          match[6],
+          match[8],
         ),
       );
-    } else if (match[8] !== undefined) {
-      const html = katex.renderToString(match[8], { displayMode: false, throwOnError: false });
+    } else if (match[10] !== undefined) {
+      const html = katex.renderToString(match[10], { displayMode: false, throwOnError: false });
       parts.push(
         createElement("span", {
           key: partKey++,

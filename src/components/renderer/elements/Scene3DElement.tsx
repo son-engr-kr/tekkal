@@ -574,7 +574,14 @@ export function Scene3DElementRenderer({ element, sceneStep, thumbnail }: Props)
         position: "relative",
       }}
     >
-      <div style={{ position: "absolute", inset: 0 }}>
+      <div
+        style={{ position: "absolute", inset: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <Canvas
           camera={{
             position: cameraState.position,

@@ -222,20 +222,6 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
   }
 
   if (type === "youtube" || type === "vimeo") {
-    // Editor mode: show static placeholder instead of loading iframe
-    if (editorMode) {
-      return (
-        <div
-          style={{ ...commonStyle, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#18181b", flexDirection: "column", gap: 8 }}
-        >
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="1.5">
-            <polygon points="5,3 19,12 5,21" />
-          </svg>
-          <span style={{ color: "#71717a", fontSize: 11 }}>{type === "youtube" ? "YouTube" : "Vimeo"}</span>
-        </div>
-      );
-    }
-
     const params = new URLSearchParams();
     if (element.autoplay) params.set("autoplay", "1");
     if (element.loop) params.set("loop", "1");
@@ -244,12 +230,18 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
     const url = paramStr ? `${embedUrl}?${paramStr}` : embedUrl;
 
     return (
-      <iframe
-        src={url}
-        style={{ ...commonStyle, border: "none" }}
-        allow="autoplay; fullscreen; picture-in-picture"
-        allowFullScreen
-      />
+      <div
+        style={{ ...commonStyle, position: "relative" }}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <iframe
+          src={url}
+          style={{ width: "100%", height: "100%", border: "none", borderRadius: commonStyle.borderRadius }}
+          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          allowFullScreen
+        />
+      </div>
     );
   }
 
