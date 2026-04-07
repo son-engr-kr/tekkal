@@ -30,6 +30,7 @@ You are creating slides for Deckode, a local-first, JSON-based slide platform. T
 | 8a | [Guidelines](./guide/08a-guidelines.md) | Common pitfalls (must-read) and AI best practices |
 | 8b | [Style Preferences](./guide/08b-style-preferences.md) | Ask user about theme, animations, notes tone, highlight boxes |
 | 8c | [Visual Style Guide](./guide/08c-visual-style.md) | Default color palette, typography, layout rules, diagram patterns |
+| 8d | [Layout Templates](./guide/08d-layout-templates.md) | Pre-designed slide layouts, "Analytical Insight" palette, design principles |
 | 9 | [Complete Example](./guide/09-example.md) | A full 3-slide deck.json example |
 
 ## Quick Reference
