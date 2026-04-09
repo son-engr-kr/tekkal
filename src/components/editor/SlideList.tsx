@@ -21,7 +21,7 @@ import { useAdapter } from "@/contexts/AdapterContext";
 import type { Slide, DeckTheme, ReferenceElement, SharedComponent } from "@/types/deck";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from "@/types/deck";
 import { setSlideClipboard, setElementClipboard } from "./clipboard";
-import { reuploadSlideAssets, reuploadElementAssets } from "@/utils/crossInstanceAssets";
+import { restoreSlideAssets, restoreElementAssets, collectAssetDataUrls } from "@/utils/crossInstanceAssets";
 import type { LayoutInfo } from "@/adapters/types";
 import { useGitDiff } from "@/contexts/GitDiffContext";
 
@@ -341,7 +341,14 @@ export function SlideList({ showDiff = false }: { showDiff?: boolean }) {
             setElementClipboard(null);
             const clipData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, slides: slidesData };
             if (Object.keys(components).length > 0) clipData.components = components;
-            navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
+            const allEls = slidesData.flatMap(s => s.elements);
+            const bgImages = slidesData.map(s => s.background?.image).filter((v): v is string => !!v);
+            collectAssetDataUrls(allEls, adapter, bgImages).then((assetData) => {
+              if (Object.keys(assetData).length > 0) clipData.assetData = assetData;
+              navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
+            }).catch(() => {
+              navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
+            });
             closeContextMenu();
           }}
           onPaste={async () => {
@@ -351,20 +358,21 @@ export function SlideList({ showDiff = false }: { showDiff?: boolean }) {
               if (!parsed?.__deckode) { closeContextMenu(); return; }
               const isCrossInstance = (parsed.origin && parsed.origin !== window.location.origin)
                 || (parsed.project && parsed.project !== adapter.projectName);
+              const assetData = parsed.assetData as Record<string, string> | undefined;
               const slidesToPaste: Slide[] | undefined =
                 Array.isArray(parsed.slides) ? parsed.slides
                 : parsed.slide ? [parsed.slide]
                 : undefined;
               if (!slidesToPaste || slidesToPaste.length === 0) { closeContextMenu(); return; }
               const state = useDeckStore.getState();
-              // Merge components (re-upload assets if cross-origin)
+              // Merge components
               if (parsed.components && typeof parsed.components === "object" && state.deck) {
                 if (!state.deck.components) state.deck.components = {};
                 for (const [compId, comp] of Object.entries(parsed.components)) {
                   if (!state.deck.components[compId]) {
                     const c = comp as SharedComponent;
                     if (isCrossInstance) {
-                      for (const el of c.elements) await reuploadElementAssets(el, parsed.origin, parsed.project, adapter);
+                      for (const el of c.elements) await restoreElementAssets(el, assetData, parsed.origin, parsed.project, adapter);
                     }
                     state.deck.components[compId] = c;
                   }
@@ -375,7 +383,7 @@ export function SlideList({ showDiff = false }: { showDiff?: boolean }) {
               for (const src of slidesToPaste) {
                 const clone = cloneSlide(src);
                 if (isCrossInstance) {
-                  await reuploadSlideAssets(clone, parsed.origin, parsed.project, adapter);
+                  await restoreSlideAssets(clone, assetData, parsed.origin, parsed.project, adapter);
                 }
                 state.addSlide(clone, insertIndex);
                 insertIndex++;

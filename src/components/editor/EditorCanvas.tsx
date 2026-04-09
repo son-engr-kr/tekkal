@@ -10,7 +10,7 @@ import { useAdapter } from "@/contexts/AdapterContext";
 import { assert } from "@/utils/assert";
 import { ComponentEditOverlay } from "./ComponentEditOverlay";
 import { useGitDiff } from "@/contexts/GitDiffContext";
-import { reuploadElementAssets, reuploadSlideAssets } from "@/utils/crossInstanceAssets";
+import { restoreElementAssets, restoreSlideAssets } from "@/utils/crossInstanceAssets";
 
 function fileToDataUrl(file: File | Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -312,13 +312,14 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
           if (parsed?.__deckode) {
             const isCrossInstance = (parsed.origin && parsed.origin !== window.location.origin)
               || (parsed.project && parsed.project !== adapter.projectName);
+            const assetData = parsed.assetData as Record<string, string> | undefined;
 
             // Element paste
             if (Array.isArray(parsed.elements)) {
               e.preventDefault();
               const { nextElementId } = await import("@/utils/id");
 
-              // Merge referenced components into deck (re-upload assets if cross-origin)
+              // Merge referenced components into deck
               if (parsed.components && typeof parsed.components === "object") {
                 const state = useDeckStore.getState();
                 if (state.deck) {
@@ -327,7 +328,7 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
                     if (!state.deck.components[compId]) {
                       const c = comp as import("@/types/deck").SharedComponent;
                       if (isCrossInstance) {
-                        for (const el of c.elements) await reuploadElementAssets(el, parsed.origin, parsed.project, adapter);
+                        for (const el of c.elements) await restoreElementAssets(el, assetData, parsed.origin, parsed.project, adapter);
                       }
                       state.deck.components[compId] = c;
                     }
@@ -341,9 +342,8 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
                 clone.id = nextElementId();
                 clone.position = { x: original.position.x + 20, y: original.position.y + 20 };
                 delete clone.groupId;
-                // Re-upload assets from other instance
                 if (isCrossInstance) {
-                  await reuploadElementAssets(clone, parsed.origin, parsed.project, adapter);
+                  await restoreElementAssets(clone, assetData, parsed.origin, parsed.project, adapter);
                 }
                 addElement(slide.id, clone);
                 newIds.push(clone.id);
@@ -370,7 +370,7 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
               const { cloneSlide } = await import("@/utils/id");
               const state = useDeckStore.getState();
 
-              // Merge referenced components (re-upload assets if cross-origin)
+              // Merge referenced components
               if (parsed.components && typeof parsed.components === "object") {
                 if (state.deck) {
                   if (!state.deck.components) state.deck.components = {};
@@ -378,7 +378,7 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
                     if (!state.deck.components[compId]) {
                       const c = comp as import("@/types/deck").SharedComponent;
                       if (isCrossInstance) {
-                        for (const el of c.elements) await reuploadElementAssets(el, parsed.origin, parsed.project, adapter);
+                        for (const el of c.elements) await restoreElementAssets(el, assetData, parsed.origin, parsed.project, adapter);
                       }
                       state.deck.components[compId] = c;
                     }
@@ -390,9 +390,8 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
               const newSlideIds: string[] = [];
               for (const srcSlide of slidesToPaste) {
                 const clone = cloneSlide(srcSlide);
-                // Re-upload assets from other instance
                 if (isCrossInstance) {
-                  await reuploadSlideAssets(clone, parsed.origin, parsed.project, adapter);
+                  await restoreSlideAssets(clone, assetData, parsed.origin, parsed.project, adapter);
                 }
                 state.addSlide(clone, insertIndex);
                 insertIndex++;

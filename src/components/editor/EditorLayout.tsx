@@ -27,6 +27,7 @@ import {
   setElementClipboard,
   setSlideClipboard,
 } from "./clipboard";
+import { collectAssetDataUrls } from "@/utils/crossInstanceAssets";
 
 // ── Error boundary for PropertyPanel ──
 
@@ -297,8 +298,14 @@ export function EditorLayout() {
               // Write to system clipboard for cross-instance paste
               const clipData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, elements };
               if (Object.keys(components).length > 0) clipData.components = components;
-              navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
               e.preventDefault();
+              // Embed asset data URLs for adapters without HTTP serving (FsAccess, read-only)
+              collectAssetDataUrls(elements, adapter).then((assetData) => {
+                if (Object.keys(assetData).length > 0) clipData.assetData = assetData;
+                navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
+              }).catch(() => {
+                navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
+              });
             }
           } else if (slide) {
             // No elements selected → copy selected slides (or current slide)
@@ -323,8 +330,16 @@ export function EditorLayout() {
             setElementClipboard(null);
             const clipData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, slides: slidesData };
             if (Object.keys(components).length > 0) clipData.components = components;
-            navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
             e.preventDefault();
+            // Embed asset data URLs
+            const allElements = slidesData.flatMap(s => s.elements);
+            const bgImages = slidesData.map(s => s.background?.image).filter((v): v is string => !!v);
+            collectAssetDataUrls(allElements, adapter, bgImages).then((assetData) => {
+              if (Object.keys(assetData).length > 0) clipData.assetData = assetData;
+              navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
+            }).catch(() => {
+              navigator.clipboard.writeText(JSON.stringify(clipData)).catch(() => {});
+            });
           }
         }
         return;
@@ -343,7 +358,13 @@ export function EditorLayout() {
               const cloned = JSON.parse(JSON.stringify(elements));
               setElementClipboard(cloned);
               // Write to system clipboard so paste event can access it
-              navigator.clipboard.writeText(JSON.stringify({ __deckode: true, origin: window.location.origin, project: adapter.projectName, elements: cloned })).catch(() => {});
+              const cutData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, elements: cloned };
+              collectAssetDataUrls(cloned, adapter).then((assetData) => {
+                if (Object.keys(assetData).length > 0) cutData.assetData = assetData;
+                navigator.clipboard.writeText(JSON.stringify(cutData)).catch(() => {});
+              }).catch(() => {
+                navigator.clipboard.writeText(JSON.stringify(cutData)).catch(() => {});
+              });
               for (const elId of [...selectedElementIds]) {
                 deleteElement(slide.id, elId);
               }
