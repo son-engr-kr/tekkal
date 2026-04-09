@@ -20,6 +20,7 @@ import guide07 from "../../docs/guide/07-slide-features.md?raw";
 import guide08a from "../../docs/guide/08a-guidelines.md?raw";
 import guide08b from "../../docs/guide/08b-style-preferences.md?raw";
 import guide08c from "../../docs/guide/08c-visual-style.md?raw";
+import guide08d from "../../docs/guide/08d-layout-templates.md?raw";
 import guide09 from "../../docs/guide/09-example.md?raw";
 
 export const GUIDE_INDEX = guideIndex;
@@ -43,6 +44,7 @@ export const GUIDE_SECTIONS: Record<string, string> = {
   "08a-guidelines.md": guide08a,
   "08b-style-preferences.md": guide08b,
   "08c-visual-style.md": guide08c,
+  "08d-layout-templates.md": guide08d,
   "09-example.md": guide09,
 };
 

@@ -158,6 +158,7 @@ const GUIDE_SECTION_FILES = {
   "08a-guidelines": "08a-guidelines.md",
   "08b-style-preferences": "08b-style-preferences.md",
   "08c-visual-style": "08c-visual-style.md",
+  "08d-layout-templates": "08d-layout-templates.md",
   "09-example": "09-example.md",
 };
 
@@ -194,6 +195,7 @@ function getGeneratorSchema() {
     readGuide("05-animations"),
     readGuide("08a-guidelines"),
     readGuide("08c-visual-style"),
+    readGuide("08d-layout-templates"),
   ].join("\n\n---\n\n");
 }
 
@@ -227,6 +229,10 @@ Respond with a JSON object (no markdown code fences). Keep it concise — one sh
 }
 
 Important: For "create", always include a title slide first and plan diagrams using shape elements (not mermaid/tikz).
+
+## Layout Templates
+Available templates (from guide 08d-layout-templates): t-title-a, t-title-b, t-section, t-three-metric, t-card-gallery, t-triple-image, t-image-annotated, t-two-image, t-image-table, t-code-panel, t-math, t-hero-stat, t-timeline.
+For each slide in the plan, include a "template" field with the recommended template ID. Downstream agents will use this as a layout reference.
 `;
 }
 
@@ -262,6 +268,7 @@ function getContentAgentSchema() {
     readGuide("05-animations"),
     readGuide("08a-guidelines"),
     readGuide("08c-visual-style"),
+    readGuide("08d-layout-templates"),
   ].join("\n\n---\n\n");
 }
 
@@ -274,6 +281,7 @@ function getVisualAgentSchema() {
     readGuide("04g-elem-scene3d"),
     readGuide("08a-guidelines"),
     readGuide("08c-visual-style"),
+    readGuide("08d-layout-templates"),
   ].join("\n\n---\n\n");
 }
 
@@ -295,6 +303,12 @@ You have two tools to avoid size guessing:
 - \`measure_text(content, fontSize)\` → returns {estimatedW, estimatedH} — use for accurate text sizing
 
 ## Instructions
+- If the plan includes a "template" field, refer to the layout template from guide 08d-layout-templates for element positions, sizes, and styles. Use it as a starting point and adapt the content.
+- MANDATORY: Every slide MUST have a title as the FIRST text element:
+  - Content slides: fontSize 18, color "#1A2B48", bold (**title**), position (x:40, y:20)
+  - Title slides: fontSize 36, color "#1A2B48", bold, position (x:80, y:90 or per template)
+- Font sizes MUST be consistent across ALL slides: title=18 (or 36 for title slide), body=12-14, subtitle=14, metadata=9-10
+- Use ONLY these colors: #1A2B48, #5B9BD5, #BDD7EE, #E7E6E6, #F2F2F2, #A68966, #333333, #8899AA, #AABBCC, #ffffff. No other hex values.
 - Create the slide with add_slide, including ALL text, code, and table elements
 - Use text elements for: title, bullet points, labels, captions, descriptions
 - For code slides, use the code element type with appropriate language — show only 5-8 key lines, no full files
@@ -397,6 +411,8 @@ Step 5 — add_element("s4", tikz at x:500, y:80, w:440, h:380)
 - Element IDs must be slide-scoped and not conflict with existing IDs
 - FORBIDDEN types: "mermaid", "video", "iframe", "audio" — NEVER use these
 - Group related shapes with the same groupId
+- Use ONLY these colors: #1A2B48, #5B9BD5, #BDD7EE, #E7E6E6, #F2F2F2, #A68966, #333333, #8899AA, #AABBCC, #ffffff. No other hex values.
+- For shape fills use #E7E6E6, for strokes use #E7E6E6 or #5B9BD5, for text labels use #5B9BD5 or #1A2B48
 
 ## TikZ Quality Standards
 - ALWAYS include \\path (minX,minY) rectangle (maxX,maxY) bounding box as the FIRST statement
@@ -473,7 +489,8 @@ Standard shapes (flow chart, left column):
 - Execute the plan by calling the appropriate tools (add_slide, add_element, update_slide, etc.)
 - Create slides one at a time with ALL elements included in the slide object
 - ALWAYS include presenter notes in every slide (notes field) — describe what the presenter should say
-- Use the style guide colors, fonts, and layout patterns consistently
+- Use ONLY the Analytical Insight palette: #1A2B48, #5B9BD5, #BDD7EE, #E7E6E6, #F2F2F2, #A68966, #333333, #8899AA, #AABBCC, #ffffff. No other hex values.
+- If the plan includes a "template" field, use the layout template from guide 08d as a starting point — match element positions, sizes, and palette
 - For diagrams: build with shape (rectangle, arrow) + text elements, grouped with groupId
 - Element IDs MUST be globally unique across ALL slides. Use slide-scoped IDs: for slide s1 use "s1-e1", "s1-e2"...; for slide s2 use "s2-e1", "s2-e2"... Never reuse an ID that appears in any other slide.
 - After creating all slides, briefly confirm what was created
@@ -590,7 +607,7 @@ const TOOL_DECLARATIONS = [
   {
     name: "read_guide",
     description:
-      "Read a specific section of the Deckode guide documentation. Available sections: 01-overview, 02-slide-splitting, 03a-schema-deck, 03b-schema-elements, 04a-elem-text-code, 04b-elem-media, 04c-elem-shape, 04d-elem-tikz, 04e-elem-diagrams, 04f-elem-table-mermaid, 04g-elem-scene3d, 04h-elem-scene3d-examples, 05-animations, 06-theme, 07-slide-features, 08a-guidelines, 08b-style-preferences, 09-example",
+      "Read a specific section of the Deckode guide documentation. Available sections: 01-overview, 02-slide-splitting, 03a-schema-deck, 03b-schema-elements, 04a-elem-text-code, 04b-elem-media, 04c-elem-shape, 04d-elem-tikz, 04e-elem-diagrams, 04f-elem-table-mermaid, 04g-elem-scene3d, 04h-elem-scene3d-examples, 05-animations, 06-theme, 07-slide-features, 08a-guidelines, 08b-style-preferences, 08c-visual-style, 08d-layout-templates, 09-example",
     parameters: {
       type: "object",
       properties: {
@@ -925,7 +942,7 @@ async function callGeminiOnce(systemInstruction, message) {
     const model = client.getGenerativeModel({
       model: MODEL,
       systemInstruction,
-      generationConfig: { maxOutputTokens: 8192 },
+      generationConfig: { maxOutputTokens: 16384 },
     });
     const chat = model.startChat({ history: [] });
     const result = await chat.sendMessage(message);
