@@ -12,6 +12,7 @@ import { CodePanel } from "./CodePanel";
 import { NotesEditor } from "./NotesEditor";
 import { ElementPalette } from "./ElementPalette";
 import { SlideAnimationList } from "./SlideAnimationList";
+import { ElementList } from "./ElementList";
 import { ThemePanel } from "./ThemePanel";
 import { PresentationMode } from "@/components/presenter/PresentationMode";
 import { exportToPdf } from "@/components/export/pdfExport";
@@ -739,7 +740,7 @@ export function EditorLayout() {
             </div>
           ) : (
             <>
-              {/* Properties — top half */}
+              {/* Properties */}
               <div className="flex-1 overflow-y-auto border-b border-zinc-800">
                 <PropertyPanelErrorBoundary
                   elementId={selectedElementId}
@@ -748,7 +749,15 @@ export function EditorLayout() {
                   <PropertyPanel />
                 </PropertyPanelErrorBoundary>
               </div>
-              {/* Animations — bottom half */}
+              {/* Element list */}
+              <div className="h-[180px] shrink-0 overflow-y-auto border-b border-zinc-800">
+                <ElementList
+                  onSelectElement={(elementId) => {
+                    useDeckStore.getState().selectElement(elementId);
+                  }}
+                />
+              </div>
+              {/* Animations */}
               <div className="flex-1 overflow-y-auto">
                 <SlideAnimationList
                   onSelectElement={(elementId) => {

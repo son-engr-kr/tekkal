@@ -96,6 +96,7 @@ interface DeckState {
   patchElementById: (elementId: string, patch: Partial<SlideElement>) => void;
   bringToFront: (slideId: string, elementId: string) => void;
   sendToBack: (slideId: string, elementId: string) => void;
+  moveElementOrder: (slideId: string, fromIndex: number, toIndex: number) => void;
 
   // Shared component actions
   createComponent: (slideId: string, groupId: string) => void;
@@ -752,6 +753,16 @@ export const useDeckStore = create<DeckState>()(
             if (idx === 0) return; // already back
             const [el] = slide.elements.splice(idx, 1);
             slide.elements.unshift(el!);
+            state.versionId += 1;
+          }),
+
+        moveElementOrder: (slideId, fromIndex, toIndex) =>
+          set((state) => {
+            assert(state.deck !== null, "No deck loaded");
+            const slide = getSlide(state.deck.slides, slideId);
+            if (fromIndex === toIndex) return;
+            const [el] = slide.elements.splice(fromIndex, 1);
+            slide.elements.splice(toIndex, 0, el!);
             state.versionId += 1;
           }),
 
