@@ -12,6 +12,15 @@ import { ComponentEditOverlay } from "./ComponentEditOverlay";
 import { useGitDiff } from "@/contexts/GitDiffContext";
 import { reuploadElementAssets, reuploadSlideAssets } from "@/utils/crossInstanceAssets";
 
+function fileToDataUrl(file: File | Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 interface MarqueeRect {
   startX: number;
   startY: number;
@@ -216,7 +225,13 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
         const renamed = new File([file], `paste-${Date.now()}.${ext}`, {
           type: file.type,
         });
-        const storedUrl = await adapter.uploadAsset(renamed);
+        let storedUrl: string;
+        try {
+          storedUrl = await adapter.uploadAsset(renamed);
+        } catch {
+          // Adapter doesn't support upload (e.g. read-only mode) — embed as data URL
+          storedUrl = await fileToDataUrl(file);
+        }
         const slideId = slide.id;
         const id = crypto.randomUUID();
         // Use blob URL for dimension probing (storedUrl may be a relative path)
