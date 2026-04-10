@@ -187,6 +187,8 @@ After a non-trivial edit, run at least one of these before reporting success:
 
 ## Tool Selection Decision Tree
 
+> **Scope**: Deckode in-app AI pipeline only. External agents editing `deck.json` directly should skip this subsection — you do not have a tool layer to choose from. Edit the JSON per the schema rules in `03*`/`04*` and the constraints below.
+
 When a user asks for an edit, pick tools in this order:
 
 1. **Is there a specialized tool for exactly this operation?** (move, resize, align, crop, set_image_alt, set_speaker_notes, apply_theme, …) Use it.
@@ -196,13 +198,23 @@ When a user asks for an edit, pick tools in this order:
 
 ## Common Failure Modes to Avoid
 
-- **Manually computing alignment or distribution coordinates**. Use `align_elements` / `distribute_elements`. The LLM often makes off-by-one and centering mistakes here.
-- **Updating elements one by one when a deck-wide operation exists**. Use `apply_style_to_all`.
-- **Reading every slide before deciding what to do**. Use `list_slide_titles` → `find_elements` → `read_slide` in order of specificity.
-- **Round-tripping the whole `animations` array for a single animation change**. Use `update_animation(slideId, index, patch)`.
-- **Forgetting to snapshot before a risky multi-step operation**. A single `snapshot("before-X")` at the start lets you safely `restore("before-X")` if things go wrong.
-- **Reporting success without verification**. End non-trivial tool sequences with `validate_deck` or `lint_slide`.
-- **Adding an image without alt text**. The deck summary can only describe an image via its alt/caption/aiSummary. No alt = invisible to upstream planning.
+**Universal** (applies to any AI agent — in-app or external):
+
+- **Reading the whole deck before deciding what to do.** Read the narrowest thing that answers your question. If you only need slide 3, do not read slides 1, 2, 4, 5…
+- **Computing alignment or distribution coordinates by LLM arithmetic.** Off-by-one and centering mistakes are extremely common. If you are editing raw JSON, measure carefully against the known bounding boxes; if you have an in-app alignment tool available, use it (see below).
+- **Editing many elements in a loop when a single broader operation would do.** For deck-wide style changes, collect the target set first, then apply the change in one pass rather than reading-writing-reading-writing.
+- **Reporting success without verification.** After a non-trivial edit, re-check the state: list the slide/element you changed and confirm the fields actually hold the expected values. Never claim "done" based only on the fact that your write call did not error.
+- **Adding an image without alt text.** The deck summary conveys image content to downstream agents via `alt`/`caption`/`description`/`aiSummary`. An image with none of those is invisible to upstream planning and will be treated as an opaque blob by every future read.
+- **Forgetting the blast radius of a change.** Before a risky multi-step edit, make sure you can recover: note the current state, or in an in-app environment take a snapshot.
+
+**In-app only** (Deckode chat panel agents with the tool catalog):
+
+- **Manually computing alignment or distribution coordinates** when `align_elements` / `distribute_elements` exist. The tool computes coordinates from the selection's bounding box — free correctness.
+- **Updating elements one by one when a deck-wide operation exists.** Use `apply_style_to_all` instead of iterating `update_element`.
+- **Round-tripping the whole `animations` array for a single animation change.** Use `update_animation(slideId, index, patch)`.
+- **Forgetting to snapshot before a risky multi-step operation.** A single `snapshot("before-X")` at the start lets you safely `restore("before-X")` if things go wrong.
+- **Reporting success without running `validate_deck` or `lint_slide`.** End non-trivial tool sequences with one of these.
+- **Reading every slide sequentially** when `list_slide_titles` → `find_elements` → `read_slide` in order of specificity would answer the question with far fewer tokens.
 
 # AI Constraints
 
