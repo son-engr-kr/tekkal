@@ -200,6 +200,9 @@ export interface ImageElement extends BaseElement {
   type: "image";
   src: string;
   alt?: string;
+  caption?: string;
+  description?: string;
+  aiSummary?: string;
   style?: ImageStyle;
 }
 

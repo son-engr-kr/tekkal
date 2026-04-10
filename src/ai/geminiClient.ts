@@ -87,7 +87,12 @@ export interface GeminiCallOptions {
   systemInstruction: string;
   history?: Content[];
   tools?: Tool[];
-  message: string;
+  /**
+   * Message body. A string sends a plain text message; a Part[] enables
+   * multimodal input (text + inlineData/fileData parts) for image-aware calls.
+   * The Google SDK accepts both forms in chat.sendMessage.
+   */
+  message: string | Part[];
   onStream?: (chunk: string) => void;
 }
 

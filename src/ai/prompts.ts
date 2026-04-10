@@ -1,5 +1,79 @@
-import type { Deck } from "@/types/deck";
+import type { Deck, Slide, SlideElement, TextElement, ImageElement, VideoElement, ShapeElement, CodeElement } from "@/types/deck";
 import { GUIDE_INDEX, readGuide } from "./guides";
+
+const TITLE_PREVIEW_LENGTH = 80;
+const HINT_PREVIEW_LENGTH = 50;
+
+/**
+ * Extract a slide title using a layered heuristic.
+ * Priority: markdown # heading > largest fontSize text > topmost text > first text element.
+ * Returns null when no text element exists.
+ */
+export function extractSlideTitle(slide: Slide): string | null {
+  const texts = slide.elements.filter((e): e is TextElement => e.type === "text");
+  if (texts.length === 0) return null;
+
+  const headed = texts.find((t) => /^\s*#\s+/.test(t.content));
+  if (headed) return stripMarkdownHeading(headed.content);
+
+  const sortedByFontSize = [...texts].sort(
+    (a, b) => (b.style?.fontSize ?? 0) - (a.style?.fontSize ?? 0),
+  );
+  const largest = sortedByFontSize[0]!;
+  const allSameSize = sortedByFontSize.every(
+    (t) => (t.style?.fontSize ?? 0) === (largest.style?.fontSize ?? 0),
+  );
+  if (!allSameSize) return firstLine(largest.content);
+
+  const sortedByY = [...texts].sort((a, b) => a.position.y - b.position.y);
+  return firstLine(sortedByY[0]!.content);
+}
+
+function stripMarkdownHeading(content: string): string {
+  const firstLineRaw = content.split("\n", 1)[0] ?? "";
+  return firstLineRaw.replace(/^\s*#+\s*/, "").trim().slice(0, TITLE_PREVIEW_LENGTH);
+}
+
+function firstLine(content: string): string {
+  return (content.split("\n", 1)[0] ?? "").trim().slice(0, TITLE_PREVIEW_LENGTH);
+}
+
+/**
+ * One-line semantic hint per element so the Planner can reason about a slide
+ * without calling read_slide. Image/video hints surface alt + aiSummary so the
+ * deck summary is meaningful even when slides are media-heavy.
+ */
+function elementHint(element: SlideElement): string {
+  switch (element.type) {
+    case "text": {
+      const content = (element as TextElement).content.replace(/\s+/g, " ").trim();
+      return `text: "${content.slice(0, HINT_PREVIEW_LENGTH)}${content.length > HINT_PREVIEW_LENGTH ? "…" : ""}"`;
+    }
+    case "image": {
+      const img = element as ImageElement;
+      const summary = img.aiSummary ?? img.caption ?? img.description ?? img.alt;
+      return summary ? `image[${truncate(summary, HINT_PREVIEW_LENGTH)}]` : `image[no alt — UNDESCRIBED]`;
+    }
+    case "video": {
+      const vid = element as VideoElement;
+      return vid.alt ? `video[${truncate(vid.alt, HINT_PREVIEW_LENGTH)}]` : `video[no alt]`;
+    }
+    case "shape": {
+      const sh = element as ShapeElement;
+      return `shape[${sh.shape}]`;
+    }
+    case "code": {
+      const code = element as CodeElement;
+      return `code[${code.language}, ${code.content.split("\n").length} lines]`;
+    }
+    default:
+      return element.type;
+  }
+}
+
+function truncate(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}
 
 // Shared context shape — matches ContextBarSnapshot in pipeline.ts (defined here to avoid circular deps)
 export interface PromptContext {
@@ -414,14 +488,16 @@ function formatDeckState(deck: Deck): string {
   ];
 
   for (const slide of deck.slides) {
-    const types = [...new Set(slide.elements.map((e) => e.type))].join(", ");
-    const firstText = slide.elements.find((e) => e.type === "text");
-    const preview = firstText ? ` "${(firstText as { content: string }).content.slice(0, 50)}"` : "";
-    const existingIds = slide.elements.map((e) => e.id).join(", ");
+    const title = extractSlideTitle(slide);
+    const titleLabel = title ? ` "${title}"` : " <no title>";
+    const flags = `${slide.notes ? " [has notes]" : ""}${slide.hidden ? " [hidden]" : ""}`;
     lines.push(
-      `  [${slide.id}] ${slide.elements.length} elements (${types})${preview}${slide.notes ? " [has notes]" : ""}${slide.hidden ? " [hidden]" : ""}`,
+      `  [${slide.id}]${titleLabel} — ${slide.elements.length} elements${flags}`,
     );
-    if (existingIds) lines.push(`    IDs: ${existingIds}`);
+    if (slide.elements.length > 0) {
+      const hints = slide.elements.map((e) => `${e.id}=${elementHint(e)}`);
+      lines.push(`    elements: ${hints.join(" | ")}`);
+    }
   }
 
   return lines.join("\n");

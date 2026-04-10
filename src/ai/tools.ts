@@ -172,6 +172,151 @@ export const deckodeTools: DeckodeTool[] = [
       required: ["deck"],
     },
   },
+  {
+    name: "read_element",
+    description:
+      "Read the full JSON of a single element. Cheaper than read_slide when you only need one element. Prefer this over read_slide when modifying a specific element you already know by ID.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING, description: "Slide containing the element" },
+        elementId: { type: SchemaType.STRING, description: "Element ID to read" },
+      },
+      required: ["slideId", "elementId"],
+    },
+  },
+  {
+    name: "move_element",
+    description:
+      "Move an element to new x/y coordinates. Either x or y (or both) may be provided. Use this instead of update_element for pure position changes — it is safer and more explicit. Canvas is 960x540.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementId: { type: SchemaType.STRING },
+        x: { type: SchemaType.NUMBER, description: "New x coordinate (optional)" },
+        y: { type: SchemaType.NUMBER, description: "New y coordinate (optional)" },
+      },
+      required: ["slideId", "elementId"],
+    },
+  },
+  {
+    name: "resize_element",
+    description:
+      "Resize an element. Optionally specify an anchor (defaults to top-left) so the element stays centered or right-aligned during resize. Canvas is 960x540.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementId: { type: SchemaType.STRING },
+        w: { type: SchemaType.NUMBER, description: "New width (optional)" },
+        h: { type: SchemaType.NUMBER, description: "New height (optional)" },
+        anchor: {
+          type: SchemaType.STRING,
+          description: "Resize anchor: top-left | center | top-right | bottom-left | bottom-right. Default top-left.",
+        },
+      },
+      required: ["slideId", "elementId"],
+    },
+  },
+  {
+    name: "align_elements",
+    description:
+      "Align multiple elements on a slide along a single axis (left, center, right, top, middle, bottom). The reference is the bounding box of the selected elements. NEVER compute alignment coordinates manually — call this tool.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementIds: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          description: "Element IDs to align (at least 2)",
+        },
+        alignment: {
+          type: SchemaType.STRING,
+          description: "left | center | right | top | middle | bottom",
+        },
+      },
+      required: ["slideId", "elementIds", "alignment"],
+    },
+  },
+  {
+    name: "distribute_elements",
+    description:
+      "Distribute elements evenly along the horizontal or vertical axis. Requires at least 3 elements. Spacing is computed from the leftmost/topmost and rightmost/bottommost elements.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementIds: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+        },
+        axis: { type: SchemaType.STRING, description: "horizontal | vertical" },
+      },
+      required: ["slideId", "elementIds", "axis"],
+    },
+  },
+  {
+    name: "find_elements",
+    description:
+      "Search for elements across the deck by type, text content, or slide range. Returns a list of matches as { slideId, elementId, type, preview }. Use this to locate elements without dumping every slide.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        type: {
+          type: SchemaType.STRING,
+          description: "Element type filter (e.g. 'image', 'text'). Optional.",
+        },
+        textContains: {
+          type: SchemaType.STRING,
+          description: "Substring to match in text or code element content. Case-insensitive. Optional.",
+        },
+        slideRange: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.NUMBER },
+          description: "Inclusive [startIndex, endIndex] of slides to search (1-based). Optional.",
+        },
+      },
+    },
+  },
+  {
+    name: "get_slide_outline",
+    description:
+      "Return a compact one-line-per-element outline of a slide: id, type, position, size, and short content preview. Cheaper than read_slide and ideal when you only need to reason about layout.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+      },
+      required: ["slideId"],
+    },
+  },
+  {
+    name: "validate_deck",
+    description:
+      "Run structural validation on the current deck (unique IDs, in-bounds positions, required fields). Returns a list of issues. Call this as a self-check before finishing a generation or modification task.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {},
+    },
+  },
+  {
+    name: "duplicate_slide",
+    description:
+      "Duplicate an existing slide with new unique element IDs. The new slide is inserted after the source slide. Prefer this over add_slide when creating a slide similar to an existing one.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING, description: "Source slide ID to duplicate" },
+        newSlideId: {
+          type: SchemaType.STRING,
+          description: "ID for the new slide. Must be unique.",
+        },
+      },
+      required: ["slideId", "newSlideId"],
+    },
+  },
 ];
 
 // ── Project file reference tools (only available when a project is @mentioned) ──
@@ -205,16 +350,34 @@ export const projectFileTools: DeckodeTool[] = [
   },
 ];
 
-export const plannerTools: DeckodeTool[] = deckodeTools.filter(
-  (t) => t.name === "read_deck" || t.name === "read_slide" || t.name === "read_guide",
-);
+const READ_TOOL_NAMES = new Set([
+  "read_deck",
+  "read_slide",
+  "read_guide",
+  "read_element",
+  "get_slide_outline",
+  "find_elements",
+]);
+
+const REVIEWER_WRITE_TOOL_NAMES = new Set([
+  "update_element",
+  "update_slide",
+  "delete_element",
+  "move_element",
+  "resize_element",
+  "align_elements",
+  "distribute_elements",
+  "validate_deck",
+]);
+
+export const plannerTools: DeckodeTool[] = deckodeTools.filter((t) => READ_TOOL_NAMES.has(t.name));
 
 export const generatorTools: DeckodeTool[] = deckodeTools; // all tools (includes read_guide)
 
 export const reviewerTools: DeckodeTool[] = deckodeTools.filter(
-  (t) => t.name === "read_deck" || t.name === "read_slide" || t.name === "read_guide" || t.name === "update_element" || t.name === "update_slide" || t.name === "delete_element",
+  (t) => READ_TOOL_NAMES.has(t.name) || REVIEWER_WRITE_TOOL_NAMES.has(t.name),
 );
 
 export const writerTools: DeckodeTool[] = deckodeTools.filter(
-  (t) => t.name === "read_deck" || t.name === "read_slide" || t.name === "read_guide" || t.name === "update_slide",
+  (t) => READ_TOOL_NAMES.has(t.name) || t.name === "update_slide",
 );
