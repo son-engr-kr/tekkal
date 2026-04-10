@@ -525,6 +525,200 @@ export const deckodeTools: DeckodeTool[] = [
       required: ["slideId", "pivotElementId", "newSlideId"],
     },
   },
+  {
+    name: "change_z_order",
+    description:
+      "Move an element up or down in the slide's element order by a relative delta. Positive delta moves toward the front, negative toward the back. Use bring_to_front / send_to_back for extreme positions.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementId: { type: SchemaType.STRING },
+        delta: { type: SchemaType.NUMBER, description: "Positions to shift. +1 = one step toward front, -1 = one step toward back." },
+      },
+      required: ["slideId", "elementId", "delta"],
+    },
+  },
+  {
+    name: "list_slide_titles",
+    description:
+      "Return a compact list of every slide's ID and extracted title. The cheapest way to understand overall deck structure — use this before read_deck when you only need the table of contents.",
+    parameters: { type: SchemaType.OBJECT, properties: {} },
+  },
+  {
+    name: "search_text",
+    description:
+      "Search the deck for a substring across text element content, code content, image alt/caption, and optionally speaker notes. Returns matching locations so you can read or modify them without dumping whole slides.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        query: { type: SchemaType.STRING, description: "Substring to match. Case-insensitive." },
+        includeNotes: { type: SchemaType.BOOLEAN, description: "Also search slide.notes. Default false." },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "count_elements",
+    description:
+      "Return counts of elements by type across the deck or within a slide range. Useful for deck-level statistics like 'how many images do I have' without reading every slide.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideRange: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.NUMBER },
+          description: "Inclusive [startIndex, endIndex] 1-based slide range. Optional — defaults to whole deck.",
+        },
+      },
+    },
+  },
+  {
+    name: "duplicate_element",
+    description:
+      "Duplicate an existing element on the same slide with a small offset. Useful when building repeated layouts (e.g., several icons or buttons). The new element gets a fresh unique ID.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementId: { type: SchemaType.STRING, description: "Element to duplicate" },
+      },
+      required: ["slideId", "elementId"],
+    },
+  },
+  {
+    name: "reorder_slides",
+    description:
+      "Apply a new slide ordering to the deck. Provide the full list of slide IDs in the desired order. Any slide ID omitted from the list is left out (rejected). For a deterministic outcome always pass every slide ID exactly once.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        order: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          description: "Slide IDs in the desired order.",
+        },
+      },
+      required: ["order"],
+    },
+  },
+  {
+    name: "move_slide",
+    description:
+      "Move a single slide to a new index. Prefer this over reorder_slides when relocating just one slide.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        toIndex: { type: SchemaType.NUMBER, description: "0-based target position" },
+      },
+      required: ["slideId", "toIndex"],
+    },
+  },
+  {
+    name: "set_slide_background",
+    description:
+      "Set or replace the background of a slide. Accepts a color, an image src, or both. Does not touch elements or notes.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        color: { type: SchemaType.STRING, description: "CSS color (e.g., '#0f172a'). Optional." },
+        image: { type: SchemaType.STRING, description: "Image src path. Optional." },
+      },
+      required: ["slideId"],
+    },
+  },
+  {
+    name: "apply_theme",
+    description:
+      "Shallow-merge a patch into the deck theme (colors, fonts, per-element-type defaults). Use for deck-wide aesthetic changes. Only known top-level theme buckets (slide, text, code, shape, image, video, tikz, mermaid, table, scene3d) are accepted; unknown keys are ignored.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        themePatch: {
+          type: SchemaType.OBJECT,
+          description: "Partial theme object. Each key is a bucket (slide, text, code, etc.) mapped to that bucket's style fields.",
+          properties: {},
+        },
+      },
+      required: ["themePatch"],
+    },
+  },
+  {
+    name: "set_image_alt",
+    description:
+      "Set or replace the alt text on an image element. Cheaper and more explicit than update_element for this common operation.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementId: { type: SchemaType.STRING },
+        alt: { type: SchemaType.STRING, description: "Short accessibility description of the image" },
+      },
+      required: ["slideId", "elementId", "alt"],
+    },
+  },
+  {
+    name: "add_comment",
+    description:
+      "Attach a comment to a slide, optionally anchored to a specific element. Comments persist on the deck and can be categorized.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING, description: "Slide the comment belongs to" },
+        text: { type: SchemaType.STRING },
+        elementId: { type: SchemaType.STRING, description: "Optional element the comment is about" },
+        category: {
+          type: SchemaType.STRING,
+          description: "One of: content, design, bug, todo, question, done",
+        },
+      },
+      required: ["slideId", "text"],
+    },
+  },
+  {
+    name: "resolve_comment",
+    description:
+      "Mark a comment as done by flipping its category to 'done'. Use when the work the comment describes has been completed.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        commentId: { type: SchemaType.STRING },
+      },
+      required: ["slideId", "commentId"],
+    },
+  },
+  {
+    name: "crop_image",
+    description:
+      "Non-destructively crop an image element by setting the style.crop fractions (top/right/bottom/left, each 0-1 representing the fraction cropped from that edge). The renderer applies clip-path inset so the original image asset is preserved and the crop can be undone at any time.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+        elementId: { type: SchemaType.STRING },
+        top: { type: SchemaType.NUMBER, description: "Fraction (0-1) cropped from top edge. Default 0." },
+        right: { type: SchemaType.NUMBER, description: "Fraction (0-1) cropped from right edge. Default 0." },
+        bottom: { type: SchemaType.NUMBER, description: "Fraction (0-1) cropped from bottom edge. Default 0." },
+        left: { type: SchemaType.NUMBER, description: "Fraction (0-1) cropped from left edge. Default 0." },
+      },
+      required: ["slideId", "elementId"],
+    },
+  },
+  {
+    name: "diff_against_snapshot",
+    description:
+      "Compare the current deck to a previously saved snapshot and return a structural diff summary: slides added/removed/modified and element counts. Useful as a self-check after a multi-step edit.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        label: { type: SchemaType.STRING, description: "Snapshot label to diff against" },
+      },
+      required: ["label"],
+    },
+  },
 ];
 
 // ── Project file reference tools (only available when a project is @mentioned) ──

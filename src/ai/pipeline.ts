@@ -779,6 +779,251 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       store.addSlide(newSlide, sourceIdx);
       return `Split "${slideId}" at "${pivotId}". Kept ${keepElements.length} elements; moved ${renamed.length} to new slide "${newSlideId}".`;
     }
+    case "change_z_order": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementId = args.elementId as string;
+      const delta = args.delta as number;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const fromIdx = slide.elements.findIndex((e) => e.id === elementId);
+      if (fromIdx === -1) return `Element "${elementId}" not found in slide "${slideId}".`;
+      const toIdx = Math.max(0, Math.min(slide.elements.length - 1, fromIdx + delta));
+      if (toIdx === fromIdx) return `Element "${elementId}" already at the requested z-order.`;
+      store.moveElementOrder(slideId, fromIdx, toIdx);
+      return `Element "${elementId}" z-order: ${fromIdx} -> ${toIdx}.`;
+    }
+    case "list_slide_titles": {
+      if (!deck) return "No deck loaded.";
+      const titles = deck.slides.map((s, i) => {
+        const title = extractSlideTitle(s) ?? "<no title>";
+        return `${i + 1}. [${s.id}] ${title}`;
+      });
+      return titles.join("\n");
+    }
+    case "search_text": {
+      if (!deck) return "No deck loaded.";
+      const query = (args.query as string).toLowerCase();
+      const includeNotes = args.includeNotes as boolean | undefined;
+      if (!query) return "ERROR: empty query.";
+      const matches: Array<{ slideId: string; location: string; snippet: string }> = [];
+      for (const slide of deck.slides) {
+        if (includeNotes && slide.notes && slide.notes.toLowerCase().includes(query)) {
+          const idx = slide.notes.toLowerCase().indexOf(query);
+          matches.push({
+            slideId: slide.id,
+            location: "notes",
+            snippet: slide.notes.slice(Math.max(0, idx - 20), idx + query.length + 20),
+          });
+        }
+        for (const el of slide.elements) {
+          let haystack = "";
+          let where = "";
+          if (el.type === "text" || el.type === "code") {
+            haystack = (el as { content: string }).content;
+            where = `${el.id} (${el.type})`;
+          } else if (el.type === "image") {
+            const img = el as { alt?: string; caption?: string };
+            haystack = `${img.alt ?? ""} ${img.caption ?? ""}`;
+            where = `${el.id} (image alt/caption)`;
+          }
+          if (haystack.toLowerCase().includes(query)) {
+            const idx = haystack.toLowerCase().indexOf(query);
+            matches.push({
+              slideId: slide.id,
+              location: where,
+              snippet: haystack.slice(Math.max(0, idx - 20), idx + query.length + 20).replace(/\s+/g, " "),
+            });
+          }
+        }
+      }
+      if (matches.length === 0) return `No matches for "${query}".`;
+      return `${matches.length} match(es):\n${matches.map((m) => `- [${m.slideId}] ${m.location}: "${m.snippet}"`).join("\n")}`;
+    }
+    case "count_elements": {
+      if (!deck) return "No deck loaded.";
+      const slideRange = args.slideRange as [number, number] | undefined;
+      const startIdx = slideRange ? Math.max(0, slideRange[0] - 1) : 0;
+      const endIdx = slideRange ? Math.min(deck.slides.length, slideRange[1]) : deck.slides.length;
+      const counts: Record<string, number> = {};
+      let total = 0;
+      for (let i = startIdx; i < endIdx; i++) {
+        for (const el of deck.slides[i]!.elements) {
+          counts[el.type] = (counts[el.type] ?? 0) + 1;
+          total++;
+        }
+      }
+      const scope = slideRange ? `slides ${slideRange[0]}-${slideRange[1]}` : "whole deck";
+      const breakdown = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([type, n]) => `  ${type}: ${n}`)
+        .join("\n");
+      return `${total} elements across ${scope}:\n${breakdown}`;
+    }
+    case "duplicate_element": {
+      const slideId = args.slideId as string;
+      const elementId = args.elementId as string;
+      store.duplicateElement(slideId, elementId);
+      return `Element "${elementId}" duplicated on slide "${slideId}".`;
+    }
+    case "reorder_slides": {
+      if (!deck) return "No deck loaded.";
+      const order = args.order as string[];
+      if (order.length !== deck.slides.length) {
+        return `ERROR: reorder_slides expected ${deck.slides.length} IDs, got ${order.length}. Pass every slide ID exactly once.`;
+      }
+      const existingIds = new Set(deck.slides.map((s) => s.id));
+      for (const id of order) {
+        if (!existingIds.has(id)) return `ERROR: unknown slide ID "${id}".`;
+      }
+      if (new Set(order).size !== order.length) {
+        return `ERROR: reorder_slides contains duplicate slide IDs.`;
+      }
+      const reordered = order.map((id) => deck.slides.find((s) => s.id === id)!);
+      store.replaceDeck({ ...deck, slides: reordered });
+      return `Reordered ${order.length} slides.`;
+    }
+    case "move_slide": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const toIndex = args.toIndex as number;
+      const fromIndex = deck.slides.findIndex((s) => s.id === slideId);
+      if (fromIndex === -1) return `ERROR: slide "${slideId}" not found.`;
+      const clamped = Math.max(0, Math.min(deck.slides.length - 1, toIndex));
+      if (clamped === fromIndex) return `Slide "${slideId}" already at index ${clamped}.`;
+      store.moveSlide(fromIndex, clamped);
+      return `Slide "${slideId}" moved ${fromIndex} -> ${clamped}.`;
+    }
+    case "set_slide_background": {
+      const slideId = args.slideId as string;
+      const bg: { color?: string; image?: string } = {};
+      if (typeof args.color === "string") bg.color = args.color;
+      if (typeof args.image === "string") bg.image = args.image;
+      if (Object.keys(bg).length === 0) {
+        return `ERROR: set_slide_background needs at least color or image.`;
+      }
+      store.updateSlide(slideId, { background: bg });
+      return `Background set on slide "${slideId}" (${Object.keys(bg).join(", ")}).`;
+    }
+    case "apply_theme": {
+      const themePatch = args.themePatch as Record<string, unknown>;
+      if (!themePatch || typeof themePatch !== "object") {
+        return `ERROR: themePatch must be an object.`;
+      }
+      const allowedBuckets = new Set([
+        "slide", "text", "code", "shape", "image", "video",
+        "tikz", "mermaid", "table", "scene3d",
+      ]);
+      const filtered: Record<string, unknown> = {};
+      const rejected: string[] = [];
+      for (const [k, v] of Object.entries(themePatch)) {
+        if (allowedBuckets.has(k) && v && typeof v === "object") {
+          filtered[k] = v;
+        } else {
+          rejected.push(k);
+        }
+      }
+      if (Object.keys(filtered).length === 0) {
+        return `ERROR: no valid theme buckets in patch. Allowed: ${[...allowedBuckets].join(", ")}.`;
+      }
+      store.updateTheme(filtered as Parameters<typeof store.updateTheme>[0]);
+      const note = rejected.length > 0 ? ` (rejected: ${rejected.join(", ")})` : "";
+      return `Theme updated: ${Object.keys(filtered).join(", ")}${note}.`;
+    }
+    case "set_image_alt": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementId = args.elementId as string;
+      const alt = args.alt as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      const element = slide?.elements.find((e) => e.id === elementId);
+      if (!element || element.type !== "image") {
+        return `ERROR: element "${elementId}" on slide "${slideId}" is not an image.`;
+      }
+      store.updateElement(slideId, elementId, { alt } as Partial<SlideElement>);
+      return `Alt text set on "${elementId}": "${alt.slice(0, 60)}${alt.length > 60 ? "..." : ""}".`;
+    }
+    case "add_comment": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const text = args.text as string;
+      const elementId = args.elementId as string | undefined;
+      const category = args.category as string | undefined;
+      const validCategories = ["content", "design", "bug", "todo", "question", "done"] as const;
+      const finalCategory = category && (validCategories as readonly string[]).includes(category)
+        ? (category as typeof validCategories[number])
+        : undefined;
+      const comment = {
+        id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        text,
+        elementId,
+        category: finalCategory,
+        createdAt: Date.now(),
+      };
+      store.addComment(slideId, comment);
+      return `Comment "${comment.id}" added to slide "${slideId}"${elementId ? ` (element ${elementId})` : ""}.`;
+    }
+    case "resolve_comment": {
+      const slideId = args.slideId as string;
+      const commentId = args.commentId as string;
+      store.updateComment(slideId, commentId, { category: "done" });
+      return `Comment "${commentId}" marked done.`;
+    }
+    case "crop_image": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementId = args.elementId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      const element = slide?.elements.find((e) => e.id === elementId);
+      if (!element || element.type !== "image") {
+        return `ERROR: element "${elementId}" on slide "${slideId}" is not an image.`;
+      }
+      const clamp = (v: unknown): number => {
+        const n = typeof v === "number" ? v : 0;
+        return Math.max(0, Math.min(0.95, n));
+      };
+      const crop = {
+        top: clamp(args.top),
+        right: clamp(args.right),
+        bottom: clamp(args.bottom),
+        left: clamp(args.left),
+      };
+      if (crop.top + crop.bottom >= 1 || crop.left + crop.right >= 1) {
+        return `ERROR: crop would leave zero visible area. Ensure top+bottom < 1 and left+right < 1.`;
+      }
+      const currentStyle = (element as { style?: Record<string, unknown> }).style ?? {};
+      store.updateElement(slideId, elementId, {
+        style: { ...currentStyle, crop },
+      } as Partial<SlideElement>);
+      return `Cropped "${elementId}": top ${crop.top} right ${crop.right} bottom ${crop.bottom} left ${crop.left}.`;
+    }
+    case "diff_against_snapshot": {
+      if (!deck) return "No deck loaded.";
+      const label = args.label as string;
+      const saved = snapshots.get(label);
+      if (!saved) return `ERROR: snapshot "${label}" not found.`;
+      const savedSlideIds = new Set(saved.slides.map((s) => s.id));
+      const currentSlideIds = new Set(deck.slides.map((s) => s.id));
+      const added = [...currentSlideIds].filter((id) => !savedSlideIds.has(id));
+      const removed = [...savedSlideIds].filter((id) => !currentSlideIds.has(id));
+      const modified: string[] = [];
+      for (const slide of deck.slides) {
+        const prior = saved.slides.find((s) => s.id === slide.id);
+        if (!prior) continue;
+        if (JSON.stringify(prior) !== JSON.stringify(slide)) {
+          const priorN = prior.elements.length;
+          const nowN = slide.elements.length;
+          modified.push(`${slide.id} (${priorN} -> ${nowN} elements)`);
+        }
+      }
+      const lines = [
+        `Diff vs snapshot "${label}":`,
+        `  added slides: ${added.length === 0 ? "none" : added.join(", ")}`,
+        `  removed slides: ${removed.length === 0 ? "none" : removed.join(", ")}`,
+        `  modified slides: ${modified.length === 0 ? "none" : modified.join(", ")}`,
+      ];
+      return lines.join("\n");
+    }
     case "duplicate_slide": {
       if (!deck) return "No deck loaded.";
       const sourceId = args.slideId as string;
