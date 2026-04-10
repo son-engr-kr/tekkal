@@ -141,7 +141,7 @@ export function deckApiPlugin(): Plugin {
   function notifyDeckChanged(project: string) {
     viteServer.ws.send({
       type: "custom",
-      event: "deckode:deck-changed",
+      event: "tekkal:deck-changed",
       data: { project },
     });
   }

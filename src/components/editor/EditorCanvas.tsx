@@ -307,12 +307,13 @@ export const EditorCanvas = memo(function EditorCanvas({ showDiff = false }: { s
         return;
       }
 
-      // 2. Try deckode data from system clipboard
+      // 2. Try tekkal data from system clipboard
       const text = e.clipboardData?.getData("text/plain");
       if (text) {
         try {
           const parsed = JSON.parse(text);
-          if (parsed?.__deckode) {
+          // Back-compat: accept both __tekkal (new) and __deckode (pre-rebrand) markers
+          if (parsed?.__tekkal || parsed?.__deckode) {
             const isCrossInstance = (parsed.origin && parsed.origin !== window.location.origin)
               || (parsed.project && parsed.project !== adapter.projectName);
             const assetData = parsed.assetData as Record<string, string> | undefined;

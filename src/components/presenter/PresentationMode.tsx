@@ -417,8 +417,8 @@ export function PresentationMode({ onExit }: PresentationModeProps) {
       const { elementId, action, currentTime } = (e as CustomEvent).detail;
       postVideoControl(elementId, action, currentTime);
     };
-    window.addEventListener("deckode:video-control", handler);
-    return () => window.removeEventListener("deckode:video-control", handler);
+    window.addEventListener("tekkal:video-control", handler);
+    return () => window.removeEventListener("tekkal:video-control", handler);
   }, [postVideoControl]);
 
   // ── Audience popup ──

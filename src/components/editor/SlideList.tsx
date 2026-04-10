@@ -339,7 +339,7 @@ export function SlideList({ showDiff = false }: { showDiff?: boolean }) {
             }
             setSlideClipboard(slidesData);
             setElementClipboard(null);
-            const clipData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, slides: slidesData };
+            const clipData: Record<string, unknown> = { __tekkal: true, origin: window.location.origin, project: adapter.projectName, slides: slidesData };
             if (Object.keys(components).length > 0) clipData.components = components;
             const allEls = slidesData.flatMap(s => s.elements);
             const bgImages = slidesData.map(s => s.background?.image).filter((v): v is string => !!v);
@@ -355,7 +355,8 @@ export function SlideList({ showDiff = false }: { showDiff?: boolean }) {
             try {
               const text = await navigator.clipboard.readText();
               const parsed = JSON.parse(text);
-              if (!parsed?.__deckode) { closeContextMenu(); return; }
+              // Back-compat: accept both __tekkal (new) and __deckode (pre-rebrand) markers
+              if (!parsed?.__tekkal && !parsed?.__deckode) { closeContextMenu(); return; }
               const isCrossInstance = (parsed.origin && parsed.origin !== window.location.origin)
                 || (parsed.project && parsed.project !== adapter.projectName);
               const assetData = parsed.assetData as Record<string, string> | undefined;

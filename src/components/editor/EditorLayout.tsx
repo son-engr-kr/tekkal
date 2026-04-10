@@ -299,7 +299,7 @@ export function EditorLayout() {
                 }
               }
               // Write to system clipboard for cross-instance paste
-              const clipData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, elements };
+              const clipData: Record<string, unknown> = { __tekkal: true, origin: window.location.origin, project: adapter.projectName, elements };
               if (Object.keys(components).length > 0) clipData.components = components;
               e.preventDefault();
               // Embed asset data URLs for adapters without HTTP serving (FsAccess, read-only)
@@ -331,7 +331,7 @@ export function EditorLayout() {
             }
             setSlideClipboard(slidesData);
             setElementClipboard(null);
-            const clipData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, slides: slidesData };
+            const clipData: Record<string, unknown> = { __tekkal: true, origin: window.location.origin, project: adapter.projectName, slides: slidesData };
             if (Object.keys(components).length > 0) clipData.components = components;
             e.preventDefault();
             // Embed asset data URLs
@@ -361,7 +361,7 @@ export function EditorLayout() {
               const cloned = JSON.parse(JSON.stringify(elements));
               setElementClipboard(cloned);
               // Write to system clipboard so paste event can access it
-              const cutData: Record<string, unknown> = { __deckode: true, origin: window.location.origin, project: adapter.projectName, elements: cloned };
+              const cutData: Record<string, unknown> = { __tekkal: true, origin: window.location.origin, project: adapter.projectName, elements: cloned };
               collectAssetDataUrls(cloned, adapter).then((assetData) => {
                 if (Object.keys(assetData).length > 0) cutData.assetData = assetData;
                 navigator.clipboard.writeText(JSON.stringify(cutData)).catch(() => {});

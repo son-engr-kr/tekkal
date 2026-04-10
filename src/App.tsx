@@ -189,9 +189,9 @@ export function App() {
         tryMerge(remoteDeck);
       });
     };
-    import.meta.hot.on("deckode:deck-changed", handler);
+    import.meta.hot.on("tekkal:deck-changed", handler);
     return () => {
-      import.meta.hot!.off("deckode:deck-changed", handler);
+      import.meta.hot!.off("tekkal:deck-changed", handler);
     };
   }, [adapter, tryMerge]);
 

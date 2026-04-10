@@ -762,7 +762,7 @@ function ElementContextMenu({
               onClick={() => handleAction(() => {
                 const compId = (clickedElement as ReferenceElementType).componentId;
                 setComponentClipboard(compId);
-                navigator.clipboard.writeText(JSON.stringify({ __deckode: true, componentRef: compId })).catch(() => {});
+                navigator.clipboard.writeText(JSON.stringify({ __tekkal: true, componentRef: compId })).catch(() => {});
               })}
             />
             <ContextMenuItem

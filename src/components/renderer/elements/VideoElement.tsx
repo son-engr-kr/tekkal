@@ -283,7 +283,7 @@ export function VideoElementRenderer({ element, thumbnail, videoStep, editorMode
     const video = videoRef.current;
     if (!video || editorMode) return;
     const emit = (action: "play" | "pause") => {
-      window.dispatchEvent(new CustomEvent("deckode:video-control", {
+      window.dispatchEvent(new CustomEvent("tekkal:video-control", {
         detail: { elementId: element.id, action, currentTime: video.currentTime },
       }));
     };
