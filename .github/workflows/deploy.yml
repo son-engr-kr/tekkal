@@ -31,7 +31,9 @@ jobs:
 
       - name: Build main
         env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # Custom domain (tekkal.dev) serves from root. Override VITE_BASE_PATH
+          # to "/tekkal/" when deploying without the custom domain.
+          VITE_BASE_PATH: /
         run: npm run build
 
       - run: mkdir -p _site && cp -r dist/* _site/
@@ -46,7 +48,7 @@ jobs:
 
       - name: Build class
         env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/ie5374/
+          VITE_BASE_PATH: /ie5374/
         run: npm run build
 
       - run: mkdir -p _site/ie5374 && cp -r dist/* _site/ie5374/

@@ -36,7 +36,8 @@ function tikzjaxGzFixPlugin(): Plugin {
 }
 
 export default defineConfig(({ command }) => ({
-  // For GitHub Pages: set VITE_BASE_PATH env var (e.g., "/deckode/")
+  // For GitHub Pages without a custom domain set VITE_BASE_PATH to "/tekkal/".
+  // With tekkal.dev custom domain (set via public/CNAME), leave the default "/".
   base: process.env.VITE_BASE_PATH ?? "/",
   plugins: [
     tikzjaxGzFixPlugin(),
