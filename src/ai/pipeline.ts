@@ -1,12 +1,15 @@
-import type { Deck, Slide, SlideElement } from "@/types/deck";
+import type { Deck, Slide, SlideElement, ImageElement } from "@/types/deck";
 import { useDeckStore } from "@/stores/deckStore";
 import { callGemini, buildFunctionDeclarations, type GeminiModel, type DeckodeTool, getModelForAgent } from "./geminiClient";
-import { buildPlannerPrompt, buildGeneratorPrompt, buildContentAgentPrompt, buildVisualAgentPrompt, buildReviewerPrompt, buildWriterPrompt, type PromptContext } from "./prompts";
+import { buildPlannerPrompt, buildGeneratorPrompt, buildContentAgentPrompt, buildVisualAgentPrompt, buildReviewerPrompt, buildWriterPrompt, extractSlideTitle, type PromptContext } from "./prompts";
 import { generatorTools, reviewerTools, writerTools, plannerTools, projectFileTools } from "./tools";
 import { useProjectRefStore } from "@/stores/projectRefStore";
 import { readGuide } from "./guides";
 import { validateDeck, buildFixInstructions } from "./validation";
-import type { Content } from "@google/generative-ai";
+import { downscaleImage } from "@/utils/imageDownscale";
+import type { Content, Part } from "@google/generative-ai";
+
+const MAX_ATTACHED_IMAGES = 3;
 
 // ---------- Types ----------
 
@@ -144,12 +147,10 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
         slideCount: deck.slides.length,
         slides: deck.slides.map((s) => ({
           id: s.id,
+          title: extractSlideTitle(s),
           elementCount: s.elements.length,
           elementTypes: [...new Set(s.elements.map((e) => e.type))],
           hasNotes: !!s.notes,
-          firstText: s.elements.find((e) => e.type === "text")
-            ? (s.elements.find((e) => e.type === "text") as { content: string }).content.slice(0, 60)
-            : null,
         })),
       };
       return JSON.stringify(summary, null, 2);
@@ -219,6 +220,236 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       store.deleteElement(slideId, elementId);
       return `Element "${elementId}" deleted from slide "${slideId}".`;
     }
+    case "read_element": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementId = args.elementId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const element = slide.elements.find((e) => e.id === elementId);
+      if (!element) return `Element "${elementId}" not found in slide "${slideId}".`;
+      return JSON.stringify(element, null, 2);
+    }
+    case "move_element": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementId = args.elementId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      const element = slide?.elements.find((e) => e.id === elementId);
+      if (!element) return `ERROR: Element "${elementId}" not found in slide "${slideId}".`;
+      const newX = typeof args.x === "number" ? args.x : element.position.x;
+      const newY = typeof args.y === "number" ? args.y : element.position.y;
+      store.updateElement(slideId, elementId, { position: { x: newX, y: newY } });
+      return `Element "${elementId}" moved to (${newX}, ${newY}).`;
+    }
+    case "resize_element": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementId = args.elementId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      const element = slide?.elements.find((e) => e.id === elementId);
+      if (!element) return `ERROR: Element "${elementId}" not found in slide "${slideId}".`;
+      const oldW = (element.size as { w?: number }).w ?? 0;
+      const oldH = (element.size as { h?: number }).h ?? 0;
+      const newW = typeof args.w === "number" ? args.w : oldW;
+      const newH = typeof args.h === "number" ? args.h : oldH;
+      const anchor = (args.anchor as string | undefined) ?? "top-left";
+      let newX = element.position.x;
+      let newY = element.position.y;
+      const dw = newW - oldW;
+      const dh = newH - oldH;
+      switch (anchor) {
+        case "center":
+          newX -= dw / 2;
+          newY -= dh / 2;
+          break;
+        case "top-right":
+          newX -= dw;
+          break;
+        case "bottom-left":
+          newY -= dh;
+          break;
+        case "bottom-right":
+          newX -= dw;
+          newY -= dh;
+          break;
+      }
+      store.updateElement(slideId, elementId, {
+        position: { x: newX, y: newY },
+        size: { ...element.size, w: newW, h: newH },
+      });
+      return `Element "${elementId}" resized to ${newW}x${newH} (anchor: ${anchor}).`;
+    }
+    case "align_elements": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementIds = args.elementIds as string[];
+      const alignment = args.alignment as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const targets = elementIds
+        .map((id) => slide.elements.find((e) => e.id === id))
+        .filter((e): e is SlideElement => !!e);
+      if (targets.length < 2) {
+        return `ERROR: align_elements needs at least 2 valid elements. Got ${targets.length}.`;
+      }
+      const boxes = targets.map((e) => ({
+        id: e.id,
+        x: e.position.x,
+        y: e.position.y,
+        w: (e.size as { w?: number }).w ?? 0,
+        h: (e.size as { h?: number }).h ?? 0,
+      }));
+      const minX = Math.min(...boxes.map((b) => b.x));
+      const maxX = Math.max(...boxes.map((b) => b.x + b.w));
+      const minY = Math.min(...boxes.map((b) => b.y));
+      const maxY = Math.max(...boxes.map((b) => b.y + b.h));
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      for (const b of boxes) {
+        let nx = b.x;
+        let ny = b.y;
+        switch (alignment) {
+          case "left": nx = minX; break;
+          case "right": nx = maxX - b.w; break;
+          case "center": nx = centerX - b.w / 2; break;
+          case "top": ny = minY; break;
+          case "bottom": ny = maxY - b.h; break;
+          case "middle": ny = centerY - b.h / 2; break;
+          default:
+            return `ERROR: Unknown alignment "${alignment}". Use left|center|right|top|middle|bottom.`;
+        }
+        store.updateElement(slideId, b.id, { position: { x: nx, y: ny } });
+      }
+      return `Aligned ${boxes.length} elements (${alignment}) on slide "${slideId}".`;
+    }
+    case "distribute_elements": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const elementIds = args.elementIds as string[];
+      const axis = args.axis as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const targets = elementIds
+        .map((id) => slide.elements.find((e) => e.id === id))
+        .filter((e): e is SlideElement => !!e);
+      if (targets.length < 3) {
+        return `ERROR: distribute_elements needs at least 3 valid elements. Got ${targets.length}.`;
+      }
+      const items = targets.map((e) => ({
+        id: e.id,
+        x: e.position.x,
+        y: e.position.y,
+        w: (e.size as { w?: number }).w ?? 0,
+        h: (e.size as { h?: number }).h ?? 0,
+      }));
+      if (axis === "horizontal") {
+        items.sort((a, b) => a.x - b.x);
+        const first = items[0]!;
+        const last = items[items.length - 1]!;
+        const totalW = items.reduce((sum, it) => sum + it.w, 0);
+        const span = last.x + last.w - first.x;
+        const gap = (span - totalW) / (items.length - 1);
+        let cursor = first.x;
+        for (const it of items) {
+          store.updateElement(slideId, it.id, { position: { x: cursor, y: it.y } });
+          cursor += it.w + gap;
+        }
+      } else if (axis === "vertical") {
+        items.sort((a, b) => a.y - b.y);
+        const first = items[0]!;
+        const last = items[items.length - 1]!;
+        const totalH = items.reduce((sum, it) => sum + it.h, 0);
+        const span = last.y + last.h - first.y;
+        const gap = (span - totalH) / (items.length - 1);
+        let cursor = first.y;
+        for (const it of items) {
+          store.updateElement(slideId, it.id, { position: { x: it.x, y: cursor } });
+          cursor += it.h + gap;
+        }
+      } else {
+        return `ERROR: Unknown axis "${axis}". Use horizontal|vertical.`;
+      }
+      return `Distributed ${items.length} elements (${axis}) on slide "${slideId}".`;
+    }
+    case "find_elements": {
+      if (!deck) return "No deck loaded.";
+      const filterType = args.type as string | undefined;
+      const textContains = (args.textContains as string | undefined)?.toLowerCase();
+      const slideRange = args.slideRange as [number, number] | undefined;
+      const startIdx = slideRange ? Math.max(0, slideRange[0] - 1) : 0;
+      const endIdx = slideRange ? Math.min(deck.slides.length, slideRange[1]) : deck.slides.length;
+      const matches: Array<{ slideId: string; elementId: string; type: string; preview: string }> = [];
+      for (let i = startIdx; i < endIdx; i++) {
+        const slide = deck.slides[i]!;
+        for (const el of slide.elements) {
+          if (filterType && el.type !== filterType) continue;
+          let preview = "";
+          if (el.type === "text" || el.type === "code") {
+            preview = (el as { content: string }).content.slice(0, 60);
+            if (textContains && !preview.toLowerCase().includes(textContains)) continue;
+          } else if (el.type === "image") {
+            preview = (el as { alt?: string }).alt ?? "<no alt>";
+            if (textContains && !preview.toLowerCase().includes(textContains)) continue;
+          } else {
+            if (textContains) continue;
+          }
+          matches.push({ slideId: slide.id, elementId: el.id, type: el.type, preview });
+        }
+      }
+      return JSON.stringify({ matchCount: matches.length, matches }, null, 2);
+    }
+    case "get_slide_outline": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const outline = slide.elements.map((e) => {
+        const w = (e.size as { w?: number }).w ?? 0;
+        const h = (e.size as { h?: number }).h ?? 0;
+        let preview = "";
+        if (e.type === "text" || e.type === "code") {
+          preview = (e as { content: string }).content.slice(0, 50).replace(/\s+/g, " ");
+        } else if (e.type === "image") {
+          preview = (e as { alt?: string }).alt ?? "";
+        }
+        return `${e.id} ${e.type} pos=(${e.position.x},${e.position.y}) size=(${w}x${h})${preview ? ` "${preview}"` : ""}`;
+      });
+      return outline.join("\n");
+    }
+    case "validate_deck": {
+      if (!deck) return "No deck loaded.";
+      const result = validateDeck(deck);
+      if (result.issues.length === 0) return "OK: deck passes structural validation.";
+      return `Found ${result.issues.length} issue(s):\n${result.issues.map((i) => `- [${i.severity}] ${i.message}`).join("\n")}`;
+    }
+    case "duplicate_slide": {
+      if (!deck) return "No deck loaded.";
+      const sourceId = args.slideId as string;
+      const newId = args.newSlideId as string;
+      const sourceIdx = deck.slides.findIndex((s) => s.id === sourceId);
+      if (sourceIdx === -1) return `ERROR: source slide "${sourceId}" not found.`;
+      if (deck.slides.some((s) => s.id === newId)) {
+        return `ERROR: new slide ID "${newId}" already exists.`;
+      }
+      const source = deck.slides[sourceIdx]!;
+      const usedElementIds = new Set<string>();
+      for (const s of deck.slides) for (const el of s.elements) usedElementIds.add(el.id);
+      const cloned: Slide = JSON.parse(JSON.stringify(source));
+      cloned.id = newId;
+      cloned.elements = cloned.elements.map((el) => {
+        const baseId = el.id.replace(/_\d+$/, "");
+        let candidate = `${baseId}_${newId}`;
+        let suffix = 2;
+        while (usedElementIds.has(candidate)) {
+          candidate = `${baseId}_${newId}_${suffix++}`;
+        }
+        usedElementIds.add(candidate);
+        return { ...el, id: candidate };
+      });
+      store.addSlide(cloned, sourceIdx);
+      return `Slide "${newId}" duplicated from "${sourceId}" with ${cloned.elements.length} elements.`;
+    }
     case "list_project_files": {
       const projectName = args.projectName as string;
       const path = args.path as string | undefined;
@@ -236,6 +467,60 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
   }
 }
 
+// ---------- Multimodal helpers ----------
+
+/**
+ * Build Gemini Part[] for image elements attached via the Context Bar.
+ * Looks up each attached image element in the deck, downscales it, and returns
+ * inlineData parts. Limited to MAX_ATTACHED_IMAGES to keep token cost bounded.
+ *
+ * Returns an empty array when no image elements are attached. Errors during
+ * downscaling are logged and skipped — a missing image should not block the
+ * pipeline.
+ */
+async function buildAttachedImageParts(
+  context: ContextBarSnapshot | undefined,
+  deck: Deck | null,
+  onLog: (msg: string) => void,
+): Promise<Part[]> {
+  if (!context || !deck) return [];
+  const imageRefs = context.elements.filter((e) => e.type === "image").slice(0, MAX_ATTACHED_IMAGES);
+  if (imageRefs.length === 0) return [];
+
+  const parts: Part[] = [];
+  for (const ref of imageRefs) {
+    const slide = deck.slides.find((s) => s.id === ref.slideId);
+    const element = slide?.elements.find((el) => el.id === ref.elementId);
+    if (!element || element.type !== "image") continue;
+    const img = element as ImageElement;
+    try {
+      const downscaled = await downscaleImage(img.src);
+      parts.push({
+        inlineData: {
+          mimeType: downscaled.mimeType,
+          data: downscaled.base64,
+        },
+      });
+      onLog(`[multimodal] attached ${ref.elementId} (${downscaled.width}x${downscaled.height}, ${(downscaled.bytes / 1024).toFixed(0)}KB ${downscaled.mimeType})`);
+    } catch (err) {
+      onLog(`[multimodal] skipped ${ref.elementId}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  return parts;
+}
+
+/** Wrap a text message and optional image parts into a single Part[] payload. */
+function buildMessagePayload(text: string, imageParts: Part[]): string | Part[] {
+  if (imageParts.length === 0) return text;
+  return [{ text }, ...imageParts];
+}
+
+/** Normalize a message (string or Part[]) into Part[] for history entries. */
+function messagePartsForHistory(message: string | Part[]): Part[] {
+  if (typeof message === "string") return [{ text: message }];
+  return message;
+}
+
 // ---------- Agent Call with Tool Loop ----------
 
 async function callAgentWithTools(
@@ -245,10 +530,11 @@ async function callAgentWithTools(
   message: string,
   history: Content[],
   onLog: (msg: string) => void,
+  initialImageParts: Part[] = [],
 ): Promise<string> {
   const geminiTools = buildFunctionDeclarations(tools);
   let currentHistory = [...history];
-  let currentMessage = message;
+  let currentMessage: string | Part[] = buildMessagePayload(message, initialImageParts);
   let iterations = 0;
   let toolCallsMade = false;
   const maxIterations = 20;
@@ -271,7 +557,7 @@ async function callAgentWithTools(
         onLog("Model responded with text only, nudging to use tools...");
         currentHistory = [
           ...currentHistory,
-          { role: "user", parts: [{ text: currentMessage }] },
+          { role: "user", parts: messagePartsForHistory(currentMessage) },
           { role: "model", parts: [{ text: response.text }] },
         ];
         currentMessage = "Now execute the plan by calling the provided tools (add_slide, add_element, etc.). Do not just describe what you would do — actually call the tools.";
@@ -302,7 +588,7 @@ async function callAgentWithTools(
     // Add to history and continue
     currentHistory = [
       ...currentHistory,
-      { role: "user", parts: [{ text: currentMessage }] },
+      { role: "user", parts: messagePartsForHistory(currentMessage) },
       { role: "model", parts: [{ text: response.text || "Calling tools..." }] },
     ];
     currentMessage = `Tool results:\n${functionResponses.join("\n")}\n\nContinue executing the plan. If all done, provide a summary.`;
@@ -338,6 +624,7 @@ async function runPlanner(
   // If projects are referenced, give planner access to project file tools
   // so it can answer questions about project contents directly
   const hasProjects = context?.projectNames && context.projectNames.length > 0;
+  const imageParts = await buildAttachedImageParts(context, deck, cb.onLog);
   let responseText: string;
 
   if (hasProjects) {
@@ -349,13 +636,14 @@ async function runPlanner(
       userMessage,
       history,
       cb.onLog,
+      imageParts,
     );
   } else {
     const response = await callGemini({
       model: getModelForAgent("planner"),
       systemInstruction: prompt,
       history,
-      message: userMessage,
+      message: buildMessagePayload(userMessage, imageParts),
     });
     responseText = response.text;
   }
@@ -398,7 +686,16 @@ async function runGenerator(
     const deck = useDeckStore.getState().deck;
     const prompt = buildGeneratorPrompt(deck, context);
     const planMessage = `Execute these modifications:\n${plan.actions?.join("\n")}`;
-    return callAgentWithTools(getModelForAgent("generator"), prompt, tools, planMessage, [], cb.onLog);
+    const imageParts = await buildAttachedImageParts(context, deck, cb.onLog);
+    return callAgentWithTools(
+      getModelForAgent("generator"),
+      prompt,
+      tools,
+      planMessage,
+      [],
+      cb.onLog,
+      imageParts,
+    );
   }
 
   // Create intent: slide-by-slide loop
