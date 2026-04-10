@@ -66,6 +66,28 @@ When asked to modify an existing deck:
 3. When moving elements, only change `position` — preserve all other fields
 4. When restyling, only change `style` fields — preserve content and position
 
+## Reading Deck State Efficiently
+
+Reading deck state costs tokens. Always prefer the narrowest read that answers your question.
+
+**Read-before-write principle**: Before modifying any slide or element, you must know its current state. But "knowing the current state" rarely means "dump the entire deck."
+
+**Read tool hierarchy** (use the highest-level summary that still answers your question):
+
+1. **`read_deck`** — Returns a summary of the entire deck: title, author, slide count, and per-slide metadata (id, element count, element types, first text preview). Use this to understand overall structure, find a target slide by content, or count slides. **This is your default first read.** It does NOT return full element data.
+
+2. **`read_slide(slideId)`** — Returns the full JSON of a single slide, including all element fields. Use this only after `read_deck` told you which slide you need to inspect. Never call `read_slide` on every slide in a loop — that defeats the purpose of the summary tier.
+
+**Anti-patterns to avoid**:
+- Calling `read_slide` on every slide before deciding what to do. Use `read_deck` first; it already tells you which slides have which element types.
+- Re-reading the same slide multiple times in one turn. Cache the result mentally and reason about it.
+- Reading the entire deck just to confirm a slide exists. The `read_deck` summary already includes all slide IDs.
+- Reading slides you have no intention of modifying. If the user said "fix slide 3", you only need to read slide 3.
+
+**When you genuinely need everything**: For deck-wide refactors (e.g., "unify all heading colors", "renumber all slides"), it is acceptable to read every slide. But state to yourself why before doing it, and prefer a single batch over interleaved reads-and-writes.
+
+**Image content in summaries**: The `read_deck` summary includes element types but does not include image pixels. To know what an image depicts, you must read the slide and inspect the `alt` field. Always populate `alt` when adding images so future reads can understand them — see the image element guide for the strict alt-text rule.
+
 # AI Constraints
 
 These rules MUST be followed by all AI agents when generating or modifying decks.

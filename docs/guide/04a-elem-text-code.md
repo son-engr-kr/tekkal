@@ -31,6 +31,19 @@ Renders Markdown text content.
 - Inline math (`$E = mc^2$`)
 - Block math (`$$\int_0^1 f(x) dx$$`)
 
+### Slide title convention
+
+The `Slide` schema does not have a dedicated `title` field. Instead, the **slide title is conveyed by starting a text element's `content` with a Markdown `#` heading**. Downstream tooling (deck summarizers, the Planner agent, future title-detection heuristics) treats the first `#`-prefixed text element on a slide as that slide's title.
+
+**Rules for AI agents**:
+1. Every content slide should contain exactly one text element whose `content` begins with `# ` (level-1 heading) representing the slide title. Title slides may also use `#` for the main title.
+2. The title element should be the visually largest text on the slide (`fontSize` ≥ body text fontSize).
+3. The title element should be positioned near the top of the slide (`y` smaller than body content).
+4. Do not put `#` inside body text elements. Use `##` or `###` for sub-sections within body text instead.
+5. If a slide is intentionally title-less (e.g., a full-bleed image slide), it is acceptable to omit the `#` element, but prefer adding a small caption text with `#` so the deck summary can identify the slide.
+
+This convention lets the deck summarizer extract slide titles without ambiguity and lets the Planner agent reason about deck structure using only titles instead of full element dumps.
+
 **LaTeX math bold**: Do NOT use Markdown `**` inside math expressions — it renders as plain text. Use `\bm{}` (bold-italic, recommended for symbols) or `\mathbf{}` (bold-upright) instead. Example: `$\bm{\kappa}$` → **κ**, `$\mathbf{A}$` → **A**.
 
 **Style fields**:

@@ -25,7 +25,9 @@ Renders an image.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `src` | string | yes | Image path relative to project root, or absolute URL |
-| `alt` | string | no | Alt text describing the image content. Helps AI agents understand what the image depicts beyond just the filename. Also used for accessibility and PPTX export. |
+| `alt` | string | **yes (AI must always provide)** | Short description of what the image depicts. Used for accessibility, PPTX export, and — critically — as the only signal AI agents have about image content when planning or summarizing the deck. Without `alt`, downstream agents see the image as an opaque blob and cannot reason about it. Keep it concise (one sentence) and specific (e.g., `"Bar chart of Q4 revenue by region"`, not `"chart"`). |
+
+**Alt text rule for AI agents**: When adding or modifying any image element, you MUST populate `alt`. Treat `alt` as required even though the schema marks it optional. The deck-summary representation passed to the Planner agent does not include image pixels — it only sees `alt`. An image without `alt` is invisible to upstream planning. If you do not know what the image depicts (e.g., user-uploaded asset with an opaque filename), write a placeholder describing the filename and slot (`"User-uploaded asset 'diagram-final-v2.png' in slide 3 hero position"`) rather than leaving it blank.
 **Style fields**:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
