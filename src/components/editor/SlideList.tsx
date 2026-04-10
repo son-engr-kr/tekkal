@@ -393,7 +393,7 @@ export function SlideList({ showDiff = false }: { showDiff?: boolean }) {
               state.setCurrentSlide(contextMenu.slideIndex + 1);
               if (newIds.length > 1) state.setSelectedSlides(newIds);
             } catch {
-              // Clipboard not available or not deckode data
+              // Clipboard not available or not tekkal data
             }
             closeContextMenu();
           }}

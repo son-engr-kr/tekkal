@@ -1,8 +1,8 @@
 /**
  * Three-way merge for individual slide fields.
- * base = last saved by deckode, local = current deckode state, remote = current disk state.
+ * base = last saved by tekkal, local = current tekkal state, remote = current disk state.
  * Element-level: remote wins for elements only changed remotely, local wins for local-only changes.
- * Both changed same element: local wins (deckode user is actively editing).
+ * Both changed same element: local wins (tekkal user is actively editing).
  */
 export function mergeSlideFields(base: any, local: any, remote: any): any {
   const result = { ...local };

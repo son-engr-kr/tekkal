@@ -189,7 +189,7 @@ export function deckApiPlugin(): Plugin {
   }
 
   return {
-    name: "deckode-api",
+    name: "tekkal-api",
     configureServer(server) {
       viteServer = server;
       validate = createValidator();
@@ -444,9 +444,9 @@ export function deckApiPlugin(): Plugin {
         const docsDir = path.resolve(dir, "docs");
         fs.mkdirSync(docsDir, { recursive: true });
 
-        const guideSource = path.resolve(process.cwd(), "docs", "deckode-guide.md");
+        const guideSource = path.resolve(process.cwd(), "docs", "tekkal-guide.md");
         if (fs.existsSync(guideSource)) {
-          fs.copyFileSync(guideSource, path.resolve(docsDir, "deckode-guide.md"));
+          fs.copyFileSync(guideSource, path.resolve(docsDir, "tekkal-guide.md"));
         }
         const guideDir = path.resolve(process.cwd(), "docs", "guide");
         if (fs.existsSync(guideDir)) {
@@ -988,13 +988,13 @@ function migrateToProjectDir() {
       const destDir = path.dirname(dest);
       if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
       fs.renameSync(legacyDeck, dest);
-      console.log(`[deckode] Migrated ${DECK_FILENAME} → ${PROJECT_DIR}/default/${DECK_FILENAME}`);
+      console.log(`[tekkal] Migrated ${DECK_FILENAME} → ${PROJECT_DIR}/default/${DECK_FILENAME}`);
     }
     if (fs.existsSync(legacyAssets) && fs.statSync(legacyAssets).isDirectory()) {
       const dest = path.resolve(root, "default", "assets");
       fs.cpSync(legacyAssets, dest, { recursive: true });
       fs.rmSync(legacyAssets, { recursive: true, force: true });
-      console.log(`[deckode] Migrated assets/ → ${PROJECT_DIR}/default/assets/`);
+      console.log(`[tekkal] Migrated assets/ → ${PROJECT_DIR}/default/assets/`);
     }
     // Rewrite asset URLs in the migrated deck
     rewriteAssetUrls(path.resolve(root, "default", DECK_FILENAME), "default");
@@ -1011,13 +1011,13 @@ function migrateToProjectDir() {
 
     const dest = path.resolve(defaultDir, DECK_FILENAME);
     fs.renameSync(flatDeck, dest);
-    console.log(`[deckode] Migrated ${PROJECT_DIR}/${DECK_FILENAME} → ${PROJECT_DIR}/default/${DECK_FILENAME}`);
+    console.log(`[tekkal] Migrated ${PROJECT_DIR}/${DECK_FILENAME} → ${PROJECT_DIR}/default/${DECK_FILENAME}`);
 
     if (fs.existsSync(flatAssets) && fs.statSync(flatAssets).isDirectory()) {
       const assetsDest = path.resolve(defaultDir, "assets");
       fs.cpSync(flatAssets, assetsDest, { recursive: true });
       fs.rmSync(flatAssets, { recursive: true, force: true });
-      console.log(`[deckode] Migrated ${PROJECT_DIR}/assets/ → ${PROJECT_DIR}/default/assets/`);
+      console.log(`[tekkal] Migrated ${PROJECT_DIR}/assets/ → ${PROJECT_DIR}/default/assets/`);
     }
 
     // Rewrite asset URLs: /assets/foo → /assets/default/foo
@@ -1043,7 +1043,7 @@ function rewriteAssetUrls(deckFilePath: string, project: string) {
   );
   if (rewritten !== raw) {
     fs.writeFileSync(deckFilePath, rewritten, "utf-8");
-    console.log(`[deckode] Rewrote asset URLs to relative format in ${deckFilePath}`);
+    console.log(`[tekkal] Rewrote asset URLs to relative format in ${deckFilePath}`);
   }
 }
 
@@ -1120,7 +1120,7 @@ async function compileTikz(
     };
   }
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "deckode-tikz-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "tekkal-tikz-"));
 
   const texSource = wrapTikzDocument(content, preamble);
   const texFile = path.join(tmpDir, "input.tex");

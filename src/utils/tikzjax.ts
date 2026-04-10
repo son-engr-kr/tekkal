@@ -14,7 +14,7 @@
 
 import { assert } from "@/utils/assert";
 
-// Respect Vite's base path (e.g. "/deckode/" for GitHub Pages)
+// Respect Vite's base path (e.g. "/tekkal/" for GitHub Pages without custom domain)
 const TIKZJAX_BASE = `${import.meta.env.BASE_URL}tikzjax`.replace(/\/\//g, "/");
 
 /**
@@ -224,7 +224,9 @@ async function embedFonts(svg: string): Promise<string> {
 
 // ── IndexedDB SVG cache ─────────────────────────────────────────────
 
-const CACHE_DB = "deckode-tikz-cache";
+// Cache is regenerable (SHA-256 keyed compile outputs), so no migration
+// from the legacy "deckode-tikz-cache" database. Orphan cost is negligible.
+const CACHE_DB = "tekkal-tikz-cache";
 const CACHE_STORE = "svgCache";
 
 function openCacheDB(): Promise<IDBDatabase> {

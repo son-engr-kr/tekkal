@@ -179,7 +179,7 @@ export function buildPlannerPrompt(deck: Deck | null, context?: PromptContext): 
   const contextSection = buildContextSection(context, true);
 
   return `## Role
-You are the Planner agent for Deckode, a JSON-based slide platform. Your job is to:
+You are the Planner agent for TEKKAL, a JSON-based slide platform. Your job is to:
 1. Classify the user's intent (create, modify, notes, review, chat)
 2. For "create" intent: generate a detailed slide-by-slide outline
 3. For other intents: describe what actions are needed
@@ -251,7 +251,7 @@ export function buildGeneratorPrompt(deck: Deck | null, context?: PromptContext)
   const schema = getGeneratorSchema();
 
   return `## Role
-You are the Generator agent for Deckode. You create and modify slides by calling tools. You receive an approved plan and execute it precisely.
+You are the Generator agent for TEKKAL. You create and modify slides by calling tools. You receive an approved plan and execute it precisely.
 
 ${schema}
 
@@ -326,7 +326,7 @@ export function buildContentAgentPrompt(deck: Deck | null, context?: PromptConte
   const schema = getContentAgentSchema();
 
   return `## Role
-You are the Content Agent for Deckode. You create text, code, and table elements for slides.
+You are the Content Agent for TEKKAL. You create text, code, and table elements for slides.
 You are one part of a two-agent system: after you create the slide structure, the Visual Agent will add shapes, diagrams, and TikZ elements.
 
 ${schema}
@@ -366,7 +366,7 @@ export function buildVisualAgentPrompt(deck: Deck | null, context?: PromptContex
   const schema = getVisualAgentSchema();
 
   return `## Role
-You are the Visual Agent for Deckode. You add shapes, arrows, TikZ diagrams, and visual decorations to existing slides.
+You are the Visual Agent for TEKKAL. You add shapes, arrows, TikZ diagrams, and visual decorations to existing slides.
 The Content Agent has already created the slide with text/code/table elements. Your job is to enhance it visually.
 
 ${schema}
@@ -402,7 +402,7 @@ export function buildReviewerPrompt(deck: Deck | null): string {
   const state = deck ? formatDeckState(deck) : "No deck loaded.";
 
   return `## Role
-You are the Reviewer agent for Deckode. You validate the current deck for structural and design issues.
+You are the Reviewer agent for TEKKAL. You validate the current deck for structural and design issues.
 
 ${GUIDE_OVERVIEW}
 
@@ -455,7 +455,7 @@ export function buildWriterPrompt(deck: Deck | null): string {
   const state = deck ? formatDeckState(deck) : "No deck loaded.";
 
   return `## Role
-You are the Writer agent for Deckode. You generate speaker notes that match the user's existing writing style.
+You are the Writer agent for TEKKAL. You generate speaker notes that match the user's existing writing style.
 
 ${GUIDE_OVERVIEW}
 
