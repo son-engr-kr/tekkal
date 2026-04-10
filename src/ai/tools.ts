@@ -369,6 +369,149 @@ export const deckodeTools: DeckodeTool[] = [
       },
     },
   },
+  {
+    name: "apply_style_to_all",
+    description:
+      "Apply a style patch to every element matching the filter in one shot. Use for deck-wide consistency operations like unifying heading colors, changing body font, or setting a common shape stroke. The style patch is shallow-merged into each matched element's style object.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        filter: {
+          type: SchemaType.OBJECT,
+          description: "Which elements to target",
+          properties: {
+            type: { type: SchemaType.STRING, description: "Element type filter, e.g. 'text', 'shape', 'image'" },
+            slideRange: {
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.NUMBER },
+              description: "Inclusive [startIndex, endIndex] 1-based slide range. Optional.",
+            },
+            minFontSize: {
+              type: SchemaType.NUMBER,
+              description: "For text elements only: only match elements with style.fontSize >= this value. Useful for 'all headings'.",
+            },
+            maxFontSize: {
+              type: SchemaType.NUMBER,
+              description: "For text elements only: only match elements with style.fontSize <= this value. Useful for 'all body text'.",
+            },
+          },
+        },
+        stylePatch: {
+          type: SchemaType.OBJECT,
+          description: "Shallow-merged into element.style. Fields must be valid for the targeted element type.",
+          properties: {},
+        },
+      },
+      required: ["filter", "stylePatch"],
+    },
+  },
+  {
+    name: "check_overlaps",
+    description:
+      "Detect overlapping element bounding boxes on a slide. Returns pairs that intersect so AI can decide whether the overlap is intentional (e.g. shape+text grouping) or an accidental layout bug.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+      },
+      required: ["slideId"],
+    },
+  },
+  {
+    name: "check_contrast",
+    description:
+      "Check WCAG contrast ratio for text elements against the slide background. Returns elements with ratio < 4.5 (AA standard). Use for accessibility review.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+      },
+      required: ["slideId"],
+    },
+  },
+  {
+    name: "lint_slide",
+    description:
+      "Run combined design quality checks on a slide: overlaps, contrast, out-of-bounds elements, empty text, and missing titles. Returns all issues found. Use as a self-check before finalizing a slide.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING },
+      },
+      required: ["slideId"],
+    },
+  },
+  {
+    name: "snapshot",
+    description:
+      "Save the current deck state under a label for later restore. Useful as a safety checkpoint before a risky multi-step edit. Snapshots are in-memory and cleared on page reload.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        label: { type: SchemaType.STRING, description: "Label to identify this snapshot" },
+      },
+      required: ["label"],
+    },
+  },
+  {
+    name: "restore",
+    description:
+      "Restore the deck to a previously saved snapshot by label. Discards all changes made since the snapshot was taken. Use only when an edit went wrong and you need to start over.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        label: { type: SchemaType.STRING, description: "Snapshot label to restore" },
+      },
+      required: ["label"],
+    },
+  },
+  {
+    name: "list_snapshots",
+    description: "List all saved snapshot labels in this session.",
+    parameters: { type: SchemaType.OBJECT, properties: {} },
+  },
+  {
+    name: "undo",
+    description:
+      "Undo the most recent deck change via the editor's temporal history. Complements snapshot/restore: undo walks back one step, restore jumps to a named checkpoint.",
+    parameters: { type: SchemaType.OBJECT, properties: {} },
+  },
+  {
+    name: "redo",
+    description: "Redo the most recently undone deck change.",
+    parameters: { type: SchemaType.OBJECT, properties: {} },
+  },
+  {
+    name: "merge_slides",
+    description:
+      "Merge multiple slides into a single target slide. Elements from source slides are appended to the target, with y-offset adjustments to stack them vertically. Source slides are deleted after merge. Useful for consolidating outlines into a single summary slide.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        targetSlideId: { type: SchemaType.STRING, description: "Slide that will receive the merged content" },
+        sourceSlideIds: {
+          type: SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          description: "Slides whose elements will be moved into the target. The target itself may be omitted from this list.",
+        },
+      },
+      required: ["targetSlideId", "sourceSlideIds"],
+    },
+  },
+  {
+    name: "split_slide",
+    description:
+      "Split a slide at a pivot element. Elements at and after the pivot are moved into a new slide inserted after the source. Useful when a slide has accumulated too much content and needs to be broken up.",
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        slideId: { type: SchemaType.STRING, description: "Source slide to split" },
+        pivotElementId: { type: SchemaType.STRING, description: "First element that should move to the new slide" },
+        newSlideId: { type: SchemaType.STRING, description: "ID for the new slide" },
+      },
+      required: ["slideId", "pivotElementId", "newSlideId"],
+    },
+  },
 ];
 
 // ── Project file reference tools (only available when a project is @mentioned) ──

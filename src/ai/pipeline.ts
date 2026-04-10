@@ -11,6 +11,56 @@ import type { Content, Part } from "@google/generative-ai";
 
 const MAX_ATTACHED_IMAGES = 3;
 
+/**
+ * In-memory snapshot map for the snapshot/restore tools. Labels are
+ * user-provided so the AI agent can create meaningful checkpoints like
+ * "before-tikz-rewrite" and roll back on its own. Cleared on reload.
+ */
+const snapshots = new Map<string, Deck>();
+
+/**
+ * WCAG relative luminance for an sRGB color. Input accepts #rgb, #rrggbb,
+ * or the literal "transparent". Unknown strings fall back to assuming
+ * white, which is the conservative choice for contrast checks.
+ */
+function relativeLuminance(color: string): number {
+  const hex = parseHexColor(color);
+  if (!hex) return 1;
+  const srgb = hex.map((c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * srgb[0]! + 0.7152 * srgb[1]! + 0.0722 * srgb[2]!;
+}
+
+function parseHexColor(color: string): [number, number, number] | null {
+  const trimmed = color.trim().toLowerCase();
+  if (trimmed === "transparent") return null;
+  const hex = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (hex.length === 3) {
+    const r = parseInt(hex[0]! + hex[0]!, 16);
+    const g = parseInt(hex[1]! + hex[1]!, 16);
+    const b = parseInt(hex[2]! + hex[2]!, 16);
+    if ([r, g, b].some(Number.isNaN)) return null;
+    return [r, g, b];
+  }
+  if (hex.length === 6) {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    if ([r, g, b].some(Number.isNaN)) return null;
+    return [r, g, b];
+  }
+  return null;
+}
+
+function contrastRatio(fg: string, bg: string): number {
+  const l1 = relativeLuminance(fg);
+  const l2 = relativeLuminance(bg);
+  const [light, dark] = l1 > l2 ? [l1, l2] : [l2, l1];
+  return (light + 0.05) / (dark + 0.05);
+}
+
 // ---------- Types ----------
 
 export type PipelineIntent = "create" | "modify" | "notes" | "review" | "chat" | "style_inquiry";
@@ -454,6 +504,258 @@ async function executeTool(name: string, args: Record<string, unknown>): Promise
       }
       store.replaceDeck({ ...deck, meta: { ...deck.meta, ...patch } });
       return `Deck meta updated: ${Object.keys(patch).join(", ")}.`;
+    }
+    case "apply_style_to_all": {
+      if (!deck) return "No deck loaded.";
+      const filter = (args.filter as Record<string, unknown>) ?? {};
+      const stylePatch = (args.stylePatch as Record<string, unknown>) ?? {};
+      const filterType = filter.type as string | undefined;
+      const slideRange = filter.slideRange as [number, number] | undefined;
+      const minFontSize = filter.minFontSize as number | undefined;
+      const maxFontSize = filter.maxFontSize as number | undefined;
+      const startIdx = slideRange ? Math.max(0, slideRange[0] - 1) : 0;
+      const endIdx = slideRange ? Math.min(deck.slides.length, slideRange[1]) : deck.slides.length;
+      let updated = 0;
+      for (let i = startIdx; i < endIdx; i++) {
+        const slide = deck.slides[i]!;
+        for (const el of slide.elements) {
+          if (filterType && el.type !== filterType) continue;
+          if (el.type === "text" && (minFontSize !== undefined || maxFontSize !== undefined)) {
+            const fs = (el as { style?: { fontSize?: number } }).style?.fontSize ?? 0;
+            if (minFontSize !== undefined && fs < minFontSize) continue;
+            if (maxFontSize !== undefined && fs > maxFontSize) continue;
+          }
+          const currentStyle = (el as { style?: Record<string, unknown> }).style ?? {};
+          store.updateElement(slide.id, el.id, {
+            style: { ...currentStyle, ...stylePatch },
+          } as Partial<SlideElement>);
+          updated++;
+        }
+      }
+      return `Updated style on ${updated} element(s).`;
+    }
+    case "check_overlaps": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const boxes = slide.elements.map((e) => ({
+        id: e.id,
+        type: e.type,
+        x: e.position.x,
+        y: e.position.y,
+        w: (e.size as { w?: number }).w ?? 0,
+        h: (e.size as { h?: number }).h ?? 0,
+        groupId: (e as { groupId?: string }).groupId,
+      }));
+      const overlaps: Array<{ a: string; b: string; reason: string }> = [];
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i]!;
+          const b = boxes[j]!;
+          const intersects =
+            a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+          if (!intersects) continue;
+          // Grouped elements intentionally overlap — skip
+          if (a.groupId && a.groupId === b.groupId) continue;
+          overlaps.push({ a: a.id, b: b.id, reason: `${a.type} and ${b.type} bounding boxes intersect` });
+        }
+      }
+      if (overlaps.length === 0) return `No overlaps on slide "${slideId}".`;
+      return `Found ${overlaps.length} overlap(s):\n${overlaps.map((o) => `- ${o.a} ↔ ${o.b} (${o.reason})`).join("\n")}`;
+    }
+    case "check_contrast": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const slideBg =
+        (slide.background as { color?: string } | undefined)?.color ??
+        (deck.theme?.slide?.background as { color?: string } | undefined)?.color ??
+        "#0f172a";
+      const issues: string[] = [];
+      for (const el of slide.elements) {
+        if (el.type !== "text") continue;
+        const color = (el as { style?: { color?: string } }).style?.color ?? "#ffffff";
+        const ratio = contrastRatio(color, slideBg);
+        if (ratio < 4.5) {
+          issues.push(`- ${el.id}: ${color} on ${slideBg} → ratio ${ratio.toFixed(2)} (WCAG AA requires ≥ 4.5)`);
+        }
+      }
+      if (issues.length === 0) return `All text on slide "${slideId}" passes WCAG AA contrast.`;
+      return `Low-contrast text on slide "${slideId}":\n${issues.join("\n")}`;
+    }
+    case "lint_slide": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const slide = deck.slides.find((s) => s.id === slideId);
+      if (!slide) return `Slide "${slideId}" not found.`;
+      const problems: string[] = [];
+      // Out-of-bounds
+      for (const el of slide.elements) {
+        const w = (el.size as { w?: number }).w ?? 0;
+        const h = (el.size as { h?: number }).h ?? 0;
+        if (el.position.x < 0 || el.position.y < 0 || el.position.x + w > 960 || el.position.y + h > 540) {
+          problems.push(`${el.id}: out of 960x540 bounds at (${el.position.x},${el.position.y}) ${w}x${h}`);
+        }
+      }
+      // Empty text
+      for (const el of slide.elements) {
+        if (el.type === "text" && !(el as { content: string }).content.trim()) {
+          problems.push(`${el.id}: empty text element`);
+        }
+      }
+      // Missing title
+      const hasTitle = slide.elements.some(
+        (e) => e.type === "text" && /^\s*#\s+/.test((e as { content: string }).content),
+      );
+      if (!hasTitle) problems.push(`no '#'-prefixed title element`);
+      // Overlaps (reuse logic, but inline for speed)
+      const boxes = slide.elements.map((e) => ({
+        id: e.id,
+        type: e.type,
+        x: e.position.x,
+        y: e.position.y,
+        w: (e.size as { w?: number }).w ?? 0,
+        h: (e.size as { h?: number }).h ?? 0,
+        groupId: (e as { groupId?: string }).groupId,
+      }));
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          const a = boxes[i]!;
+          const b = boxes[j]!;
+          if (a.groupId && a.groupId === b.groupId) continue;
+          if (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y) {
+            problems.push(`overlap: ${a.id} ↔ ${b.id}`);
+          }
+        }
+      }
+      // Contrast (text only)
+      const slideBg =
+        (slide.background as { color?: string } | undefined)?.color ??
+        (deck.theme?.slide?.background as { color?: string } | undefined)?.color ??
+        "#0f172a";
+      for (const el of slide.elements) {
+        if (el.type !== "text") continue;
+        const color = (el as { style?: { color?: string } }).style?.color ?? "#ffffff";
+        const ratio = contrastRatio(color, slideBg);
+        if (ratio < 4.5) {
+          problems.push(`low contrast: ${el.id} ratio ${ratio.toFixed(2)}`);
+        }
+      }
+      if (problems.length === 0) return `lint_slide "${slideId}": OK (${slide.elements.length} elements).`;
+      return `lint_slide "${slideId}" found ${problems.length} issue(s):\n${problems.map((p) => `- ${p}`).join("\n")}`;
+    }
+    case "snapshot": {
+      if (!deck) return "No deck loaded.";
+      const label = args.label as string;
+      snapshots.set(label, JSON.parse(JSON.stringify(deck)));
+      return `Snapshot "${label}" saved (${deck.slides.length} slides).`;
+    }
+    case "restore": {
+      const label = args.label as string;
+      const saved = snapshots.get(label);
+      if (!saved) return `ERROR: Snapshot "${label}" not found. Available: ${[...snapshots.keys()].join(", ") || "(none)"}`;
+      store.replaceDeck(JSON.parse(JSON.stringify(saved)));
+      return `Restored snapshot "${label}" (${saved.slides.length} slides).`;
+    }
+    case "list_snapshots": {
+      if (snapshots.size === 0) return "No snapshots.";
+      return `Snapshots: ${[...snapshots.keys()].join(", ")}`;
+    }
+    case "undo": {
+      const temporal = useDeckStore.temporal.getState();
+      if (temporal.pastStates.length === 0) return "Nothing to undo.";
+      temporal.undo();
+      return `Undid last change. ${temporal.pastStates.length} step(s) remain in history.`;
+    }
+    case "redo": {
+      const temporal = useDeckStore.temporal.getState();
+      if (temporal.futureStates.length === 0) return "Nothing to redo.";
+      temporal.redo();
+      return `Redid change. ${temporal.futureStates.length} redo step(s) remain.`;
+    }
+    case "merge_slides": {
+      if (!deck) return "No deck loaded.";
+      const targetId = args.targetSlideId as string;
+      const sourceIds = (args.sourceSlideIds as string[]).filter((id) => id !== targetId);
+      const target = deck.slides.find((s) => s.id === targetId);
+      if (!target) return `ERROR: target slide "${targetId}" not found.`;
+      const sources = sourceIds
+        .map((id) => deck.slides.find((s) => s.id === id))
+        .filter((s): s is Slide => !!s);
+      if (sources.length === 0) return `ERROR: no valid source slides.`;
+      // Compute base y-offset: start below existing target elements
+      let baseY = target.elements.reduce(
+        (max, el) => Math.max(max, el.position.y + ((el.size as { h?: number }).h ?? 0)),
+        0,
+      );
+      baseY += 20;
+      const usedIds = new Set<string>(target.elements.map((e) => e.id));
+      for (const s of deck.slides) for (const el of s.elements) usedIds.add(el.id);
+      const mergedElements: SlideElement[] = [...target.elements];
+      for (const src of sources) {
+        const srcMinY = src.elements.length > 0
+          ? Math.min(...src.elements.map((e) => e.position.y))
+          : 0;
+        const srcMaxY = src.elements.length > 0
+          ? Math.max(...src.elements.map((e) => e.position.y + ((e.size as { h?: number }).h ?? 0)))
+          : 0;
+        const dy = baseY - srcMinY;
+        for (const el of src.elements) {
+          let newId = `${el.id}_from_${src.id}`;
+          let suffix = 2;
+          while (usedIds.has(newId)) newId = `${el.id}_from_${src.id}_${suffix++}`;
+          usedIds.add(newId);
+          mergedElements.push({
+            ...el,
+            id: newId,
+            position: { x: el.position.x, y: el.position.y + dy },
+          });
+        }
+        baseY += (srcMaxY - srcMinY) + 20;
+      }
+      store.updateSlide(targetId, { elements: mergedElements });
+      for (const src of sources) store.deleteSlide(src.id);
+      return `Merged ${sources.length} slide(s) into "${targetId}" (${mergedElements.length} elements total).`;
+    }
+    case "split_slide": {
+      if (!deck) return "No deck loaded.";
+      const slideId = args.slideId as string;
+      const pivotId = args.pivotElementId as string;
+      const newSlideId = args.newSlideId as string;
+      const sourceIdx = deck.slides.findIndex((s) => s.id === slideId);
+      if (sourceIdx === -1) return `ERROR: slide "${slideId}" not found.`;
+      if (deck.slides.some((s) => s.id === newSlideId)) {
+        return `ERROR: new slide ID "${newSlideId}" already exists.`;
+      }
+      const source = deck.slides[sourceIdx]!;
+      const pivotIdx = source.elements.findIndex((e) => e.id === pivotId);
+      if (pivotIdx === -1) return `ERROR: pivot element "${pivotId}" not found on slide "${slideId}".`;
+      const keepElements = source.elements.slice(0, pivotIdx);
+      const movedElements = source.elements.slice(pivotIdx);
+      if (keepElements.length === 0 || movedElements.length === 0) {
+        return `ERROR: split would leave one side empty. Choose a pivot that keeps at least one element on each side.`;
+      }
+      // Rename moved elements to avoid ID conflicts across slides
+      const usedIds = new Set<string>();
+      for (const s of deck.slides) for (const el of s.elements) usedIds.add(el.id);
+      for (const el of keepElements) usedIds.add(el.id);
+      const renamed = movedElements.map((el) => {
+        let newId = `${el.id}_${newSlideId}`;
+        let suffix = 2;
+        while (usedIds.has(newId)) newId = `${el.id}_${newSlideId}_${suffix++}`;
+        usedIds.add(newId);
+        return { ...el, id: newId };
+      });
+      store.updateSlide(slideId, { elements: keepElements });
+      const newSlide: Slide = {
+        id: newSlideId,
+        elements: renamed,
+        notes: source.notes,
+      };
+      store.addSlide(newSlide, sourceIdx);
+      return `Split "${slideId}" at "${pivotId}". Kept ${keepElements.length} elements; moved ${renamed.length} to new slide "${newSlideId}".`;
     }
     case "duplicate_slide": {
       if (!deck) return "No deck loaded.";
