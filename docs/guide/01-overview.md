@@ -37,9 +37,11 @@ A Deckode presentation is a single `deck.json` file (with optional `$ref` splits
 - All `position` and `size` values use this virtual coordinate space
 - The renderer scales the virtual canvas to fit the actual viewport
 
-# How the AI Pipeline Sees Your Deck
+# How the Deckode In-App AI Pipeline Sees Your Deck
 
-AI agents do not receive the full `deck.json` on every call. They see a compressed representation that grows richer on demand:
+> **Scope**: This section describes the context-assembly mechanism used by the Deckode in-app AI pipeline (the chat panel inside the editor). If you are an external AI agent (Claude Code, etc.) reading `deck.json` via file-system tools, none of this applies — you receive the raw JSON and there is no sliding window, no multimodal attach, no background captioning. The section is kept here as reference material for in-app agents and for developers working on the pipeline.
+
+The in-app pipeline does not pass the full `deck.json` to every model call. It sees a compressed representation that grows richer on demand:
 
 1. **Deck summary**: title, slide count, and for each slide the extracted title (via the `#` markdown heading convention, falling back to largest fontSize / topmost y / first text), element count, element types, and a per-element one-line hint. Image hints prefer `aiSummary` → `caption` → `description` → `alt`. Shape hints show the shape kind. Code hints show language + line count. This is what powers routing and high-level planning.
 

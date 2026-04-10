@@ -68,15 +68,28 @@ When asked to modify an existing deck:
 
 ## Reading Deck State Efficiently
 
-Reading deck state costs tokens. Always prefer the narrowest read that answers your question.
+**Universal principle** (applies to any AI agent, including external ones like Claude Code editing `deck.json` directly):
 
-**Read-before-write principle**: Before modifying any slide or element, you must know its current state. But "knowing the current state" rarely means "dump the entire deck."
+Reading deck state costs tokens. Always prefer the narrowest read that answers your question. Before modifying any slide or element, you must know its current state — but "knowing the current state" rarely means "dump the entire deck." Avoid these anti-patterns regardless of what tools you have available:
 
-**Read tool hierarchy** (use the highest-level summary that still answers your question):
+- Reading every slide before deciding what to do.
+- Re-reading the same slide multiple times in one turn. Cache results mentally.
+- Reading the entire deck just to confirm a slide exists.
+- Reading slides you have no intention of modifying. If the user said "fix slide 3", only look at slide 3.
+
+**Image content**: The deck summary conveys image semantics via `aiSummary` → `caption` → `description` → `alt` in that priority order. An image with none of those fields is invisible to upstream planning. Always populate `alt` when you add a new image.
+
+---
+
+> **Scope note** — everything below this line assumes access to the Deckode in-app AI pipeline (the chat panel inside the editor), which exposes ~50 specialized tools. If you are an external AI agent (Claude Code, a generic LLM editing `deck.json` via file-system Read/Edit, etc.), these tools do **not** exist in your environment. Skip to the "AI Constraints" section below and edit `deck.json` directly. The tool names in the rest of this document are reference material for in-app agents only.
+
+---
+
+**In-app read tool hierarchy** (use the highest-level summary that still answers your question):
 
 1. **`list_slide_titles`** — One line per slide with its ID and extracted title. Cheapest possible read. Use this when you need a table of contents — e.g., "which slide is about transformers?". Nothing else.
 
-2. **`read_deck`** — Returns a summary of the entire deck: title, author, slide count, and per-slide metadata (id, extracted title, element count, element types). Use this to understand overall structure or to find candidate slides by element type. **This is your default first read when list_slide_titles is not enough.** It does NOT return full element data.
+2. **`read_deck`** — Returns a summary of the entire deck: title, author, slide count, and per-slide metadata (id, extracted title, element count, element types). Use this to understand overall structure or to find candidate slides by element type. **Your default first read when list_slide_titles is not enough.** It does NOT return full element data.
 
 3. **`find_elements(query)`** — Search across the deck by `{ type, textContains, slideRange }`. Use this when you know what to look for but not where it is. Example: `find_elements({ type: "image", textContains: "chart" })`. Avoids reading slides you do not need.
 
@@ -84,22 +97,15 @@ Reading deck state costs tokens. Always prefer the narrowest read that answers y
 
 5. **`get_slide_outline(slideId)`** — One line per element on a single slide with id, type, position, size, and a short content preview. Cheaper than `read_slide` when you only need layout information, not full content.
 
-6. **`read_slide(slideId)`** — Returns the full JSON of a single slide, including all element fields. Use this when you need every field of every element on a slide. Never call `read_slide` on every slide in a loop — that defeats the purpose of the summary tier.
+6. **`read_slide(slideId)`** — Returns the full JSON of a single slide, including all element fields. Use this when you need every field of every element on a slide. Never call `read_slide` on every slide in a loop.
 
 7. **`read_element(slideId, elementId)`** — Returns the full JSON of a single element. Prefer this over `read_slide` when you already know the element ID and only need its fields. Cheapest way to inspect one element.
 
-**Anti-patterns to avoid**:
-- Calling `read_slide` on every slide before deciding what to do. Use `read_deck` or `find_elements` first.
-- Re-reading the same slide multiple times in one turn. Cache the result mentally and reason about it.
-- Reading the entire deck just to confirm a slide exists. `read_deck` already includes all slide IDs.
-- Reading slides you have no intention of modifying. If the user said "fix slide 3", you only need to read slide 3.
-- Using `read_slide` when `get_slide_outline` or `read_element` would suffice.
-
-**When you genuinely need everything**: For deck-wide refactors (e.g., "unify all heading colors", "renumber all slides"), you may not even need to read every slide — prefer `apply_style_to_all` or `find_elements` with a filter. If you still must read everything, batch reads at the start and avoid interleaving reads and writes.
-
-**Image content in summaries**: The deck summary passes image `aiSummary`/`caption`/`description`/`alt` as a text hint so you can reason about image content without seeing pixels. When an image lacks all of those, it shows as `image[no alt — UNDESCRIBED]` — that is your signal that you cannot reason about its contents. Two options: (a) call `generate_image_caption(slideId, elementId)` to force a caption now and wait for the result; (b) call `read_slide` or `read_element` on the image, which triggers a background caption for the next read. Always populate `alt` when you add a new image so future reads carry the semantics for free.
+**In-app image caption tools**: When an image shows as `image[no alt — UNDESCRIBED]` in the deck summary, either (a) call `generate_image_caption(slideId, elementId)` to force a caption now and wait for the result, or (b) call `read_slide` / `read_element` on the image, which fires a background caption that the next read will pick up.
 
 ## Tool Catalog by Task
+
+> **Scope**: This entire section describes tools available only to the Deckode in-app AI pipeline. External agents editing `deck.json` via file-system tools should skip it — none of these tools exist in your environment. Use the schema sections (`03a`, `03b`, `04*`) and the "AI Constraints" rules below to edit the JSON directly.
 
 Pick the most specific tool for the job. Specialized tools have better validation, smaller token footprints, and avoid the common failure modes that come with free-form edits.
 
@@ -200,11 +206,11 @@ When a user asks for an edit, pick tools in this order:
 
 # AI Constraints
 
-These rules MUST be followed by all AI agents when generating or modifying decks.
+These rules MUST be followed by all AI agents when generating or modifying decks, whether in-app or external.
 
 ## Element Rules
 
-- Only use the provided tools to modify the deck. Never output raw JSON.
+- **In-app agents**: Only use the provided tools to modify the deck. Never output raw JSON. **External agents** (Claude Code, generic LLMs editing `deck.json` directly via file-system tools): you ARE the tool — edit the JSON in place, but honor all schema rules below.
 - All element IDs must be unique across the entire deck.
 - All slide IDs must be unique.
 - Positions must be within bounds: 0 <= x <= 960, 0 <= y <= 540.

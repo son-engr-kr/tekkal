@@ -32,7 +32,7 @@ Renders an image.
 
 **Alt text rule for AI agents**: When adding or modifying any image element, you MUST populate `alt`. Treat `alt` as required even though the schema marks it optional. The deck-summary representation passed to the Planner agent does not include image pixels — it only sees `alt`, `caption`, `description`, or `aiSummary`. An image with none of these is invisible to upstream planning. If you do not know what the image depicts (e.g., user-uploaded asset with an opaque filename), call `generate_image_caption(slideId, elementId)` — it runs a multimodal Gemini call and writes the result to `aiSummary`. If captioning is not available, write a placeholder describing the filename and slot (`"User-uploaded asset 'diagram-final-v2.png' in slide 3 hero position"`) rather than leaving it blank.
 
-**Image editing tools** (prefer these over raw `update_element` patches):
+**Image editing tools** (Deckode in-app AI pipeline only — external agents editing `deck.json` directly should patch the fields themselves):
 
 - `set_image_alt(slideId, elementId, alt)` — replace alt text
 - `crop_image(slideId, elementId, top?, right?, bottom?, left?)` — non-destructive crop via `style.crop` fractions. The renderer applies `clip-path: inset(...)` and the original asset is preserved.
