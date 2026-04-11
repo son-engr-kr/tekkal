@@ -645,6 +645,16 @@ export const useDeckStore = create<DeckState>()(
           set((state) => {
             assert(state.deck !== null, "No deck loaded");
             assertNoLineRotation(element);
+            // Element IDs are deck-global. A duplicate would be
+            // silently renamed by the next syncCounters pass after
+            // save, but until then deleteElement / updateElement /
+            // animation targets resolve to the first match only —
+            // leaving a zombie copy that can't be addressed by id.
+            for (const s of state.deck.slides) {
+              if (s.elements.some((e) => e.id === element.id)) {
+                assert(false, `Element id "${element.id}" already exists on slide "${s.id}" — duplicate ids are not allowed`);
+              }
+            }
             const slide = getSlide(state.deck.slides, slideId);
             slide.elements.push(element);
             state.versionId += 1;

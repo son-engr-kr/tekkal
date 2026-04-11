@@ -78,6 +78,52 @@ describe("assertNoLineRotation — guards against arrow/line with rotation", () 
     }).not.toThrow();
   });
 
+  it("rejects add_element when the element ID already exists on the same slide", () => {
+    useDeckStore.getState().openProject("test", deck());
+    useDeckStore.getState().addElement("s1", {
+      id: "dup",
+      type: "text",
+      content: "first",
+      position: { x: 0, y: 0 },
+      size: { w: 100, h: 50 },
+    });
+    expect(() => {
+      useDeckStore.getState().addElement("s1", {
+        id: "dup",
+        type: "text",
+        content: "second",
+        position: { x: 0, y: 0 },
+        size: { w: 100, h: 50 },
+      });
+    }).toThrow(/already exists|duplicate/i);
+  });
+
+  it("rejects add_element when the element ID exists on any other slide", () => {
+    // Element IDs are deck-global per syncCounters / cloneSlide
+    // assumptions. A duplicate across slides would be silently
+    // renamed by the next save, and any in-session animations or
+    // comments referencing it would resolve to the wrong element.
+    const d = deck();
+    d.slides.push({ id: "s2", elements: [] });
+    useDeckStore.getState().openProject("test", d);
+    useDeckStore.getState().addElement("s1", {
+      id: "shared",
+      type: "text",
+      content: "on s1",
+      position: { x: 0, y: 0 },
+      size: { w: 100, h: 50 },
+    });
+    expect(() => {
+      useDeckStore.getState().addElement("s2", {
+        id: "shared",
+        type: "text",
+        content: "on s2",
+        position: { x: 0, y: 0 },
+        size: { w: 100, h: 50 },
+      });
+    }).toThrow(/already exists|duplicate/i);
+  });
+
   it("rejects update_element that adds rotation to an existing line shape", () => {
     useDeckStore.getState().openProject("test", deck());
     useDeckStore.getState().addElement("s1", {
