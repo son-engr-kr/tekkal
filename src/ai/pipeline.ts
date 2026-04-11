@@ -200,7 +200,7 @@ function sanitizeToolArgs(obj: unknown): void {
   }
 }
 
-async function executeTool(name: string, args: Record<string, unknown>): Promise<string> {
+export async function executeTool(name: string, args: Record<string, unknown>): Promise<string> {
   // Sanitize text content and fix missing arrow waypoints
   sanitizeToolArgs(args);
 
