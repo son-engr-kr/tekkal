@@ -1097,6 +1097,31 @@ useDeckStore.subscribe(
   },
 );
 
+// Wrap temporal.undo / temporal.redo so they bump versionId. The
+// temporal middleware partializes only `deck` and writes through
+// its own set bypass, so the regular action path that bumps
+// versionId never runs on undo/redo. Without this, undoing back
+// across a save would leave the dirty selector reading false: the
+// in-memory deck reverts to the pre-save state, the auto-save loop
+// (which subscribes to versionId !== savedVersionId) does not fire,
+// and disk content stays stuck on the redone edits forever.
+{
+  const t = useDeckStore.temporal.getState() as unknown as {
+    undo: (steps?: number) => void;
+    redo: (steps?: number) => void;
+  };
+  const origUndo = t.undo.bind(t);
+  const origRedo = t.redo.bind(t);
+  t.undo = (steps?: number) => {
+    origUndo(steps);
+    useDeckStore.setState((s) => ({ versionId: s.versionId + 1 }));
+  };
+  t.redo = (steps?: number) => {
+    origRedo(steps);
+    useDeckStore.setState((s) => ({ versionId: s.versionId + 1 }));
+  };
+}
+
 // Auto-clear crop/trim mode when selection or slide changes
 useDeckStore.subscribe(
   (s) => s.selectedElementIds,

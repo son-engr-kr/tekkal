@@ -7,7 +7,7 @@
  * indicate real bugs a user would hit during normal editing.
  */
 // @ts-nocheck — test file accesses .content on SlideElement union type
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useDeckStore, setStoreAdapter } from "./deckStore";
 import type { Deck, Slide, SlideElement } from "@/types/deck";
 import type { FileSystemAdapter } from "@/adapters/types";
@@ -203,6 +203,39 @@ describe("saveToDisk — adversarial edge cases", () => {
 
     // isSaving must be cleared even though saveDeck threw
     expect(useDeckStore.getState().isSaving).toBe(false);
+  });
+
+  it("marks the deck dirty after temporal.undo so auto-save fires", () => {
+    // Auto-save subscribes to (versionId !== savedVersionId). The
+    // temporal middleware restores `deck` via partialize but never
+    // touches versionId, so undo back across a save would otherwise
+    // leave the in-memory deck out of sync with disk forever — the
+    // user sees the undone state, the disk still has the redone
+    // edits, and no save is queued.
+    vi.useFakeTimers();
+    try {
+      useDeckStore.getState().openProject("test", deck([slide("s0", [el("s0-e0", "v0")])]));
+      const initialVersion = useDeckStore.getState().versionId;
+      useDeckStore.setState({ savedVersionId: initialVersion });
+
+      useDeckStore.getState().updateElement("s0", "s0-e0", { content: "v1" });
+      // Flush the 300ms temporal debounce so the edit is committed
+      // to past states. Without this, undo would be a no-op.
+      vi.advanceTimersByTime(400);
+
+      const afterEditVersion = useDeckStore.getState().versionId;
+      useDeckStore.setState({ savedVersionId: afterEditVersion });
+      expect(useDeckStore.getState().versionId).toBe(useDeckStore.getState().savedVersionId);
+
+      const temporal = useDeckStore.temporal.getState();
+      expect(temporal.pastStates.length).toBeGreaterThan(0);
+
+      temporal.undo();
+
+      expect(useDeckStore.getState().versionId).not.toBe(useDeckStore.getState().savedVersionId);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does NOT mark the deck as saved when adapter.saveDeck throws", async () => {
