@@ -479,7 +479,7 @@ ${CONSTRAINTS}
 `;
 }
 
-interface FormatDeckStateOptions {
+export interface FormatDeckStateOptions {
   /** Slide ID the user is currently focused on. Triggers sliding-window mode when set. */
   anchorSlideId?: string;
   /** Number of slides on each side of the anchor that get full element hints. Default 2. */
@@ -497,7 +497,7 @@ interface FormatDeckStateOptions {
  * title-only line. This keeps prompts bounded for large decks while preserving
  * full local context where the user is working.
  */
-function formatDeckState(deck: Deck, opts: FormatDeckStateOptions = {}): string {
+export function formatDeckState(deck: Deck, opts: FormatDeckStateOptions = {}): string {
   const lines: string[] = [
     `Title: "${deck.meta.title}" | Author: ${deck.meta.author ?? "N/A"} | Aspect: ${deck.meta.aspectRatio}`,
     `Theme background: ${deck.theme?.slide?.background?.color ?? "default"}`,

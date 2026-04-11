@@ -25,7 +25,7 @@ const snapshots = new Map<string, Deck>();
  * not '##' or '###') becomes the body. Deeper headings (##, ###) are left
  * inside the body where renderMarkdown will handle them as sub-headings.
  */
-function parseOutline(markdown: string): Array<{ title: string; body: string }> {
+export function parseOutline(markdown: string): Array<{ title: string; body: string }> {
   const lines = markdown.split("\n");
   const blocks: Array<{ title: string; body: string[] }> = [];
   let current: { title: string; body: string[] } | null = null;
