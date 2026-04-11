@@ -1065,6 +1065,14 @@ export async function executeTool(name: string, args: Record<string, unknown>): 
       const text = args.text as string;
       const elementId = args.elementId as string | undefined;
       const category = args.category as string | undefined;
+      const commentSlide = deck.slides.find((s) => s.id === slideId);
+      if (!commentSlide) return `ERROR: slide "${slideId}" not found.`;
+      // If the comment is anchored to an element, require that
+      // element to exist — otherwise it becomes a ghost comment that
+      // the inspector displays floating in empty space.
+      if (elementId && !commentSlide.elements.some((e) => e.id === elementId)) {
+        return `ERROR: element "${elementId}" not found on slide "${slideId}".`;
+      }
       const validCategories = ["content", "design", "bug", "todo", "question", "done"] as const;
       const finalCategory = category && (validCategories as readonly string[]).includes(category)
         ? (category as typeof validCategories[number])

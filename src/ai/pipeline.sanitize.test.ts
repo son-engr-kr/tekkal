@@ -136,6 +136,41 @@ describe("sanitizeToolArgs — line/arrow waypoint auto-heal", () => {
     expect(useDeckStore.getState().deck!.slides[0]!.animations![0]!.target).toBe("e1");
   });
 
+  it("rejects add_comment anchored to a nonexistent element", async () => {
+    useDeckStore.getState().openProject("test", {
+      version: "0.1.0",
+      meta: { title: "Test", aspectRatio: "16:9" },
+      slides: [{ id: "s1", elements: [{
+        id: "e1",
+        type: "text",
+        content: "hi",
+        position: { x: 0, y: 0 },
+        size: { w: 100, h: 50 },
+      }] }],
+    } as Deck);
+    const result = await executeTool("add_comment", {
+      slideId: "s1",
+      text: "fix this",
+      elementId: "eMISSING",
+    });
+    expect(result).toMatch(/ERROR/i);
+    expect(useDeckStore.getState().deck!.slides[0]!.comments ?? []).toHaveLength(0);
+  });
+
+  it("allows add_comment at slide level (no elementId)", async () => {
+    useDeckStore.getState().openProject("test", {
+      version: "0.1.0",
+      meta: { title: "Test", aspectRatio: "16:9" },
+      slides: [{ id: "s1", elements: [] }],
+    } as Deck);
+    const result = await executeTool("add_comment", {
+      slideId: "s1",
+      text: "slide-level note",
+    });
+    expect(result).not.toMatch(/ERROR/i);
+    expect(useDeckStore.getState().deck!.slides[0]!.comments).toHaveLength(1);
+  });
+
   it("does not clobber existing waypoints on a line", async () => {
     useDeckStore.getState().openProject("test", deck());
     const custom = [
