@@ -181,12 +181,17 @@ function sanitizeToolArgs(obj: unknown): void {
   if (rec.type === "text" && typeof rec.content === "string") {
     rec.content = (rec.content as string).replace(/\\\\([a-zA-Z]+)/g, "\\$1");
   }
-  // Auto-add waypoints to arrows that are missing them
-  if (rec.shape === "arrow" && rec.style && rec.size) {
+  // Auto-add waypoints to arrows and lines that are missing them.
+  // Both shape kinds route direction through style.waypoints — every
+  // export backend (pdf, pdfNative, pptx) treats <2 waypoints as
+  // non-renderable and the store's assertNoLineRotation check
+  // forbids carrying direction via rotation instead.
+  if ((rec.shape === "arrow" || rec.shape === "line") && rec.size) {
+    if (!rec.style || typeof rec.style !== "object") rec.style = {};
     const style = rec.style as Record<string, unknown>;
     const size = rec.size as { w: number; h: number };
     if (!style.waypoints) {
-      // Horizontal arrow by default; vertical if h > w
+      // Horizontal by default; vertical if h > w
       if (size.h > size.w) {
         style.waypoints = [{ x: 0, y: 0 }, { x: 0, y: size.h }];
       } else {
