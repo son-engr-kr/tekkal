@@ -33,17 +33,44 @@ interface ContextBarState {
   clearElementRefs: () => void;
 }
 
-/** Extract a short title from a slide's text elements. */
+/**
+ * Extract a short title from a slide's text elements.
+ * Priority: markdown `# heading` (whitespace required, matches the
+ * editor's renderer) > first text whose content is not a bare hex
+ * color > slide number. Hex-only content gets filtered because the
+ * user perceives it as a stray color value, not a title.
+ */
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{3,8}$/;
+
 function getSlideTitle(slideIndex: number): string {
   const deck = useDeckStore.getState().deck;
   if (!deck) return `Slide ${slideIndex + 1}`;
   const slide = deck.slides[slideIndex];
   if (!slide) return `Slide ${slideIndex + 1}`;
-  const textEl = slide.elements.find((e) => e.type === "text");
-  if (textEl && "content" in textEl && typeof textEl.content === "string") {
-    const preview = textEl.content.replace(/\n/g, " ").slice(0, 40);
-    return preview || `Slide ${slideIndex + 1}`;
+  const textEls = slide.elements.filter(
+    (e): e is typeof e & { content: string } =>
+      e.type === "text" && "content" in e && typeof (e as { content: unknown }).content === "string",
+  );
+  if (textEls.length === 0) return `Slide ${slideIndex + 1}`;
+
+  // Prefer a markdown `# heading` (with whitespace) when present.
+  for (const t of textEls) {
+    const m = t.content.match(/^\s*#+\s+(.+)/);
+    if (m) {
+      return m[1]!.split("\n", 1)[0]!.trim().slice(0, 40);
+    }
   }
+
+  // Skip text whose entire content is a bare hex color — that's the
+  // user's reported #FFFFFF / #ffffff case, where a color value got
+  // pasted or auto-injected and was being shown as the slide title.
+  for (const t of textEls) {
+    const trimmed = t.content.trim();
+    if (HEX_COLOR_RE.test(trimmed)) continue;
+    const preview = t.content.replace(/\n/g, " ").slice(0, 40);
+    if (preview) return preview;
+  }
+
   return `Slide ${slideIndex + 1}`;
 }
 
