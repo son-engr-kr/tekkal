@@ -581,6 +581,28 @@ export const useDeckStore = create<DeckState>()(
         addSlide: (slide, afterIndex) =>
           set((state) => {
             assert(state.deck !== null, "No deck loaded");
+            // Reject duplicate slide ids — addSlide just pushed
+            // unconditionally, so a duplicate would shadow the
+            // original until the next save's syncCounters renamed
+            // it. Within the session, deleteSlide / moveSlide /
+            // findIndex hit the first match only, so the duplicate
+            // became unreachable by id.
+            for (const s of state.deck.slides) {
+              assert(s.id !== slide.id, `Slide id "${slide.id}" already exists — duplicate slide ids are not allowed`);
+            }
+            // Same guard for the new slide's element ids: they must
+            // not collide with element ids already used elsewhere in
+            // the deck (element ids are deck-global, see addElement).
+            const liveElementIds = new Set<string>();
+            for (const s of state.deck.slides) {
+              for (const e of s.elements) liveElementIds.add(e.id);
+            }
+            const newSlideIds = new Set<string>();
+            for (const e of slide.elements) {
+              assert(!liveElementIds.has(e.id), `Element id "${e.id}" in new slide "${slide.id}" already exists in the deck`);
+              assert(!newSlideIds.has(e.id), `Element id "${e.id}" appears twice in new slide "${slide.id}"`);
+              newSlideIds.add(e.id);
+            }
             const idx = afterIndex ?? state.deck.slides.length;
             const insertAt = idx + 1;
             slide._ref = `./slides/${slide.id}.json`;

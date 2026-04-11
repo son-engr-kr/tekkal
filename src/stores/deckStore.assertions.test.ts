@@ -124,6 +124,36 @@ describe("assertNoLineRotation — guards against arrow/line with rotation", () 
     }).toThrow(/already exists|duplicate/i);
   });
 
+  it("rejects addSlide when the slide id already exists", () => {
+    useDeckStore.getState().openProject("test", deck());
+    expect(() => {
+      useDeckStore.getState().addSlide({ id: "s1", elements: [] });
+    }).toThrow(/already exists|duplicate/i);
+  });
+
+  it("rejects addSlide when the new slide reuses an existing element id", () => {
+    useDeckStore.getState().openProject("test", deck());
+    useDeckStore.getState().addElement("s1", {
+      id: "shared",
+      type: "text",
+      content: "on s1",
+      position: { x: 0, y: 0 },
+      size: { w: 100, h: 50 },
+    });
+    expect(() => {
+      useDeckStore.getState().addSlide({
+        id: "s2",
+        elements: [{
+          id: "shared",
+          type: "text",
+          content: "on s2",
+          position: { x: 0, y: 0 },
+          size: { w: 100, h: 50 },
+        }],
+      });
+    }).toThrow(/already exists/i);
+  });
+
   it("rejects update_element that adds rotation to an existing line shape", () => {
     useDeckStore.getState().openProject("test", deck());
     useDeckStore.getState().addElement("s1", {
