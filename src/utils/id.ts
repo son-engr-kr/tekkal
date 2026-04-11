@@ -6,6 +6,15 @@ let elementCounter = 100;
 /**
  * Advance counters past existing IDs and deduplicate any collisions.
  * Mutates the deck in-place if duplicates are found.
+ *
+ * When a duplicate element ID is renamed, animations and comments in
+ * the same slide that reference the old ID are remapped to the new ID
+ * — otherwise they silently become orphaned (the renderer would drop
+ * the animation and the comment would point at a non-existent element).
+ *
+ * When a duplicate slide ID is renamed, the slide's `_ref` path is
+ * updated to match the new ID so the next save does not write to the
+ * wrong file and collide with a different slide.
  */
 export function syncCounters(deck: Deck): void {
   const seenSlides = new Set<string>();
@@ -18,18 +27,49 @@ export function syncCounters(deck: Deck): void {
 
     // Deduplicate slide ID
     if (seenSlides.has(slide.id)) {
-      slide.id = nextSlideId();
+      const newId = nextSlideId();
+      slide.id = newId;
+      // Keep _ref aligned with the new ID. If the slide had no _ref,
+      // leave it undefined (the save logic generates one on write).
+      if ((slide as unknown as { _ref?: string })._ref !== undefined) {
+        (slide as unknown as { _ref?: string })._ref = `./slides/${newId}.json`;
+      }
     }
     seenSlides.add(slide.id);
+
+    // Track old→new element ID renames for this slide so we can
+    // remap animation targets and comment anchors after the loop.
+    const renamedElements = new Map<string, string>();
 
     for (const el of slide.elements) {
       const eNum = parseIdNum(el.id, "e");
       if (eNum >= elementCounter) elementCounter = eNum + 1;
 
       if (seenElements.has(el.id)) {
-        el.id = nextElementId();
+        const oldId = el.id;
+        const newId = nextElementId();
+        el.id = newId;
+        renamedElements.set(oldId, newId);
       }
       seenElements.add(el.id);
+    }
+
+    // Remap animations that targeted renamed elements
+    if (renamedElements.size > 0 && slide.animations) {
+      for (const anim of slide.animations) {
+        const newTarget = renamedElements.get(anim.target);
+        if (newTarget) anim.target = newTarget;
+      }
+    }
+
+    // Remap comment anchors
+    if (renamedElements.size > 0 && slide.comments) {
+      for (const comment of slide.comments) {
+        if (comment.elementId) {
+          const newElId = renamedElements.get(comment.elementId);
+          if (newElId) comment.elementId = newElId;
+        }
+      }
     }
   }
 
