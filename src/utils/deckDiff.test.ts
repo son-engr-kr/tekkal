@@ -249,39 +249,11 @@ describe("save conflict detection flow", () => {
   });
 });
 
-// ============================================================
-// Element deletion merge (existing bugs documented)
-// ============================================================
-
-describe("mergeDeck - element deletion conflicts", () => {
-  it("BUG: remote deletion is ignored — local element kept (should be deleted)", () => {
-    // Element not in remoteOrder → falls to "remaining IDs" loop → kept unconditionally
-    const base = makeDeck([makeSlide("s1", [makeElement("e1"), makeElement("e2")])]);
-    const local = structuredClone(base);
-    const remote = structuredClone(base);
-    remote.slides[0]!.elements = [remote.slides[0]!.elements[0]!]; // remove e2
-
-    const result = mergeDeck(base, local, remote);
-    expect(result.merged).not.toBeNull();
-    // BUG: e2 should be deleted but is kept
-    expect(result.merged!.slides[0]!.elements).toHaveLength(2);
-    expect(result.merged!.slides[0]!.elements[1]!.id).toBe("e2");
-  });
-
-  it("BUG: remote deletion of locally modified element — no conflict raised", () => {
-    // Same root cause: element not in remoteOrder → deletion not detected
-    const base = makeDeck([makeSlide("s1", [makeElement("e1"), makeElement("e2")])]);
-    const local = structuredClone(base);
-    (local.slides[0]!.elements[1]! as TextElement).content = "Modified locally";
-    const remote = structuredClone(base);
-    remote.slides[0]!.elements = [remote.slides[0]!.elements[0]!]; // remove e2
-
-    const result = mergeDeck(base, local, remote);
-    // BUG: should be null (conflict), but merge succeeds keeping local version
-    expect(result.merged).not.toBeNull();
-    expect(result.merged!.slides[0]!.elements).toHaveLength(2);
-  });
-});
+// Element deletion merge behavior is exhaustively covered by
+// src/utils/deckDiff.adversarial.test.ts. The two "BUG:" tests that
+// previously lived here asserted the buggy silent-loss behavior and
+// were replaced by correct-behavior tests in the adversarial file
+// after the fix to mergeDeck.
 
 // Simple hash for test purposes (mirrors fnv1a concept)
 function simpleHash(str: string): number {

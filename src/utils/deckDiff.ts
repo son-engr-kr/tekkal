@@ -157,17 +157,29 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
         // Remote changed, local didn't → accept remote
         (mergedSlide as unknown as Record<string, unknown>)[field] = structuredClone((remoteSlide as unknown as Record<string, unknown>)[field]);
       } else if (remoteVal !== baseVal && localVal !== baseVal && remoteVal !== localVal) {
-        // Both changed differently → keep local
+        // Both changed differently → report as slide-level conflict so the
+        // caller pauses saves. Previously silently kept local, losing the
+        // remote edit. We keep local in the merged output so the UI has
+        // something to render, but hasSlideConflicts nulls out the return
+        // value and the user must manually reconcile.
+        hasSlideConflicts = true;
       }
       // else: only local changed, or both same → keep local (already in mergedSlide)
     }
 
-    // Merge animations: accept remote if base→remote changed and base→local didn't
+    // Merge animations: accept remote if base→remote changed and base→local didn't.
+    // Both-sides-changed is a slide-level conflict (same silent-loss bug as notes/background).
     const baseAnims = baseSlide ? JSON.stringify(baseSlide.animations) : undefined;
     const localAnims = JSON.stringify(localSlide.animations);
     const remoteAnims = JSON.stringify(remoteSlide.animations);
     if (remoteAnims !== baseAnims && localAnims === baseAnims) {
       mergedSlide.animations = structuredClone(remoteSlide.animations);
+    } else if (
+      remoteAnims !== baseAnims &&
+      localAnims !== baseAnims &&
+      remoteAnims !== localAnims
+    ) {
+      hasSlideConflicts = true;
     }
 
     // Merge elements: three-way per element
@@ -202,12 +214,17 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
           // Local deleted, remote unchanged → accept deletion
           continue;
         } else {
-          // Local deleted, remote modified → keep local decision (deletion)
+          // Local deleted, remote modified → conflict.
+          // Previously silently kept local's deletion and lost the remote
+          // modification. Reporting as a conflict pauses saves so the user
+          // can choose: restore the element or confirm the deletion.
+          conflicts.push({ slideId, elementId: elId });
         }
       } else if (localEl && !remoteEl) {
         // Exists locally, deleted remotely
         if (baseStr === localStr) continue; // remote deletion, local unchanged → accept deletion
-        // Local modified, remote deleted → keep local
+        // Local modified, remote deleted → conflict (same symmetry as above).
+        conflicts.push({ slideId, elementId: elId });
         mergedElements.push(structuredClone(localEl));
       } else if (localEl && remoteEl) {
         if (localStr === remoteStr) {
@@ -229,12 +246,32 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
       }
     }
 
-    // Remaining IDs: local-only elements (new locally, or not in remote order)
+    // Remaining IDs: elements present in local but not in remoteOrder.
+    // This set is either:
+    //   - genuine local additions (not in base, not in remote)
+    //   - elements that base+local shared but remote has deleted (not in remote)
+    // We must check base to distinguish these, otherwise remote deletions
+    // of untouched elements would be silently ignored and remote deletions
+    // of locally-modified elements would silently keep local.
     for (const elId of allIds) {
       const localEl = localEls.get(elId);
-      if (localEl) {
+      if (!localEl) continue;
+      const baseEl = baseEls.get(elId);
+      if (!baseEl) {
+        // Local added it, remote does not have it → keep as a local add
         mergedElements.push(structuredClone(localEl));
+        continue;
       }
+      // Was in base and local, but not in remote → remote deleted it
+      const baseStr = JSON.stringify(baseEl);
+      const localStr = JSON.stringify(localEl);
+      if (baseStr === localStr) {
+        // Local untouched → accept remote's deletion, drop from merged
+        continue;
+      }
+      // Local modified, remote deleted → conflict
+      conflicts.push({ slideId, elementId: elId });
+      mergedElements.push(structuredClone(localEl));
     }
 
     mergedSlide.elements = mergedElements;
@@ -244,7 +281,9 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
   const merged: Deck = structuredClone(local);
   merged.slides = mergedSlides;
 
-  // Merge deck-level fields (theme, pageNumbers, components, meta)
+  // Merge deck-level fields (theme, pageNumbers, components, meta).
+  // Both-sides-changed is a conflict — previously silently kept local and
+  // lost the remote edit.
   const deckFields = ["theme", "pageNumbers", "meta", "components"] as const;
   for (const field of deckFields) {
     const baseVal = JSON.stringify((base as unknown as Record<string, unknown>)[field]);
@@ -252,6 +291,8 @@ export function mergeDeck(base: Deck, local: Deck, remote: Deck): MergeResult {
     const remoteVal = JSON.stringify((remote as unknown as Record<string, unknown>)[field]);
     if (remoteVal !== baseVal && localVal === baseVal) {
       (merged as unknown as Record<string, unknown>)[field] = structuredClone((remote as unknown as Record<string, unknown>)[field]);
+    } else if (remoteVal !== baseVal && localVal !== baseVal && remoteVal !== localVal) {
+      hasSlideConflicts = true;
     }
   }
 
