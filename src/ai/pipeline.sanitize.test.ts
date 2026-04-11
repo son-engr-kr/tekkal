@@ -86,6 +86,56 @@ describe("sanitizeToolArgs — line/arrow waypoint auto-heal", () => {
     expect(wp[1]!.y).toBeGreaterThan(wp[0]!.y);
   });
 
+  it("rejects add_animation targeting a nonexistent element", async () => {
+    // Orphan animations pass through the store today — the renderer
+    // then silently drops them, so the user sees "nothing happens"
+    // with no feedback. The tool should refuse up-front.
+    useDeckStore.getState().openProject("test", {
+      version: "0.1.0",
+      meta: { title: "Test", aspectRatio: "16:9" },
+      slides: [{ id: "s1", elements: [{
+        id: "e1",
+        type: "text",
+        content: "hi",
+        position: { x: 0, y: 0 },
+        size: { w: 100, h: 50 },
+      }] }],
+    } as Deck);
+    const result = await executeTool("add_animation", {
+      slideId: "s1",
+      target: "eDOES_NOT_EXIST",
+      effect: "fadeIn",
+      trigger: "onEnter",
+    });
+    expect(result).toMatch(/ERROR/i);
+    expect(useDeckStore.getState().deck!.slides[0]!.animations ?? []).toHaveLength(0);
+  });
+
+  it("rejects update_animation that retargets to a nonexistent element", async () => {
+    useDeckStore.getState().openProject("test", {
+      version: "0.1.0",
+      meta: { title: "Test", aspectRatio: "16:9" },
+      slides: [{
+        id: "s1",
+        elements: [{
+          id: "e1",
+          type: "text",
+          content: "hi",
+          position: { x: 0, y: 0 },
+          size: { w: 100, h: 50 },
+        }],
+        animations: [{ target: "e1", effect: "fadeIn", trigger: "onEnter" }],
+      }],
+    } as Deck);
+    const result = await executeTool("update_animation", {
+      slideId: "s1",
+      index: 0,
+      patch: { target: "eMISSING" },
+    });
+    expect(result).toMatch(/ERROR/i);
+    expect(useDeckStore.getState().deck!.slides[0]!.animations![0]!.target).toBe("e1");
+  });
+
   it("does not clobber existing waypoints on a line", async () => {
     useDeckStore.getState().openProject("test", deck());
     const custom = [

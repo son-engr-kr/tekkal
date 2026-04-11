@@ -1158,6 +1158,14 @@ export async function executeTool(name: string, args: Record<string, unknown>): 
       if (!validTriggers.includes(trigger)) {
         return `ERROR: unknown trigger "${trigger}". Valid: ${validTriggers.join(", ")}.`;
       }
+      // Reject orphan animations up-front: the renderer silently
+      // drops animations whose target doesn't resolve, so the agent
+      // would otherwise see "success" with no visible effect.
+      const animSlide = deck?.slides.find((s) => s.id === slideId);
+      if (!animSlide) return `ERROR: slide "${slideId}" not found.`;
+      if (!animSlide.elements.some((e) => e.id === target)) {
+        return `ERROR: target element "${target}" not found on slide "${slideId}".`;
+      }
       const animation = {
         target,
         effect: effect as Parameters<typeof store.addAnimation>[1]["effect"],
@@ -1172,6 +1180,17 @@ export async function executeTool(name: string, args: Record<string, unknown>): 
       const slideId = args.slideId as string;
       const index = args.index as number;
       const patch = args.patch as Record<string, unknown>;
+      // Reject orphan retargets — same reasoning as add_animation:
+      // the renderer drops animations that don't resolve to a real
+      // element on the slide, so the agent must not be able to
+      // introduce one here either.
+      if (typeof patch?.target === "string") {
+        const updSlide = deck?.slides.find((s) => s.id === slideId);
+        if (!updSlide) return `ERROR: slide "${slideId}" not found.`;
+        if (!updSlide.elements.some((e) => e.id === patch.target)) {
+          return `ERROR: target element "${patch.target as string}" not found on slide "${slideId}".`;
+        }
+      }
       store.updateAnimation(slideId, index, patch as Parameters<typeof store.updateAnimation>[2]);
       return `Animation [${index}] on slide "${slideId}" patched.`;
     }
