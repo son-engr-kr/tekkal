@@ -434,8 +434,9 @@ content that validateDeck did not flag.
 13. Line/arrow elements have style.waypoints (at least 2 {x, y}
     points) and NO rotation field
 14. TikZ elements include a bounding box (\\path rectangle)
-15. [step:N]...[/step] markers in notes match the number of
-    onClick animations on the same slide
+15. Step markers in notes: 1-indexed (never [step:0]), the
+    highest N must not exceed the slide's onClick animation count,
+    and the total marker count matches the onClick count
 16. No Markdown ** inside KaTeX math delimiters (use \\mathbf{} instead)
 17. No line-break \\\\ in text content outside a \\begin{env}...\\end{env} block
 

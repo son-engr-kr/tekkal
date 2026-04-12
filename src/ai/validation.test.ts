@@ -373,6 +373,63 @@ describe("validateDeck — step marker vs onClick animation count", () => {
     })]);
     expect(findIssue(validateDeck(d), /Step marker count/)).toBe(false);
   });
+
+  it("flags [step:0] as 1-indexed violation", () => {
+    const d = deck([slide("s1", [text("e1")], {
+      notes: "[step:0]pre-click[/step] [step:1]first[/step]",
+      animations: [
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+      ],
+    })]);
+    const result = validateDeck(d);
+    const issue = result.issues.find((i) => /1-indexed/.test(i.message));
+    expect(issue).toBeDefined();
+    expect(issue!.severity).toBe("error");
+    expect(issue!.message).toMatch(/\[step:0\]/);
+  });
+
+  it("flags step index exceeding onClick count", () => {
+    const d = deck([slide("s1", [text("e1")], {
+      notes: "[step:1]a[/step] [step:2]b[/step] [step:3]c[/step]",
+      animations: [
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+      ],
+    })]);
+    const result = validateDeck(d);
+    const issue = result.issues.find((i) => /\[step:3\].*never fire|only 2 onClick/.test(i.message));
+    expect(issue).toBeDefined();
+    expect(issue!.severity).toBe("error");
+  });
+
+  it("flags sparse step numbering where max step exceeds onClick count", () => {
+    // [1][2][5] with 3 onClicks — count-equality check does not
+    // catch it (3 === 3) but step 5 never fires.
+    const d = deck([slide("s1", [text("e1")], {
+      notes: "[step:1]a[/step] [step:2]b[/step] [step:5]c[/step]",
+      animations: [
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+      ],
+    })]);
+    const result = validateDeck(d);
+    expect(findIssue(result, /\[step:5\]/)).toBe(true);
+    expect(findIssue(result, /only 3 onClick/)).toBe(true);
+  });
+
+  it("accepts well-formed 1-indexed step markers", () => {
+    const d = deck([slide("s1", [text("e1")], {
+      notes: "Welcome. [step:1]first[/step] [step:2]second[/step]",
+      animations: [
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+        { target: "e1", effect: "fadeIn", trigger: "onClick" },
+      ],
+    })]);
+    const result = validateDeck(d);
+    expect(findIssue(result, /1-indexed|never fire/)).toBe(false);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────

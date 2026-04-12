@@ -403,10 +403,44 @@ export function validateDeck(deck: Deck): ValidationResult {
       }
     }
 
-    // Step marker vs onClick animation count
-    if (slide.notes && slide.animations) {
-      const stepMatches = [...slide.notes.matchAll(/\[step:\d+\]/g)];
-      const onClickCount = slide.animations.filter((a) => a.trigger === "onClick").length;
+    // Step markers in notes
+    if (typeof slide.notes === "string" && slide.notes.length > 0) {
+      const stepMatches = [...slide.notes.matchAll(/\[step:(\d+)\]/g)];
+      const stepNumbers = stepMatches.map((m) => parseInt(m[1]!, 10));
+      const onClickCount = Array.isArray(slide.animations)
+        ? slide.animations.filter((a) => a.trigger === "onClick").length
+        : 0;
+
+      // [step:0] is wrong: activeStep starts at 0 meaning "before
+      // any click", so a [step:0] segment is briefly highlighted on
+      // initial render and then hidden once the user clicks — the
+      // opposite of the intended "highlight from click N onward"
+      // semantics. Steps are 1-indexed to match the N-th onClick.
+      if (stepNumbers.includes(0)) {
+        issues.push({
+          severity: "error",
+          slideId: slide.id,
+          message: `Slide "${slide.id}" uses [step:0] — step markers are 1-indexed. Use [step:1] for the first onClick animation, [step:2] for the second, etc.`,
+          autoFixable: false,
+        });
+      }
+
+      // Any referenced step index must correspond to an onClick
+      // animation that actually exists on this slide. Steps beyond
+      // the onClick count never fire and the text stays dark forever.
+      if (stepNumbers.length > 0) {
+        const maxStep = Math.max(...stepNumbers);
+        if (maxStep > onClickCount) {
+          issues.push({
+            severity: "error",
+            slideId: slide.id,
+            message: `Slide "${slide.id}" references [step:${maxStep}] but only ${onClickCount} onClick animation(s) exist — the step will never fire. Either add another onClick animation or renumber the markers to fit`,
+            autoFixable: false,
+          });
+        }
+      }
+
+      // Total marker count vs onClick count (the original check).
       if (stepMatches.length > 0 && stepMatches.length !== onClickCount) {
         issues.push({
           severity: "warning",

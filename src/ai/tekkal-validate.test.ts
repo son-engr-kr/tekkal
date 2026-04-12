@@ -506,6 +506,99 @@ describe("tekkal-validate.mjs drift", () => {
     expect(result.stdout).toMatch(/RESULT: PASS/);
   });
 
+  it("flags [step:0] in notes (step markers are 1-indexed)", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf(
+          "s1",
+          [textEl("t1", "content")],
+          {
+            notes: "Welcome. [step:0] first click segment [/step] [step:1] second [/step]",
+            animations: [
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+            ],
+          },
+        ),
+      ]),
+      "step-zero-index",
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toMatch(/slides\[0\]\.notes/);
+    expect(result.stdout).toMatch(/1-indexed/);
+    expect(result.stdout).toMatch(/\[step:0\]/);
+  });
+
+  it("flags a step marker whose index exceeds the onClick animation count", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf(
+          "s1",
+          [textEl("t1", "content")],
+          {
+            notes: "[step:1] a [/step] [step:2] b [/step] [step:3] c [/step]",
+            animations: [
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+            ],
+          },
+        ),
+      ]),
+      "step-beyond-onclick",
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toMatch(/slides\[0\]\.notes/);
+    expect(result.stdout).toMatch(/\[step:3\]/);
+    expect(result.stdout).toMatch(/only 2 onClick/);
+  });
+
+  it("flags sparse step numbering when max step exceeds onClick count", () => {
+    // [step:1][step:2][step:5] with 3 onClicks — the total count
+    // matches (3 === 3) so the pre-existing count check would not
+    // fire, but step:5 is unreachable. The max-step rule catches it.
+    const result = runDeck(
+      deckOf([
+        slideOf(
+          "s1",
+          [textEl("t1", "content")],
+          {
+            notes: "[step:1] a [/step] [step:2] b [/step] [step:5] c [/step]",
+            animations: [
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+            ],
+          },
+        ),
+      ]),
+      "step-sparse-max",
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toMatch(/\[step:5\]/);
+    expect(result.stdout).toMatch(/only 3 onClick/);
+  });
+
+  it("accepts well-formed 1-indexed step markers matching onClick count", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf(
+          "s1",
+          [textEl("t1", "content")],
+          {
+            notes: "Welcome. [step:1] first [/step] [step:2] second [/step]",
+            animations: [
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+              { target: "t1", effect: "fadeIn", trigger: "onClick" },
+            ],
+          },
+        ),
+      ]),
+      "step-well-formed",
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toMatch(/RESULT: PASS/);
+  });
+
   it("flags step marker count mismatch with onClick animation count", () => {
     const result = runDeck(
       deckOf([

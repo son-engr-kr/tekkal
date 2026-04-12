@@ -486,16 +486,47 @@ function validateSlide(slide, slideIdx, seenSlideIds, seenElementIds, findings) 
     }
   }
 
-  // Step marker count vs onClick animation count
-  if (typeof slide.notes === "string" && Array.isArray(slide.animations)) {
-    const stepMatches = slide.notes.match(/\[step:\d+\]/g) || [];
-    const onClickCount = slide.animations.filter(
-      (a) => isPlainObject(a) && a.trigger === "onClick",
-    ).length;
-    if (stepMatches.length > 0 && stepMatches.length !== onClickCount) {
+  // Step markers in notes
+  if (typeof slide.notes === "string" && slide.notes.length > 0) {
+    const rawMatches = slide.notes.match(/\[step:(\d+)\]/g) || [];
+    const stepNumbers = rawMatches.map((m) => {
+      const match = /\[step:(\d+)\]/.exec(m);
+      return match ? parseInt(match[1], 10) : NaN;
+    });
+    const onClickCount = Array.isArray(slide.animations)
+      ? slide.animations.filter((a) => isPlainObject(a) && a.trigger === "onClick").length
+      : 0;
+    const idLabel = slide.id || `(unnamed slide ${slideIdx})`;
+
+    // [step:0] is semantically wrong: activeStep starts at 0
+    // meaning "before any click", so a [step:0] segment flashes on
+    // initial render and disappears after the first click — the
+    // opposite of the "highlight from click N onward" intent.
+    // Steps are 1-indexed to match the N-th onClick animation.
+    if (stepNumbers.includes(0)) {
+      findings.error(
+        `${slidePath}.notes`,
+        `Slide "${idLabel}" uses [step:0] — step markers are 1-indexed. Use [step:1] for the first onClick animation, [step:2] for the second, etc.`,
+      );
+    }
+
+    // Any referenced step index must have a corresponding onClick
+    // animation. Steps beyond onClickCount never fire.
+    if (stepNumbers.length > 0) {
+      const maxStep = Math.max(...stepNumbers);
+      if (maxStep > onClickCount) {
+        findings.error(
+          `${slidePath}.notes`,
+          `Slide "${idLabel}" references [step:${maxStep}] but only ${onClickCount} onClick animation(s) exist — the step will never fire. Either add another onClick animation or renumber the markers to fit`,
+        );
+      }
+    }
+
+    // Total marker count vs onClick count (original check).
+    if (rawMatches.length > 0 && rawMatches.length !== onClickCount) {
       findings.warn(
         `${slidePath}.notes`,
-        `Step marker count (${stepMatches.length}) does not match onClick animation count (${onClickCount})`,
+        `Step marker count (${rawMatches.length}) does not match onClick animation count (${onClickCount})`,
       );
     }
   }
