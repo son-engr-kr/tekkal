@@ -213,7 +213,7 @@ export async function exportToPdf(
 }
 
 // ========================================================================
-// Render one slide: build full DOM tree → capture with toPng → add to PDF
+// Capture one slide: build full DOM tree → capture with toPng/toJpeg
 //
 // KEY FIX: the captured node (ctr) has NO position offset. A separate
 // wrapper div hides it behind the app via z-index. Previous code used
@@ -222,8 +222,11 @@ export async function exportToPdf(
 // positioning content outside the visible SVG area → blank output.
 // ========================================================================
 
-async function renderSlide(
-  doc: jsPDF,
+/**
+ * Render a single slide to a data-URL image (PNG or JPEG).
+ * Used by both the PDF image export and the standalone image export.
+ */
+export async function captureSlideToDataUrl(
   slide: Slide,
   deck: Deck,
   adapter: FileSystemAdapter,
@@ -232,7 +235,7 @@ async function renderSlide(
   captureScale: number = CAPTURE_SCALE,
   imgFormat: "png" | "jpeg" = "png",
   jpegQuality: number = 0.75,
-): Promise<void> {
+): Promise<string> {
   // Wrapper: positioned at (0,0) behind everything (lowest z-index).
   // This is NOT the captured node — its styles don't get cloned.
   const wrapper = document.createElement("div");
@@ -327,22 +330,46 @@ async function renderSlide(
     pixelRatio: captureScale,
     ...(imgFormat === "jpeg" ? { quality: jpegQuality } : {}),
   };
-  const pdfFormat = imgFormat === "jpeg" ? "JPEG" : "PNG";
 
+  let dataUrl: string;
   try {
-    const img = await capture(ctr, captureOpts);
-    doc.addImage(img, pdfFormat, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    dataUrl = await capture(ctr, captureOpts);
   } catch {
     // Retry without font embedding (CORS/Vite font-fetch failures)
     try {
-      const img = await capture(ctr, { ...captureOpts, skipFonts: true });
-      doc.addImage(img, pdfFormat, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      dataUrl = await capture(ctr, { ...captureOpts, skipFonts: true });
     } catch (err) {
       console.error("[PDF] slide capture failed:", err);
+      wrapper.remove();
+      // 1×1 transparent PNG as fallback
+      return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQABNjN9GQAAAAlwSFlzAAAWJQAAFiUBSVIk8AAAAA0lEQVQI12P4z8BQDwAEgAF/pOHurgAAAABJRU5ErkJggg==";
     }
   }
 
   wrapper.remove();
+  return dataUrl!;
+}
+
+/**
+ * Internal: render one slide and add it to the jsPDF document.
+ */
+async function renderSlide(
+  doc: jsPDF,
+  slide: Slide,
+  deck: Deck,
+  adapter: FileSystemAdapter,
+  pageNumber: number,
+  totalPages: number,
+  captureScale: number = CAPTURE_SCALE,
+  imgFormat: "png" | "jpeg" = "png",
+  jpegQuality: number = 0.75,
+): Promise<void> {
+  const dataUrl = await captureSlideToDataUrl(
+    slide, deck, adapter, pageNumber, totalPages,
+    captureScale, imgFormat, jpegQuality,
+  );
+  const pdfFormat = imgFormat === "jpeg" ? "JPEG" : "PNG";
+  doc.addImage(dataUrl, pdfFormat, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 }
 
 // ---- Flexible text font fitting (binary search, mirrors TextElement.tsx) ----

@@ -18,6 +18,7 @@ import { PresentationMode } from "@/components/presenter/PresentationMode";
 import { exportToPdf } from "@/components/export/pdfExport";
 import { exportToNativePdf } from "@/components/export/pdfNativeExport";
 import { exportToPptx } from "@/components/export/pptxExport";
+import { exportSlidesToImages } from "@/components/export/imageExport";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { AiChatPanel } from "./AiChatPanel";
@@ -644,6 +645,19 @@ export function EditorLayout() {
           className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
         >
           PPTX
+        </button>
+        <button
+          disabled={!!exportProgress}
+          onClick={() => {
+            const deck = useDeckStore.getState().deck;
+            if (!deck) return;
+            const onProgress = (c: number, t: number) => setExportProgress({ current: c, total: t, label: "Images (ZIP)" });
+            setExportProgress({ current: 0, total: deck.slides.length, label: "Images (ZIP)" });
+            exportSlidesToImages(deck, adapter, { scale: 2, format: "png", onProgress }).finally(() => setExportProgress(null));
+          }}
+          className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
+        >
+          Images
         </button>
         {import.meta.env.DEV && (
           <button
