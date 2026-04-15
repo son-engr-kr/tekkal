@@ -46,6 +46,37 @@ function isPlainObject(v) {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
+/** Normalize a hex color string to lowercase 6-digit form. */
+function normHex(c) {
+  if (typeof c !== "string") return null;
+  const m = c.trim().toLowerCase().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/);
+  if (!m) return null;
+  const hex = m[1];
+  if (hex.length === 3) {
+    return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+  }
+  return `#${hex}`;
+}
+
+const COLOR_KEYS = new Set([
+  "color", "fill", "stroke", "background", "backgroundColor",
+  "headerBackground", "headerColor", "borderColor",
+]);
+
+function collectStyleColors(style, out) {
+  if (!isPlainObject(style)) return;
+  for (const [k, v] of Object.entries(style)) {
+    if (COLOR_KEYS.has(k) && typeof v === "string") {
+      const norm = normHex(v);
+      if (norm) out.add(norm);
+    }
+  }
+}
+
+// Mutable palette state — populated in main() from deck.theme.palette.
+// null means "no palette check" (default, opt-in only).
+let CURRENT_PALETTE = null;
+
 // ─────────────────────────────────────────────────────────────────
 // Finding accumulator
 // ─────────────────────────────────────────────────────────────────
@@ -261,6 +292,14 @@ function validateElement(el, slideIdx, elIdx, slideId, seenElementIds, findings)
         `image element src "${el.src}" must start with ./assets/, /assets/, http(s)://, or data: — bare filenames render as nothing`,
       );
     }
+    // Accessibility + AI-context: 04b-elem-media.md requires alt in practice.
+    // Warn (not error) so existing decks keep passing.
+    if (typeof el.alt !== "string" || el.alt.trim().length === 0) {
+      findings.warn(
+        `${elPath}.alt`,
+        "image element missing `alt` text — required for accessibility and AI context",
+      );
+    }
   }
 
   // ── video ──
@@ -291,10 +330,13 @@ function validateElement(el, slideIdx, elIdx, slideId, seenElementIds, findings)
       findings.error(`${elPath}.content`, "code element missing `content` string");
     } else {
       const lineCount = el.content.split("\n").length;
+      // Density suggestion, not a schema invariant. 12+ lines usually
+      // means the snippet is too dense to read at slide distance, but
+      // a deliberately long code block is legitimate — demote to warning.
       if (lineCount > 12) {
-        findings.error(
+        findings.warn(
           `${elPath}.content`,
-          `code element has ${lineCount} lines — keep code blocks at 12 lines or fewer`,
+          `code element has ${lineCount} lines — keep code blocks at 12 lines or fewer for readability`,
         );
       }
     }
@@ -373,6 +415,20 @@ function validateElement(el, slideIdx, elIdx, slideId, seenElementIds, findings)
         `${elPath}.scene.orbitControls`,
         "scene3d has orbitControls:true — grabs mouse events and breaks slide navigation",
       );
+    }
+  }
+
+  // Off-palette color check (opt-in via deck.theme.palette)
+  if (CURRENT_PALETTE) {
+    const elColors = new Set();
+    collectStyleColors(el.style, elColors);
+    for (const c of elColors) {
+      if (!CURRENT_PALETTE.has(c)) {
+        findings.warn(
+          `${elPath}.style`,
+          `Color "${c}" is outside deck.theme.palette`,
+        );
+      }
     }
   }
 }
@@ -710,6 +766,14 @@ function main() {
   // same shape the loader does.
   const referencedFiles = resolveSlideRefs(deck, deckDir, findings) ?? new Set();
   checkOrphanedSlideFiles(deckDir, referencedFiles, findings);
+
+  // Palette opt-in: if deck.theme.palette is set, normalize and enable
+  // the off-palette color warning for every element style.
+  CURRENT_PALETTE = null;
+  if (isPlainObject(deck.theme) && Array.isArray(deck.theme.palette)) {
+    const norm = deck.theme.palette.map((c) => normHex(c)).filter((c) => c !== null);
+    if (norm.length > 0) CURRENT_PALETTE = new Set(norm);
+  }
 
   const ok = validateDeckShape(deck, findings);
   if (ok) {

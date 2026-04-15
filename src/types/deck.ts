@@ -383,6 +383,10 @@ export interface DeckTheme {
   mermaid?: Partial<MermaidStyle>;
   table?: Partial<TableStyle>;
   scene3d?: Partial<Scene3DStyle>;
+  /** Optional allow-list of hex colors. When set, the validator warns on
+   *  any element style color outside this list. Useful for enforcing a
+   *  brand palette. Compared case-insensitively. */
+  palette?: string[];
 }
 
 // ----- Shared Components -----

@@ -550,6 +550,76 @@ describe("validateDeck — overlap detection", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
+// B2 — Image alt missing warning
+// ─────────────────────────────────────────────────────────────────────
+
+describe("validateDeck — image alt lint", () => {
+  it("warns when an image has no alt", () => {
+    const d = deck([slide("s1", [image("img1")])]);
+    const result = validateDeck(d);
+    const issue = result.issues.find((i) => /missing `alt`/.test(i.message));
+    expect(issue).toBeDefined();
+    expect(issue?.severity).toBe("warning");
+  });
+
+  it("does not warn when alt is present and non-empty", () => {
+    const d = deck([slide("s1", [image("img1", { alt: "A diagram" })])]);
+    const result = validateDeck(d);
+    expect(result.issues.some((i) => /missing `alt`/.test(i.message))).toBe(false);
+  });
+
+  it("warns when alt is only whitespace", () => {
+    const d = deck([slide("s1", [image("img1", { alt: "   " })])]);
+    const result = validateDeck(d);
+    expect(result.issues.some((i) => /missing `alt`/.test(i.message))).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// B5 — Off-palette color warning (opt-in)
+// ─────────────────────────────────────────────────────────────────────
+
+describe("validateDeck — palette lint", () => {
+  it("does not check colors when deck.theme.palette is unset", () => {
+    const d = deck([slide("s1", [
+      text("e1", "hi", { style: { color: "#ff0000" } }),
+    ])]);
+    const result = validateDeck(d);
+    expect(result.issues.some((i) => /palette/.test(i.message))).toBe(false);
+  });
+
+  it("warns on colors outside the allow-list when palette is set", () => {
+    const d = deck([slide("s1", [
+      text("e1", "hi", { style: { color: "#ff0000" } }),
+    ])]);
+    d.theme = { palette: ["#1A2B48", "#5B9BD5"] };
+    const result = validateDeck(d);
+    const issue = result.issues.find((i) => /palette/.test(i.message));
+    expect(issue).toBeDefined();
+    expect(issue?.severity).toBe("warning");
+    expect(issue?.message).toContain("#ff0000");
+  });
+
+  it("does not warn on colors that match the palette (case-insensitive)", () => {
+    const d = deck([slide("s1", [
+      text("e1", "hi", { style: { color: "#1a2b48" } }),
+    ])]);
+    d.theme = { palette: ["#1A2B48", "#5B9BD5"] };
+    const result = validateDeck(d);
+    expect(result.issues.some((i) => /palette/.test(i.message))).toBe(false);
+  });
+
+  it("expands 3-digit hex shorthand when matching", () => {
+    const d = deck([slide("s1", [
+      text("e1", "hi", { style: { color: "#abc" } }),
+    ])]);
+    d.theme = { palette: ["#AABBCC"] };
+    const result = validateDeck(d);
+    expect(result.issues.some((i) => /palette/.test(i.message))).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
 // buildFixInstructions
 // ─────────────────────────────────────────────────────────────────────
 

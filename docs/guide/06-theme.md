@@ -28,6 +28,20 @@ To change the default text color for the entire deck to red without touching ind
 
 Elements with an explicit `style.color` will still use their own value.
 
+## Palette allow-list
+
+`theme.palette` is an optional hex allow-list. When set, the validator warns on any element whose style contains a color outside the list (comparing `color`, `fill`, `stroke`, `background`, `backgroundColor`, `headerBackground`, `headerColor`, `borderColor`, case-insensitive, with 3-digit shorthand expanded). Leave it unset to disable the check.
+
+```json
+{
+  "theme": {
+    "palette": ["#1A2B48", "#5B9BD5", "#E7E6E6", "#333333", "#ffffff"]
+  }
+}
+```
+
+Useful for enforcing the Analytical Insight palette (see `08c-visual-style.md`) or any brand-specific color system. Out-of-palette colors produce warnings, not errors — existing decks won't break.
+
 
 # Page Numbers
 

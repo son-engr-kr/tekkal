@@ -257,7 +257,7 @@ describe("tekkal-validate.mjs drift", () => {
     expect(result.stdout).toMatch(/waypoints/);
   });
 
-  it("flags code element with content longer than 12 lines", () => {
+  it("warns (not errors) on code element longer than 12 lines — density hint, not schema invariant", () => {
     const longCode = Array.from({ length: 15 }, (_, i) => `line${i}`).join("\n");
     const result = runDeck(
       deckOf([
@@ -274,9 +274,10 @@ describe("tekkal-validate.mjs drift", () => {
       ]),
       "code-too-long",
     );
-    expect(result.exitCode).toBe(1);
+    // Demoted from error to warning — long code blocks are a density
+    // suggestion, not a hard schema invariant. Exit code stays 0.
+    expect(result.exitCode).toBe(0);
     expect(result.stdout).toMatch(/slides\[0\]\.elements\[0\]\.content/);
-    // Validator reports the actual line count so the LLM sees the gap.
     expect(result.stdout).toMatch(/15 lines/);
   });
 
@@ -620,5 +621,243 @@ describe("tekkal-validate.mjs drift", () => {
     // not an individual element. Assert on the slide id.
     expect(result.stdout).toMatch(/slides\[0\]\.notes/);
     expect(result.stdout).toMatch(/Step marker count.*onClick/);
+  });
+
+  // ── B2: image alt missing ──────────────────────────────────────────
+
+  it("warns on image element missing alt text", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf("s1", [
+          {
+            id: "img1",
+            type: "image",
+            src: "./assets/example.png",
+            position: pos(20, 20),
+            size: size(300, 200),
+            // No alt field at all
+          },
+        ]),
+      ]),
+      "image-missing-alt",
+    );
+    // alt is a warning, not error — exit stays 0
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toMatch(/slides\[0\]\.elements\[0\]\.alt/);
+    expect(result.stdout).toMatch(/missing `alt`/);
+  });
+
+  it("does not warn when image has non-empty alt", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf("s1", [
+          {
+            id: "img1",
+            type: "image",
+            src: "./assets/example.png",
+            alt: "A diagram of the system architecture",
+            position: pos(20, 20),
+            size: size(300, 200),
+          },
+        ]),
+      ]),
+      "image-with-alt",
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toMatch(/missing `alt`/);
+  });
+
+  // ── B5: off-palette color warning (opt-in) ─────────────────────────
+
+  it("does not check palette when deck.theme.palette is unset", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf("s1", [
+          textEl("t1", "hello", { style: { color: "#ff0000" } }),
+        ]),
+      ]),
+      "palette-unset",
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toMatch(/outside deck\.theme\.palette/);
+  });
+
+  it("warns on colors outside the palette when it is set", () => {
+    const d = deckOf([
+      slideOf("s1", [
+        textEl("t1", "hello", { style: { color: "#ff0000" } }),
+      ]),
+    ]) as { theme?: unknown };
+    d.theme = { palette: ["#1A2B48", "#5B9BD5"] };
+    const result = runDeck(d, "palette-outside");
+    expect(result.exitCode).toBe(0); // warning, not error
+    expect(result.stdout).toMatch(/#ff0000/);
+    expect(result.stdout).toMatch(/outside deck\.theme\.palette/);
+  });
+
+  it("matches palette colors case-insensitively", () => {
+    const d = deckOf([
+      slideOf("s1", [
+        textEl("t1", "hello", { style: { color: "#1a2b48" } }),
+      ]),
+    ]) as { theme?: unknown };
+    d.theme = { palette: ["#1A2B48"] };
+    const result = runDeck(d, "palette-case");
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toMatch(/outside deck\.theme\.palette/);
+  });
+
+  // ── B1: overlap false-positive exemptions ──────────────────────────
+
+  it("does not flag fan-out arrows sharing the same origin", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf("s1", [
+          {
+            id: "a1",
+            type: "shape",
+            shape: "arrow",
+            position: pos(100, 100),
+            size: size(200, 100),
+            style: { waypoints: [{ x: 0, y: 0 }, { x: 200, y: 0 }] },
+          },
+          {
+            id: "a2",
+            type: "shape",
+            shape: "arrow",
+            position: pos(100, 100),
+            size: size(200, 100),
+            style: { waypoints: [{ x: 0, y: 0 }, { x: 200, y: 100 }] },
+          },
+          // Plus one text so the slide isn't empty (empty-slide error would
+          // otherwise hide our signal).
+          textEl("t1", "label", { position: pos(50, 50), size: size(80, 30) }),
+        ]),
+      ]),
+      "overlap-fanout-arrows",
+    );
+    expect(result.stdout).not.toMatch(/overlaps? "/);
+  });
+
+  it("does not flag a rectangle fully enclosing an image (frame pattern)", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf("s1", [
+          {
+            id: "frame",
+            type: "shape",
+            shape: "rectangle",
+            position: pos(100, 100),
+            size: size(400, 300),
+            style: { fill: "transparent", stroke: "#333", strokeWidth: 2 },
+          },
+          {
+            id: "img1",
+            type: "image",
+            src: "./assets/x.png",
+            alt: "contained",
+            position: pos(120, 120),
+            size: size(360, 260),
+          },
+        ]),
+      ]),
+      "overlap-frame-image",
+    );
+    expect(result.stdout).not.toMatch(/overlaps? "/);
+  });
+
+  it("respects allowOverlap:true opt-out", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf("s1", [
+          textEl("t1", "overlaid", {
+            position: pos(0, 0),
+            size: size(200, 100),
+            allowOverlap: true,
+          }),
+          textEl("t2", "below", { position: pos(10, 10), size: size(200, 100) }),
+        ]),
+      ]),
+      "overlap-opt-out",
+    );
+    expect(result.stdout).not.toMatch(/overlaps? "/);
+  });
+
+  // ── A2: aspectRatio support ────────────────────────────────────────
+
+  it("accepts size with w + aspectRatio (deriving h)", () => {
+    const result = runDeck(
+      deckOf([
+        slideOf("s1", [
+          {
+            id: "img1",
+            type: "image",
+            src: "./assets/x.png",
+            alt: "ratio-sized",
+            position: pos(100, 100),
+            // No h — must be derived from aspectRatio
+            size: { w: 400, aspectRatio: 1.778 },
+          },
+        ]),
+      ]),
+      "size-aspectratio",
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toMatch(/size\.w and size\.h must be numbers/);
+    expect(result.stdout).not.toMatch(/size must specify/);
+  });
+
+  // ── $ref resolution ────────────────────────────────────────────────
+
+  it("resolves slides[i].$ref entries before schema checks", () => {
+    // Write a main deck with a $ref, and the referenced slide file next
+    // to it. The validator must load the ref before running schema
+    // checks, otherwise it would report the $ref placeholder as a
+    // slide missing id/elements.
+    const subDir = join(scratchDir, "ref-test");
+    writeFileSync(
+      join(scratchDir, "ref-test-dummy.txt"),
+      "",
+    );
+    const slidesDir = join(scratchDir, "slides");
+    try { rmSync(slidesDir, { recursive: true, force: true }); } catch { /* ignore */ }
+    // Build a subfolder so we can have docs/slides/s100.json next to main.json
+    const rootDir = mkdtempSync(join(tmpdir(), "tekkal-ref-test-"));
+    try {
+      const slidesSubdir = join(rootDir, "slides");
+      writeFileSync(join(rootDir, ".keep"), "");
+      // Create slides/ directory
+      const fs = { mkdirSync: (d: string) => {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require("node:fs").mkdirSync(d, { recursive: true });
+        } catch { /* exists */ }
+      } };
+      fs.mkdirSync(slidesSubdir);
+      // The referenced slide
+      writeFileSync(
+        join(slidesSubdir, "s100.json"),
+        JSON.stringify({
+          id: "s100",
+          elements: [textEl("t1", "from-ref")],
+        }, null, 2),
+      );
+      // Main deck with $ref
+      const mainDeckPath = join(rootDir, "deck.json");
+      writeFileSync(
+        mainDeckPath,
+        JSON.stringify(deckOf([{ $ref: "./slides/s100.json" }]), null, 2),
+      );
+      const result = runValidator(mainDeckPath);
+      // Loader resolved the ref → validator saw a valid slide → PASS
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toMatch(/RESULT: PASS/);
+      // Should not complain about missing slide id/elements
+      expect(result.stdout).not.toMatch(/Missing or empty slide id/);
+      expect(result.stdout).not.toMatch(/non-array `elements`/);
+    } finally {
+      rmSync(rootDir, { recursive: true, force: true });
+      try { rmSync(subDir, { recursive: true, force: true }); } catch { /* ignore */ }
+    }
   });
 });

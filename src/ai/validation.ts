@@ -45,10 +45,49 @@ export interface ValidationResult {
   fixed: number;
 }
 
+/** Normalize a hex color string to lowercase 6-digit form for palette comparison. */
+function normHex(c: unknown): string | null {
+  if (typeof c !== "string") return null;
+  const m = c.trim().toLowerCase().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/);
+  if (!m) return null;
+  const hex = m[1]!;
+  // Expand shorthand: #abc → #aabbcc
+  if (hex.length === 3) {
+    return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+  }
+  return `#${hex}`;
+}
+
+/** Walk an object and collect every string value under keys that look like
+ *  color properties (color, fill, stroke, background, backgroundColor,
+ *  headerBackground, headerColor, borderColor). */
+function collectStyleColors(style: unknown, out: Set<string>): void {
+  if (!style || typeof style !== "object") return;
+  const COLOR_KEYS = new Set([
+    "color", "fill", "stroke", "background", "backgroundColor",
+    "headerBackground", "headerColor", "borderColor",
+  ]);
+  for (const [k, v] of Object.entries(style as Record<string, unknown>)) {
+    if (COLOR_KEYS.has(k) && typeof v === "string") {
+      const norm = normHex(v);
+      if (norm) out.add(norm);
+    }
+  }
+}
+
 export function validateDeck(deck: Deck): ValidationResult {
   const issues: ValidationIssue[] = [];
   const slideIds = new Set<string>();
   const elementIds = new Set<string>();
+
+  // Palette allow-list (opt-in via deck.theme.palette)
+  const palette = Array.isArray(deck.theme?.palette)
+    ? new Set(
+        deck.theme!.palette!
+          .map((c) => normHex(c))
+          .filter((c): c is string => c !== null),
+      )
+    : null;
 
   for (const slide of deck.slides) {
     // Duplicate slide ID
@@ -328,6 +367,40 @@ export function validateDeck(deck: Deck): ValidationResult {
             message: `${el.type} element src "${src}" must start with ./assets/, /assets/, http(s)://, or data:`,
             autoFixable: false,
           });
+        }
+      }
+
+      // Image alt text: 04b-elem-media.md says alt is mandatory in practice
+      // for accessibility and AI context. Warn (not error) so existing decks
+      // don't break but agents notice the gap.
+      if (el.type === "image") {
+        const alt = (el as { alt?: unknown }).alt;
+        if (typeof alt !== "string" || alt.trim().length === 0) {
+          issues.push({
+            severity: "warning",
+            slideId: slide.id,
+            elementId: el.id,
+            message: "image element missing `alt` text — required for accessibility and AI context",
+            autoFixable: false,
+          });
+        }
+      }
+
+      // Off-palette color check (opt-in via deck.theme.palette).
+      // Walks the element's style and reports any color not in the allow-list.
+      if (palette) {
+        const elColors = new Set<string>();
+        collectStyleColors((el as { style?: unknown }).style, elColors);
+        for (const c of elColors) {
+          if (!palette.has(c)) {
+            issues.push({
+              severity: "warning",
+              slideId: slide.id,
+              elementId: el.id,
+              message: `Color "${c}" is outside deck.theme.palette — use one of: ${[...palette].join(", ")}`,
+              autoFixable: false,
+            });
+          }
         }
       }
 
