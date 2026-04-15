@@ -90,15 +90,12 @@
         {
           "id": "s2-table",
           "type": "table",
-          "columns": [
-            { "key": "name", "label": "Element" },
-            { "key": "purpose", "label": "Purpose" }
-          ],
+          "columns": ["Element", "Purpose"],
           "rows": [
-            { "name": "text", "purpose": "Markdown + KaTeX prose" },
-            { "name": "code", "purpose": "Syntax-highlighted snippet" },
-            { "name": "table", "purpose": "Tabular data" },
-            { "name": "shape", "purpose": "Boxes, lines, arrows" }
+            ["text", "Markdown + KaTeX prose"],
+            ["code", "Syntax-highlighted snippet"],
+            ["table", "Tabular data"],
+            ["shape", "Boxes, lines, arrows"]
           ],
           "position": { "x": 510, "y": 90 },
           "size": { "w": 390, "h": 200 },

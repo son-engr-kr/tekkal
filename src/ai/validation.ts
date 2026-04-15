@@ -19,6 +19,27 @@ export interface ValidationIssue {
  */
 const VALID_ASSET_PATH_RE = /^(\.\/assets\/|\/assets\/|https?:\/\/|data:)/;
 
+/**
+ * Compute effective (w, h) for a size object that may use aspectRatio.
+ * Returns undefined for each dimension that can't be derived.
+ */
+function effectiveSize(size: unknown): { w: number | undefined; h: number | undefined } {
+  if (!size || typeof size !== "object") return { w: undefined, h: undefined };
+  const s = size as { w?: number; h?: number; aspectRatio?: number };
+  const hasAR = typeof s.aspectRatio === "number" && s.aspectRatio > 0;
+  const w = typeof s.w === "number"
+    ? s.w
+    : hasAR && typeof s.h === "number"
+      ? s.h * (s.aspectRatio as number)
+      : undefined;
+  const h = typeof s.h === "number"
+    ? s.h
+    : hasAR && typeof s.w === "number"
+      ? s.w / (s.aspectRatio as number)
+      : undefined;
+  return { w, h };
+}
+
 export interface ValidationResult {
   issues: ValidationIssue[];
   fixed: number;
@@ -93,27 +114,38 @@ export function validateDeck(deck: Deck): ValidationResult {
       }
     }
 
-    // Overlap detection: check all pairs with significant area
-    const measurableEls = slide.elements.filter(
-      (e) => e.position && e.size && e.size.w > 5 && e.size.h > 5,
-    );
+    // Overlap detection: check all pairs with significant area.
+    // Uses effective dimensions so elements defined via aspectRatio still
+    // participate in overlap checks. Dimensions are kept in a parallel
+    // array because immer-frozen elements cannot be extended.
+    type Measured = { el: typeof slide.elements[number]; w: number; h: number };
+    const measurableEls: Measured[] = [];
+    for (const e of slide.elements) {
+      if (!e.position || !e.size) continue;
+      const eff = effectiveSize(e.size);
+      if (eff.w === undefined || eff.h === undefined) continue;
+      if (eff.w <= 5 || eff.h <= 5) continue;
+      measurableEls.push({ el: e, w: eff.w, h: eff.h });
+    }
     for (let a = 0; a < measurableEls.length; a++) {
       for (let b = a + 1; b < measurableEls.length; b++) {
-        const ea = measurableEls[a]!;
-        const eb = measurableEls[b]!;
+        const ma = measurableEls[a]!;
+        const mb = measurableEls[b]!;
+        const ea = ma.el;
+        const eb = mb.el;
         // Skip if they share a groupId (intentionally stacked)
         const gaGroup = (ea as { groupId?: string }).groupId;
         const gbGroup = (eb as { groupId?: string }).groupId;
         if (gaGroup && gaGroup === gbGroup) continue;
         const ax1 = ea.position.x, ay1 = ea.position.y;
-        const ax2 = ax1 + ea.size.w,  ay2 = ay1 + ea.size.h;
+        const ax2 = ax1 + ma.w,  ay2 = ay1 + ma.h;
         const bx1 = eb.position.x, by1 = eb.position.y;
-        const bx2 = bx1 + eb.size.w,  by2 = by1 + eb.size.h;
+        const bx2 = bx1 + mb.w,  by2 = by1 + mb.h;
         const overlapW = Math.min(ax2, bx2) - Math.max(ax1, bx1);
         const overlapH = Math.min(ay2, by2) - Math.max(ay1, by1);
         if (overlapW > 20 && overlapH > 20) {
-          const areaA = ea.size.w * ea.size.h;
-          const areaB = eb.size.w * eb.size.h;
+          const areaA = ma.w * ma.h;
+          const areaB = mb.w * mb.h;
           const overlapArea = overlapW * overlapH;
           const overlapPct = overlapArea / Math.min(areaA, areaB);
           // Skip label-on-box: smaller nearly fully inside larger (ratio > 3x)
@@ -129,25 +161,23 @@ export function validateDeck(deck: Deck): ValidationResult {
           const isAnnotation = Math.max(areaA, areaB) / Math.min(areaA, areaB) > 4;
           if (!isLabelOnBox && !isShapeOnContent && !isAnnotation) {
             // Compute a suggested target position
-            const areaA = ea.size.w * ea.size.h;
-            const areaB = eb.size.w * eb.size.h;
-            const [larger, smaller] = areaA >= areaB ? [ea, eb] : [eb, ea];
-            const candidateX = larger.position.x + larger.size.w + 10;
-            const fitsRight = candidateX + smaller.size.w <= 960;
+            const [larger, smaller] = areaA >= areaB ? [ma, mb] : [mb, ma];
+            const candidateX = larger.el.position.x + larger.w + 10;
+            const fitsRight = candidateX + smaller.w <= 960;
             let suggestion: string;
             if (fitsRight) {
-              suggestion = `move "${smaller.id}" to x:${candidateX} y:${smaller.position.y} (right of "${larger.id}")`;
+              suggestion = `move "${smaller.el.id}" to x:${candidateX} y:${smaller.el.position.y} (right of "${larger.el.id}")`;
             } else {
               // Can't fit right — suggest stacking below
-              const candidateY = larger.position.y + larger.size.h + 10;
-              if (candidateY + smaller.size.h <= 540) {
-                suggestion = `move "${smaller.id}" to x:${smaller.position.x} y:${candidateY} (below "${larger.id}")`;
+              const candidateY = larger.el.position.y + larger.h + 10;
+              if (candidateY + smaller.h <= 540) {
+                suggestion = `move "${smaller.el.id}" to x:${smaller.el.position.x} y:${candidateY} (below "${larger.el.id}")`;
               } else {
-                suggestion = `resize "${smaller.id}" to w:${Math.floor((960 - larger.position.x) / 2 - 10)} or delete it — no room beside/below "${larger.id}"`;
+                suggestion = `resize "${smaller.el.id}" to w:${Math.floor((960 - larger.el.position.x) / 2 - 10)} or delete it — no room beside/below "${larger.el.id}"`;
               }
             }
-            const coordsA = `${ax1},${ay1} ${ea.size.w}×${ea.size.h}`;
-            const coordsB = `${bx1},${by1} ${eb.size.w}×${eb.size.h}`;
+            const coordsA = `${ax1},${ay1} ${ma.w}×${ma.h}`;
+            const coordsB = `${bx1},${by1} ${mb.w}×${mb.h}`;
             if (overlapPct > 0.5) {
               issues.push({
                 severity: "error",
@@ -203,12 +233,18 @@ export function validateDeck(deck: Deck): ValidationResult {
         });
         continue;
       }
-      if (!el.size || !el.size.w || !el.size.h) {
+      const effSize = effectiveSize(el.size);
+      if (
+        effSize.w === undefined ||
+        effSize.h === undefined ||
+        effSize.w <= 0 ||
+        effSize.h <= 0
+      ) {
         issues.push({
           severity: "warning",
           slideId: slide.id,
           elementId: el.id,
-          message: "Element has zero or missing size",
+          message: "Element has zero or missing size (need w+h, or one of w/h plus aspectRatio)",
           autoFixable: true,
         });
       }
@@ -224,22 +260,22 @@ export function validateDeck(deck: Deck): ValidationResult {
         });
       }
 
-      // Overflow canvas
-      if (el.position.x + el.size.w > 960) {
+      // Overflow canvas (use effective dimensions derived via aspectRatio)
+      if (effSize.w !== undefined && el.position.x + effSize.w > 960) {
         issues.push({
           severity: "warning",
           slideId: slide.id,
           elementId: el.id,
-          message: `Element overflows right edge: x(${el.position.x}) + w(${el.size.w}) = ${el.position.x + el.size.w} > 960`,
+          message: `Element overflows right edge: x(${el.position.x}) + w(${effSize.w}) = ${el.position.x + effSize.w} > 960`,
           autoFixable: true,
         });
       }
-      if (el.position.y + el.size.h > 540) {
+      if (effSize.h !== undefined && el.position.y + effSize.h > 540) {
         issues.push({
           severity: "warning",
           slideId: slide.id,
           elementId: el.id,
-          message: `Element overflows bottom edge: y(${el.position.y}) + h(${el.size.h}) = ${el.position.y + el.size.h} > 540`,
+          message: `Element overflows bottom edge: y(${el.position.y}) + h(${effSize.h}) = ${el.position.y + effSize.h} > 540`,
           autoFixable: true,
         });
       }
@@ -514,15 +550,19 @@ export function resolveOverlaps(
       .filter((e) => e.position)
       .map((e) => [e.id, { x: e.position.x, y: e.position.y }]),
   );
-  const siz = new Map<string, { w: number; h: number }>(
-    slide.elements
-      .filter((e) => e.size)
-      .map((e) => [e.id, { w: e.size.w, h: e.size.h }]),
-  );
+  const siz = new Map<string, { w: number; h: number }>();
+  for (const e of slide.elements) {
+    const eff = effectiveSize(e.size);
+    if (eff.w !== undefined && eff.h !== undefined) {
+      siz.set(e.id, { w: eff.w, h: eff.h });
+    }
+  }
 
-  const measurable = slide.elements.filter(
-    (e) => e.position && e.size && e.size.w > 5 && e.size.h > 5,
-  );
+  const measurable = slide.elements.filter((e) => {
+    if (!e.position) return false;
+    const s = siz.get(e.id);
+    return s !== undefined && s.w > 5 && s.h > 5;
+  });
 
   const VISUAL = ["shape"];
   const CONTENT = ["text", "table", "code"];

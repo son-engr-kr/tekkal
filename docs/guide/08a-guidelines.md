@@ -254,6 +254,7 @@ These rules MUST be followed by all AI agents when generating or modifying decks
 ## Tables
 
 - Table elements MUST include both `columns` (string[]) and `rows` (string[][]). `rows` must NOT be empty. Each row array length must match `columns` length.
+- **Only the plain-string form is accepted.** `columns: [{key, label}]` with `rows: [{key: value}]` objects are a legacy shape that was never rendered correctly; dev builds now throw and production builds render a visible "Table format error" box. Always emit plain `string[]` / `string[][]`.
 
 ## Scene3D
 

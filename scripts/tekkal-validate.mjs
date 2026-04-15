@@ -16,8 +16,8 @@
 // the renderer or strip user content. WARN findings are reported
 // but do not flip the exit code.
 
-import { readFileSync } from "node:fs";
-import { resolve as resolvePath } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { resolve as resolvePath, dirname, join } from "node:path";
 import process from "node:process";
 
 const CANVAS_W = 960;
@@ -158,30 +158,47 @@ function validateElement(el, slideIdx, elIdx, slideId, seenElementIds, findings)
   if (!isPlainObject(el.size)) {
     findings.warn(`${elPath}.size`, "Missing or non-object `size` field");
   } else {
-    if (typeof el.size.w !== "number" || typeof el.size.h !== "number") {
-      findings.error(`${elPath}.size`, "size.w and size.h must be numbers");
+    const hasW = typeof el.size.w === "number";
+    const hasH = typeof el.size.h === "number";
+    const hasAR = typeof el.size.aspectRatio === "number" && el.size.aspectRatio > 0;
+    // size must carry enough info to derive both w and h:
+    //   - (w, h)           explicit
+    //   - (w, aspectRatio) → h = w / aspectRatio
+    //   - (h, aspectRatio) → w = h * aspectRatio
+    if (!hasW && !hasH) {
+      findings.error(`${elPath}.size`, "size must specify w and h (or w/h plus aspectRatio)");
+    } else if (!hasW || !hasH) {
+      if (!hasAR) {
+        findings.error(
+          `${elPath}.size`,
+          "size has only one dimension — add the other, or add aspectRatio to derive it",
+        );
+      }
     }
+    // Compute effective w/h for overflow checks (derive from aspectRatio if needed)
+    const effW = hasW ? el.size.w : hasAR ? el.size.h * el.size.aspectRatio : undefined;
+    const effH = hasH ? el.size.h : hasAR ? el.size.w / el.size.aspectRatio : undefined;
     if (
       isPlainObject(el.position) &&
       typeof el.position.x === "number" &&
-      typeof el.size.w === "number"
+      typeof effW === "number"
     ) {
-      if (el.position.x + el.size.w > CANVAS_W) {
+      if (el.position.x + effW > CANVAS_W) {
         findings.warn(
           `${elPath}`,
-          `Element overflows right edge: x(${el.position.x}) + w(${el.size.w}) = ${el.position.x + el.size.w} > ${CANVAS_W}`,
+          `Element overflows right edge: x(${el.position.x}) + w(${effW}) = ${el.position.x + effW} > ${CANVAS_W}`,
         );
       }
     }
     if (
       isPlainObject(el.position) &&
       typeof el.position.y === "number" &&
-      typeof el.size.h === "number"
+      typeof effH === "number"
     ) {
-      if (el.position.y + el.size.h > CANVAS_H) {
+      if (el.position.y + effH > CANVAS_H) {
         findings.warn(
           `${elPath}`,
-          `Element overflows bottom edge: y(${el.position.y}) + h(${el.size.h}) = ${el.position.y + el.size.h} > ${CANVAS_H}`,
+          `Element overflows bottom edge: y(${el.position.y}) + h(${effH}) = ${el.position.y + effH} > ${CANVAS_H}`,
         );
       }
     }
@@ -576,6 +593,67 @@ function formatReport(findings, filePath, deck) {
 // Main
 // ─────────────────────────────────────────────────────────────────
 
+/**
+ * Resolve `{ "$ref": "./slides/foo.json" }` entries in deck.slides by
+ * reading the referenced files relative to the deck's directory.
+ * Mirrors the loader behavior in src/adapters/fsAccess.ts so the
+ * validator sees the same deck the app renders.
+ */
+function resolveSlideRefs(deck, deckDir, findings) {
+  if (!Array.isArray(deck.slides)) return;
+  const referencedFiles = new Set();
+  for (let i = 0; i < deck.slides.length; i++) {
+    const entry = deck.slides[i];
+    if (isPlainObject(entry) && typeof entry.$ref === "string") {
+      const refRel = entry.$ref.replace(/^\.\//, "");
+      referencedFiles.add(refRel);
+      const refPath = resolvePath(deckDir, refRel);
+      if (!existsSync(refPath)) {
+        findings.error(
+          `slides[${i}].$ref`,
+          `External slide file not found: ${entry.$ref}`,
+        );
+        continue;
+      }
+      try {
+        const raw = readFileSync(refPath, "utf8");
+        const resolved = JSON.parse(raw);
+        resolved._ref = entry.$ref;
+        deck.slides[i] = resolved;
+      } catch (e) {
+        findings.error(
+          `slides[${i}].$ref`,
+          `Failed to load external slide ${entry.$ref}: ${e.message}`,
+        );
+      }
+    }
+  }
+  return referencedFiles;
+}
+
+/** Warn on any slides/*.json file not referenced from deck.json. */
+function checkOrphanedSlideFiles(deckDir, referencedFiles, findings) {
+  const slidesDir = join(deckDir, "slides");
+  if (!existsSync(slidesDir)) return;
+  let files;
+  try {
+    files = readdirSync(slidesDir);
+  } catch {
+    return;
+  }
+  for (const f of files) {
+    if (!f.endsWith(".json")) continue;
+    const rel = `slides/${f}`;
+    const altRel = `./slides/${f}`;
+    if (!referencedFiles.has(rel) && !referencedFiles.has(altRel)) {
+      findings.warn(
+        `slides/${f}`,
+        `Unreferenced external slide file — not listed in deck.slides`,
+      );
+    }
+  }
+}
+
 function main() {
   const argv = process.argv.slice(2);
   if (argv.length !== 1) {
@@ -583,6 +661,7 @@ function main() {
     process.exit(2);
   }
   const filePath = resolvePath(argv[0]);
+  const deckDir = dirname(filePath);
 
   let raw;
   // I/O boundary — fall through to a structured error so the user
@@ -603,6 +682,11 @@ function main() {
   }
 
   const findings = new FindingList();
+  // Resolve $ref entries before schema checks so the validator sees the
+  // same shape the loader does.
+  const referencedFiles = resolveSlideRefs(deck, deckDir, findings) ?? new Set();
+  checkOrphanedSlideFiles(deckDir, referencedFiles, findings);
+
   const ok = validateDeckShape(deck, findings);
   if (ok) {
     const seenSlideIds = new Set();

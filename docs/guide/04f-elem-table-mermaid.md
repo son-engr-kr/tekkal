@@ -30,8 +30,10 @@ Renders a data table with column headers and rows.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `columns` | string[] | yes | Header labels for each column |
-| `rows` | string[][] | yes | 2D array of cell data. Each inner array is one row |
+| `columns` | string[] | yes | Header labels for each column. **Must be plain strings** — `{key, label}` objects are not accepted. |
+| `rows` | string[][] | yes | 2D array of cell data. Each inner array is one row, in the same order as `columns`. **Must be plain string arrays** — `{key: value}` row objects are not accepted. |
+
+> **Legacy format (not supported).** Earlier drafts of the example deck used `columns: [{key, label}]` with `rows: [{key: value}]`. That shape has never rendered correctly and is now rejected loudly: dev builds throw, production builds render a visible "Table format error" box. Always use plain `string[]` / `string[][]`.
 
 **Style fields**:
 
