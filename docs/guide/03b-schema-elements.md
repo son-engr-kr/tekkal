@@ -38,7 +38,9 @@ Grouping is flat (1-level only). Grouping elements that already belong to differ
 
 **Convention:** use `"group-"` prefix followed by a short identifier (e.g., `"group-box-a"`).
 
-**Arrow connectors must always be grouped with their label.** An arrow element (`"shape": "arrow"`) and its associated text label should share the same `groupId` so they stay aligned when moved. Similarly, box + label pairs in diagrams should be grouped.
+**Arrow connectors must always be grouped with their label.** An arrow element (`"shape": "arrow"`) and its associated text label should share the same `groupId` so they stay aligned when moved.
+
+**For labeled rectangles and ellipses, prefer the built-in `text` field** on the shape element instead of overlaying a separate text element. This keeps the shape and label as a single element for animation and positioning. See `04c-elem-shape.md` for the `text`/`textStyle` fields.
 
 See the shape and diagram guide files for grouping examples.
 

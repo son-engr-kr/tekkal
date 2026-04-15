@@ -24,6 +24,8 @@ Renders a geometric shape.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `shape` | `"rectangle"` \| `"ellipse"` \| `"line"` \| `"arrow"` | yes | Shape type |
+| `text` | string | — | Optional markdown label rendered centered on the shape. Rectangle/ellipse only — ignored on line/arrow. Supports the same markdown + math (`$...$`, `$$...$$`) as text elements. |
+| `textStyle` | `TextStyle` | — | Style for the label. Reuses the full `TextStyle` schema (fontSize, color, fontFamily, textAlign, verticalAlign, lineHeight, textSizing). Defaults to `textAlign: "center"`, `verticalAlign: "middle"`, `fontSize: 16`. |
 
 **Style fields**:
 
@@ -38,6 +40,22 @@ Renders a geometric shape.
 | `markerEnd` | `"none"` \| `"arrow"` \| `"circle"` | `"none"` (`"arrow"` for `shape: "arrow"`) | End marker (line/arrow only) |
 | `path` | string | — | SVG path `d` attribute for custom line routing (line/arrow only). Takes priority is overridden by `waypoints` when both are present. |
 | `waypoints` | `{x,y}[]` | **yes** (line/arrow) | Polyline waypoints in element-local coords (line/arrow only). **Always provide at least 2 points.** Takes priority over `path`. |
+
+**Labeled shape example** (rectangle with a centered label — animates as a single element):
+```json
+{
+  "id": "node-a",
+  "type": "shape",
+  "shape": "rectangle",
+  "position": { "x": 100, "y": 100 },
+  "size": { "w": 200, "h": 80 },
+  "style": { "fill": "#1e293b", "stroke": "#3b82f6", "strokeWidth": 2, "borderRadius": 8 },
+  "text": "**Input** $x_0$",
+  "textStyle": { "color": "#f1f5f9", "fontSize": 20 }
+}
+```
+
+Labels on shapes remove the need to overlay a separate text element, so both the shape and its label share the same animation target. For `"line"` and `"arrow"`, `text` is ignored — use a separate text element if you need a line caption.
 
 For `"line"` and `"arrow"`: `position` is the bounding box origin. **Always specify `waypoints`** with at least 2 points — they define the actual line path in element-local coordinates (relative to `position`). `size` is the bounding box enclosing the waypoints. The `"arrow"` shape is shorthand for `"line"` with `markerEnd: "arrow"`. Use `markerStart`/`markerEnd` for fine-grained control. **Never use `rotation` on line/arrow elements** — the code asserts against this. Use `waypoints` to control line direction instead.
 

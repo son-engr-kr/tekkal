@@ -883,6 +883,13 @@ function ElementStyleEditor({
     } as Partial<SlideElement>);
   };
 
+  const patchTextStyle = (prop: string, value: unknown) => {
+    if (element.type !== "shape") return;
+    updateElement(slideId, element.id, {
+      textStyle: { ...element.textStyle, [prop]: value },
+    } as Partial<SlideElement>);
+  };
+
   // Merge theme + element style so color pickers show the effective value
   const themeKey = element.type as keyof DeckTheme;
   const merged = resolveStyle(theme?.[themeKey] as Record<string, unknown> | undefined, element.style as Record<string, unknown> | undefined);
@@ -918,6 +925,34 @@ function ElementStyleEditor({
             <NumberField label="Stroke Opacity" value={element.style?.strokeOpacity ?? 1} onChange={(v) => patchStyle("strokeOpacity", v)} min={0} max={1} step={0.05} />
             <NumberField label="Stroke Width" value={element.style?.strokeWidth} onChange={(v) => patchStyle("strokeWidth", v)} min={0} max={20} />
             <NumberField label="Border Radius" value={element.style?.borderRadius ?? 0} onChange={(v) => patchStyle("borderRadius", v)} min={0} max={100} />
+            {(element.shape === "rectangle" || element.shape === "ellipse") && (
+              <>
+                <div>
+                  <FieldLabel>Label</FieldLabel>
+                  <textarea
+                    className="w-full bg-zinc-800 text-zinc-200 rounded px-2 py-1.5 text-xs font-mono resize-y min-h-12 border border-zinc-700 focus:border-blue-500 focus:outline-none"
+                    value={element.text ?? ""}
+                    rows={2}
+                    placeholder="Optional text overlay (markdown + $math$)"
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      updateElement(slideId, element.id, { text: v === "" ? undefined : v } as Partial<SlideElement>);
+                    }}
+                  />
+                </div>
+                {element.text && (
+                  <>
+                    <ColorField label="Label Color" value={element.textStyle?.color} onChange={(v) => patchTextStyle("color", v)} />
+                    <TextField label="Label Font Family" value={element.textStyle?.fontFamily} onChange={(v) => patchTextStyle("fontFamily", v)} placeholder="sans-serif" />
+                    <NumberField label="Label Font Size" value={element.textStyle?.fontSize ?? 16} onChange={(v) => patchTextStyle("fontSize", v)} min={8} max={200} />
+                    <SelectField label="Label Text Sizing" value={element.textStyle?.textSizing} options={TEXT_SIZING_OPTIONS} onChange={(v) => patchTextStyle("textSizing", v)} />
+                    <SelectField label="Label Align" value={element.textStyle?.textAlign ?? "center"} options={TEXT_ALIGN_OPTIONS} onChange={(v) => patchTextStyle("textAlign", v)} />
+                    <NumberField label="Label Line Height" value={element.textStyle?.lineHeight} onChange={(v) => patchTextStyle("lineHeight", v)} min={0.5} max={4} step={0.1} />
+                    <SelectField label="Label V-Align" value={element.textStyle?.verticalAlign ?? "middle"} options={VERTICAL_ALIGN_OPTIONS} onChange={(v) => patchTextStyle("verticalAlign", v)} />
+                  </>
+                )}
+              </>
+            )}
             {(element.shape === "line" || element.shape === "arrow") && (
               <>
                 <SelectField

@@ -217,6 +217,10 @@ export interface ShapeElement extends BaseElement {
   type: "shape";
   shape: ShapeKind;
   style?: ShapeStyle;
+  /** Optional label rendered centered on the shape (rect / ellipse only). */
+  text?: string;
+  /** Style for the label text — reuses TextStyle. */
+  textStyle?: TextStyle;
 }
 
 export interface VideoElement extends BaseElement {

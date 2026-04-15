@@ -600,6 +600,38 @@ async function addImage(
 // Shape
 // ========================================================================
 
+/** Overlay a text label on a shape (centered). Mirrors ShapeElementRenderer. */
+function addShapeTextLabel(
+  slide: PptxGenJS.Slide,
+  el: ShapeElement,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  rotate: number,
+) {
+  if (!el.text) return;
+  const ts = el.textStyle ?? {};
+  const fontSize = ts.fontSize ?? 16;
+  const fontFace = ts.fontFamily ?? DEFAULT_TEXT_FONT;
+  const colorHex = toHex(ts.color ?? "#1e293b");
+  const align = ts.textAlign ?? "center";
+  const valign = ts.verticalAlign ?? "middle";
+
+  const parsedLines = parseMarkdownLines(el.text);
+  const textProps = parsedLinesToTextProps(parsedLines, fontSize, fontFace, colorHex ?? "1E293B");
+  if (textProps.length === 0) return;
+
+  slide.addText(textProps, {
+    x, y, w, h,
+    align,
+    valign,
+    wrap: true,
+    margin: 0,
+    rotate,
+  });
+}
+
 function addShape(
   slide: PptxGenJS.Slide,
   el: ShapeElement,
@@ -642,6 +674,7 @@ function addShape(
       rectRadius: s.borderRadius ? s.borderRadius * PX_TO_IN_X : undefined,
       rotate,
     });
+    addShapeTextLabel(slide, el, x, y, w, h, rotate);
   } else if (el.shape === "ellipse") {
     slide.addShape("ellipse" as PptxGenJS.ShapeType, {
       x,
@@ -652,6 +685,7 @@ function addShape(
       line,
       rotate,
     });
+    addShapeTextLabel(slide, el, x, y, w, h, rotate);
   } else if (el.shape === "line" || el.shape === "arrow") {
     const sw = s.strokeWidth ?? 2;
     const { startMarker, endMarker } = resolveMarkers(el, s);

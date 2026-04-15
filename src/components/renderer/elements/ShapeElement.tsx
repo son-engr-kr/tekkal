@@ -1,6 +1,7 @@
-import type { ShapeElement as ShapeElementType, ShapeStyle } from "@/types/deck";
+import type { ShapeElement as ShapeElementType, ShapeStyle, TextStyle } from "@/types/deck";
 import { useElementStyle } from "@/contexts/ThemeContext";
 import { resolveMarkers } from "@/utils/lineMarkers";
+import { TextContent } from "./TextContent";
 
 interface Props {
   element: ShapeElementType;
@@ -38,19 +39,31 @@ export function ShapeElementRenderer({ element }: Props) {
     const rx = Math.max(0, w / 2 - sw / 2);
     const ry = Math.max(0, h / 2 - sw / 2);
     return (
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ opacity: style.opacity ?? 1 }}>
-        <ellipse
-          cx={w / 2}
-          cy={h / 2}
-          rx={rx}
-          ry={ry}
-          fill={style.fill ?? "transparent"}
-          fillOpacity={fOp}
-          stroke={style.stroke ?? "#888888"}
-          strokeOpacity={sOp}
-          strokeWidth={sw}
-        />
-      </svg>
+      <div style={{ position: "relative", width: w, height: h }}>
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ opacity: style.opacity ?? 1 }}>
+          <ellipse
+            cx={w / 2}
+            cy={h / 2}
+            rx={rx}
+            ry={ry}
+            fill={style.fill ?? "transparent"}
+            fillOpacity={fOp}
+            stroke={style.stroke ?? "#888888"}
+            strokeOpacity={sOp}
+            strokeWidth={sw}
+          />
+        </svg>
+        {element.text && (
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            <TextContent
+              content={element.text}
+              style={shapeTextStyle(element.textStyle)}
+              width={w}
+              height={h}
+            />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -209,6 +222,7 @@ export function ShapeElementRenderer({ element }: Props) {
   return (
     <div
       style={{
+        position: "relative",
         width: w,
         height: h,
         backgroundColor: withAlpha(style.fill ?? "transparent", fOp),
@@ -219,6 +233,27 @@ export function ShapeElementRenderer({ element }: Props) {
         borderRadius: style.borderRadius ?? 0,
         opacity: style.opacity ?? 1,
       }}
-    />
+    >
+      {element.text && (
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+          <TextContent
+            content={element.text}
+            style={shapeTextStyle(element.textStyle)}
+            width={w}
+            height={h}
+          />
+        </div>
+      )}
+    </div>
   );
+}
+
+/** Default text style for shape labels: centered both axes. */
+function shapeTextStyle(override?: TextStyle): TextStyle {
+  return {
+    textAlign: "center",
+    verticalAlign: "middle",
+    fontSize: 16,
+    ...override,
+  };
 }

@@ -501,6 +501,12 @@ async function buildReference(
 
 function buildText(el: TextElement, deck: Deck): HTMLElement {
   const s = resolveStyle<TextStyle>(deck.theme?.text, el.style);
+  return buildTextContent(el.content, s);
+}
+
+/** Build a text-rendering div from raw content + style. Used by TextElement
+ *  and by ShapeElement (text labels on rect/ellipse). */
+function buildTextContent(content: string, s: TextStyle): HTMLElement {
   const font = s.fontFamily ?? DEFAULT_TEXT_FONT;
   const size = s.fontSize ?? DEFAULT_TEXT_SIZE;
   const color = s.color ?? DEFAULT_TEXT_COLOR;
@@ -515,7 +521,7 @@ function buildText(el: TextElement, deck: Deck): HTMLElement {
 
   const inner = document.createElement("div");
   inner.style.width = "100%";
-  inner.innerHTML = mdToHtml(el.content);
+  inner.innerHTML = mdToHtml(content);
   d.appendChild(inner);
 
   if (sizing === "flexible") d.dataset.flexFit = String(size);
@@ -778,8 +784,8 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
   // Ellipse → inline SVG (matches ShapeElementRenderer)
   if (el.shape === "ellipse") {
     const sw = s.strokeWidth ?? 1;
-    const d = document.createElement("div");
-    d.style.cssText = `width:100%;height:100%;opacity:${op}`;
+    const wrap = document.createElement("div");
+    wrap.style.cssText = `position:relative;width:100%;height:100%;opacity:${op}`;
 
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("width", String(w));
@@ -798,8 +804,9 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
     ellipse.setAttribute("stroke-opacity", String(sOp));
     ellipse.setAttribute("stroke-width", String(sw));
     svg.appendChild(ellipse);
-    d.appendChild(svg);
-    return d;
+    wrap.appendChild(svg);
+    appendShapeText(wrap, el);
+    return wrap;
   }
 
   // Rectangle → CSS div (matches ShapeElementRenderer)
@@ -809,6 +816,7 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
   const strokeColor = sOp < 1 ? withAlpha(stroke, sOp) : stroke;
   const d = document.createElement("div");
   d.style.cssText = [
+    "position:relative",
     "width:100%",
     "height:100%",
     `background-color:${fillColor}`,
@@ -819,7 +827,24 @@ function buildShape(el: ShapeElement, deck: Deck): HTMLElement {
   ]
     .filter(Boolean)
     .join(";");
+  appendShapeText(d, el);
   return d;
+}
+
+/** Overlay a centered text label on a shape if el.text is set. */
+function appendShapeText(container: HTMLElement, el: ShapeElement): void {
+  if (!el.text) return;
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:absolute;inset:0;pointer-events:none";
+  const baseStyle: TextStyle = {
+    textAlign: "center",
+    verticalAlign: "middle",
+    fontSize: 16,
+    ...(el.textStyle ?? {}),
+  };
+  const text = buildTextContent(el.text, baseStyle);
+  overlay.appendChild(text);
+  container.appendChild(overlay);
 }
 
 // ---- Table (mirrors TableElement.tsx) ----

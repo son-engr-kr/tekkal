@@ -680,6 +680,23 @@ async function drawCode(
 // Shape → PDF (drawShape)
 // ========================================================================
 
+/** Build a synthetic TextElement positioned over a shape for label rendering. */
+function shapeTextToTextElement(el: ShapeElement): TextElement {
+  return {
+    id: `${el.id}__text`,
+    type: "text",
+    position: el.position,
+    size: el.size,
+    content: el.text ?? "",
+    style: {
+      textAlign: "center",
+      verticalAlign: "middle",
+      fontSize: 16,
+      ...(el.textStyle ?? {}),
+    },
+  };
+}
+
 function drawShape(doc: jsPDF, el: ShapeElement, deck: Deck): void {
   const s = resolveStyle<ShapeStyle>(deck.theme?.shape, el.style);
   const fill = s.fill ?? "transparent";
@@ -1231,6 +1248,9 @@ async function renderSlide(
         break;
       case "shape":
         drawShape(doc, el, deck);
+        if (el.text && (el.shape === "rectangle" || el.shape === "ellipse")) {
+          await drawText(doc, shapeTextToTextElement(el), deck);
+        }
         break;
       case "image":
         await drawImage(doc, el, deck, adapter);
@@ -1270,7 +1290,14 @@ async function renderSlide(
             switch (clone.type) {
               case "text": await drawText(doc, clone as TextElement, deck); break;
               case "code": await drawCode(doc, clone as CodeElement, deck); break;
-              case "shape": drawShape(doc, clone as ShapeElement, deck); break;
+              case "shape": {
+                const sh = clone as ShapeElement;
+                drawShape(doc, sh, deck);
+                if (sh.text && (sh.shape === "rectangle" || sh.shape === "ellipse")) {
+                  await drawText(doc, shapeTextToTextElement(sh), deck);
+                }
+                break;
+              }
               case "image": await drawImage(doc, clone as ImageElement, deck, adapter); break;
               case "table": drawTable(doc, clone as TableElement, deck); break;
               case "tikz": await drawTikZ(doc, clone as TikZElement, deck, adapter); break;
