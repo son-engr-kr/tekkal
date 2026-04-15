@@ -15,11 +15,7 @@ import { SlideAnimationList } from "./SlideAnimationList";
 import { ElementList } from "./ElementList";
 import { ThemePanel } from "./ThemePanel";
 import { PresentationMode } from "@/components/presenter/PresentationMode";
-import { exportToPdf } from "@/components/export/pdfExport";
-import { exportToNativePdf } from "@/components/export/pdfNativeExport";
-import { exportToPptx } from "@/components/export/pptxExport";
-import { exportSlidesToImages } from "@/components/export/imageExport";
-import { warmScene3DCache } from "@/utils/renderScene3D";
+import { ExportDialog } from "./ExportDialog";
 import { useAdapter } from "@/contexts/AdapterContext";
 import { ProjectSettingsDialog } from "./ProjectSettingsDialog";
 import { AiChatPanel } from "./AiChatPanel";
@@ -121,11 +117,11 @@ export function EditorLayout() {
   const [aiWidth, setAiWidth] = useState(300);
   const [presenting, setPresenting] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
-  const [pdfMenuOpen, setPdfMenuOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [elementListOpen, setElementListOpen] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const [showProjectSettings, setShowProjectSettings] = useState(false);
-  const [exportProgress, setExportProgress] = useState<{ current: number; total: number; label: string } | null>(null);
-  const pdfMenuRef = useRef<HTMLDivElement>(null);
+  const deck = useDeckStore((s) => s.deck);
   const isDirty = useDeckStore(selectIsDirty);
   const isSaving = useDeckStore((s) => s.isSaving);
   const saveToDisk = useDeckStore((s) => s.saveToDisk);
@@ -158,18 +154,6 @@ export function EditorLayout() {
   notesHeightRef.current = notesHeight;
   const codeHeightRef = useRef(codeHeight);
   codeHeightRef.current = codeHeight;
-
-  // Close PDF menu on click outside
-  useEffect(() => {
-    if (!pdfMenuOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (pdfMenuRef.current && !pdfMenuRef.current.contains(e.target as Node)) {
-        setPdfMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [pdfMenuOpen]);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
@@ -588,89 +572,11 @@ export function EditorLayout() {
         >
           Present (F5)
         </button>
-        <div className="relative" ref={pdfMenuRef}>
-          <button
-            onClick={() => setPdfMenuOpen(!pdfMenuOpen)}
-            className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-          >
-            PDF ▾
-          </button>
-          {pdfMenuOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded shadow-lg z-50 min-w-[140px]">
-              {([
-                ["PDF (Image HD)", { scale: 4, format: "jpeg" as const, quality: 0.92 }],
-                ["PDF (Image)", { scale: 2, format: "jpeg" as const, quality: 0.92 }],
-              ] as const).map(([label, opts]) => (
-                <button
-                  key={label}
-                  disabled={!!exportProgress}
-                  onClick={() => {
-                    setPdfMenuOpen(false);
-                    const deck = useDeckStore.getState().deck;
-                    if (!deck) return;
-                    const onProgress = (c: number, t: number) => setExportProgress({ current: c, total: t, label });
-                    setExportProgress({ current: 0, total: deck.slides.length, label });
-                    const { currentSlideIndex, setCurrentSlide } = useDeckStore.getState();
-                    warmScene3DCache(deck, setCurrentSlide, currentSlideIndex)
-                      .then(() => exportToPdf(deck, adapter, { ...opts, onProgress }))
-                      .finally(() => setExportProgress(null));
-                  }}
-                  className="w-full text-left text-xs px-3 py-2 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors disabled:opacity-50"
-                >
-                  {label}
-                </button>
-              ))}
-              <button
-                disabled={!!exportProgress}
-                onClick={() => {
-                  setPdfMenuOpen(false);
-                  const deck = useDeckStore.getState().deck;
-                  if (!deck) return;
-                  const onProgress = (c: number, t: number) => setExportProgress({ current: c, total: t, label: "PDF (Native)" });
-                  setExportProgress({ current: 0, total: deck.slides.length, label: "PDF (Native)" });
-                  const { currentSlideIndex: ci2, setCurrentSlide: sc2 } = useDeckStore.getState();
-                  warmScene3DCache(deck, sc2, ci2)
-                    .then(() => exportToNativePdf(deck, adapter, onProgress))
-                    .finally(() => setExportProgress(null));
-                }}
-                className="w-full text-left text-xs px-3 py-2 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors disabled:opacity-50"
-              >
-                PDF (Native)
-              </button>
-            </div>
-          )}
-        </div>
         <button
-          disabled={!!exportProgress}
-          onClick={() => {
-            const deck = useDeckStore.getState().deck;
-            if (!deck) return;
-            const onProgress = (c: number, t: number) => setExportProgress({ current: c, total: t, label: "PPTX" });
-            setExportProgress({ current: 0, total: deck.slides.length, label: "PPTX" });
-            const { currentSlideIndex: ci3, setCurrentSlide: sc3 } = useDeckStore.getState();
-            warmScene3DCache(deck, sc3, ci3)
-              .then(() => exportToPptx(deck, adapter, onProgress))
-              .finally(() => setExportProgress(null));
-          }}
-          className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
+          onClick={() => setExportOpen(true)}
+          className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
         >
-          PPTX
-        </button>
-        <button
-          disabled={!!exportProgress}
-          onClick={() => {
-            const deck = useDeckStore.getState().deck;
-            if (!deck) return;
-            const onProgress = (c: number, t: number) => setExportProgress({ current: c, total: t, label: "Images (ZIP)" });
-            setExportProgress({ current: 0, total: deck.slides.length, label: "Images (ZIP)" });
-            const { currentSlideIndex: ci4, setCurrentSlide: sc4 } = useDeckStore.getState();
-            warmScene3DCache(deck, sc4, ci4)
-              .then(() => exportSlidesToImages(deck, adapter, { scale: 2, format: "png", onProgress }))
-              .finally(() => setExportProgress(null));
-          }}
-          className="text-xs px-2 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
-        >
-          Images
+          Export
         </button>
         {import.meta.env.DEV && (
           <button
@@ -810,13 +716,24 @@ export function EditorLayout() {
                   <PropertyPanel />
                 </PropertyPanelErrorBoundary>
               </div>
-              {/* Element list */}
-              <div className="h-[180px] shrink-0 overflow-y-auto border-b border-zinc-800">
-                <ElementList
-                  onSelectElement={(elementId) => {
-                    useDeckStore.getState().selectElement(elementId);
-                  }}
-                />
+              {/* Element list (collapsible, default folded) */}
+              <div className="shrink-0 border-b border-zinc-800">
+                <button
+                  onClick={() => setElementListOpen(!elementListOpen)}
+                  className="w-full flex items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition-colors"
+                >
+                  <span className="text-zinc-500">{elementListOpen ? "▼" : "▶"}</span>
+                  <span>Elements</span>
+                </button>
+                {elementListOpen && (
+                  <div className="h-[180px] overflow-y-auto">
+                    <ElementList
+                      onSelectElement={(elementId) => {
+                        useDeckStore.getState().selectElement(elementId);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               {/* Animations */}
               <div className="flex-1 overflow-y-auto">
@@ -856,20 +773,13 @@ export function EditorLayout() {
           </>
         )}
       </div>
-      {exportProgress && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl px-5 py-3 flex items-center gap-3 min-w-[280px]">
-          <div className="flex-1">
-            <div className="text-xs text-zinc-300 mb-1.5">
-              {exportProgress.label} — {exportProgress.current}/{exportProgress.total} slides
-            </div>
-            <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-500 rounded-full transition-all duration-200"
-                style={{ width: `${exportProgress.total > 0 ? (exportProgress.current / exportProgress.total) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
-        </div>
+      {exportOpen && deck && (
+        <ExportDialog
+          open={exportOpen}
+          onClose={() => setExportOpen(false)}
+          deck={deck}
+          adapter={adapter}
+        />
       )}
       {showProjectSettings && (
         <ProjectSettingsDialog
