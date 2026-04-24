@@ -34,6 +34,18 @@ jobs:
       - name: Test with coverage
         run: npx vitest run --coverage
 
+      - name: Validate bundled demo decks
+        run: |
+          fail=0
+          for deck in templates/demos/*/deck.json; do
+            echo "::group::$deck"
+            if ! node scripts/tekkal-validate.mjs "$deck"; then
+              fail=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail
+
       - name: Upload coverage artifact
         if: always()
         uses: actions/upload-artifact@v4
